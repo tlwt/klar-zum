@@ -1,4 +1,4 @@
-# config.yaml - Beispielkonfiguration für PDF Formular Ausfüller
+# config.yaml - Konfiguration für PDF Formular Ausfüller
 
 groups:
   "Persönliche Daten":
@@ -27,6 +27,7 @@ fields:
     title: "Vorname"
     description: "Vorname der Person"
     type: "text"
+    mapping: "Vorname"
   
   Nachname:
     group: "Persönliche Daten"
@@ -39,12 +40,14 @@ fields:
     title: "Nachname"
     description: "Nachname der Person"
     type: "text"
+    mapping: "Nachname"
     
   NameDerReservistinDesReservisten:
     group: "Persönliche Daten"
     title: "Vollständiger Name"
     description: "Vor- und Nachname"
     type: "text"
+    mapping: "Vollname"
   
   Personenkennziffer:
     group: "Persönliche Daten"
@@ -59,29 +62,57 @@ fields:
     type: "text"
 
   # Kontaktdaten
+  Strasse:
+    group: "Kontaktdaten"
+    title: "Straße und Hausnummer"
+    description: "Ihre vollständige Adresse"
+    type: "text"
+
   StrasseHausnummer:
     group: "Kontaktdaten"
     title: "Straße und Hausnummer"
     description: "Ihre vollständige Adresse"
     type: "text"
-    
+    mapping: "Strasse"
+
+  PLZ:
+    group: "Kontaktdaten"
+    title: "PLZ und Ort"
+    description: "Postleitzahl und Wohnort"
+    type: "text"
+
   PostleitzahlWohnort:
     group: "Kontaktdaten"
     title: "PLZ und Ort"
     description: "Postleitzahl und Wohnort"
     type: "text"
+    mapping: "PLZ"
     
+  Email:
+    group: "Kontaktdaten"
+    title: "E-Mail-Adresse"
+    description: "Ihre E-Mail-Adresse"
+    type: "email"
+
   EMailAdresse:
     group: "Kontaktdaten"
     title: "E-Mail-Adresse"
     description: "Ihre E-Mail-Adresse"
     type: "email"
+    mapping: "Email"
     
+  Telefon:
+    group: "Kontaktdaten"
+    title: "Telefonnummer"
+    description: "Ihre Telefonnummer"
+    type: "tel"
+
   Telefonnummer:
     group: "Kontaktdaten"
     title: "Telefonnummer"
     description: "Ihre Telefonnummer"
     type: "tel"
+    mapping: "Telefon"
     
   Ort:
     group: "Kontaktdaten"
@@ -90,11 +121,18 @@ fields:
     type: "text"
 
   # Unternehmen
+  Unternehmen:
+    group: "Unternehmen"
+    title: "Name des Unternehmens"
+    description: "Vollständiger Firmenname"
+    type: "text"
+
   NameDesUnternehmens:
     group: "Unternehmen"
     title: "Name des Unternehmens"
     description: "Vollständiger Firmenname"
     type: "text"
+    mapping: "Unternehmen"
 
   # Zeiträume
   Datum:
@@ -108,6 +146,7 @@ fields:
     title: "Zweites Datum"
     description: "Zusätzliches Datum"
     type: "date"
+    mapping: "Datum2"
     
   fromDate1:
     group: "Zeiträume"
