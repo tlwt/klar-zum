@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Formular Ausfüller</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -65,6 +66,48 @@
             100% { transform: rotate(360deg); }
         }
         
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e5e9;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+            background: #f8f9ff;
+        }
+        
+        .tab:hover:not(.active) {
+            color: #4facfe;
+            background: #f0f8ff;
+        }
+        
+        .tab:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .form-section {
             margin-bottom: 30px;
             padding: 25px;
@@ -109,9 +152,7 @@
             line-height: 1.4;
         }
         
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
+        .form-group input {
             padding: 12px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
@@ -119,9 +160,7 @@
             transition: border-color 0.3s;
         }
         
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-group input:focus {
             outline: none;
             border-color: #4facfe;
             box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
@@ -145,6 +184,11 @@
         .pdf-checkbox:hover {
             border-color: #4facfe;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .pdf-checkbox.selected {
+            border-color: #4facfe;
+            background: #f0f8ff;
         }
         
         .pdf-checkbox input[type="checkbox"] {
@@ -190,7 +234,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -201,7 +244,7 @@
             color: white;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
         }
@@ -215,6 +258,12 @@
         .btn-secondary:hover {
             background: #4facfe;
             color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
         }
         
         .file-input {
@@ -276,6 +325,22 @@
             margin: 20px 0;
         }
         
+        .config-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .selection-summary {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -288,6 +353,14 @@
             .header h1 {
                 font-size: 2rem;
             }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -295,7 +368,7 @@
     <div class="container">
         <div class="header">
             <h1>PDF Formular Ausfüller</h1>
-            <p>Automatisches Ausfüllen von PDF-Formularen mit Feld-Erkennung</p>
+            <p>Automatisches Ausfüllen von PDF-Formularen mit YAML-Konfiguration</p>
         </div>
         
         <div class="content">
@@ -305,39 +378,63 @@
             </div>
             
             <div id="mainContent" style="display: none;">
+                <div id="configInfo" class="config-info" style="display: none;">
+                    <strong>📄 Konfiguration geladen:</strong> <span id="configPath"></span>
+                </div>
+                
                 <div id="urlParams" class="url-params" style="display: none;">
                     <h4>🔗 URL-Parameter erkannt:</h4>
                     <div id="urlParamsContent"></div>
                 </div>
                 
-                <div id="pdfSection" class="form-section">
-                    <h3>📄 PDF-Formulare auswählen</h3>
-                    <p class="description">Wählen Sie die PDF-Formulare aus, die Sie ausfüllen möchten.</p>
-                    <div id="pdfSelection" class="pdf-selection">
-                        <!-- Wird dynamisch mit PDFs aus ./formulare gefüllt -->
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('pdf-selection')">
+                        📄 PDF-Auswahl
+                    </button>
+                    <button class="tab" onclick="switchTab('form-fields')" id="formFieldsTab" disabled>
+                        📝 Formularfelder
+                    </button>
+                </div>
+                
+                <div id="pdf-selection" class="tab-content active">
+                    <div class="form-section">
+                        <h3>📄 PDF-Formulare auswählen</h3>
+                        <p class="description">Wählen Sie die PDF-Formulare aus, die Sie ausfüllen möchten.</p>
+                        <div id="pdfSelection" class="pdf-selection"></div>
+                        
+                        <div id="selectionSummary" class="selection-summary" style="display: none;">
+                            <h4>✅ Ausgewählte Formulare:</h4>
+                            <div id="selectedPDFsList"></div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="button" class="btn btn-primary" id="nextButton" onclick="goToFormFields()" disabled>
+                                ➡️ Weiter zu Formularfeldern
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <form id="dataForm">
-                    <div id="formSections">
-                        <!-- Wird dynamisch basierend auf PDF-Feldern und Konfiguration generiert -->
+                <div id="form-fields" class="tab-content">
+                    <form id="dataForm">
+                        <div id="formSections"></div>
+                    </form>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="generatePDFs()">
+                            📄 PDFs generieren
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="saveData()">
+                            💾 Daten speichern
+                        </button>
+                        <label for="loadFile" class="file-label">
+                            📁 Daten laden
+                        </label>
+                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                        <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">
+                            ⬅️ Zurück zur PDF-Auswahl
+                        </button>
                     </div>
-                </form>
-                
-                <div class="button-group">
-                    <button type="button" class="btn btn-primary" onclick="generatePDFs()">
-                        📄 PDFs generieren
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="saveData()">
-                        💾 Daten speichern
-                    </button>
-                    <label for="loadFile" class="file-label">
-                        📁 Daten laden
-                    </label>
-                    <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
-                    <button type="button" class="btn btn-secondary" onclick="downloadSampleConfig()">
-                        ⚙️ Beispiel-Config herunterladen
-                    </button>
                 </div>
                 
                 <div id="status" class="status"></div>
@@ -349,140 +446,128 @@
                 <ul>
                     <li>Das Verzeichnis <code>./formulare/</code> existiert</li>
                     <li>PDF-Dateien im Verzeichnis vorhanden sind</li>
-                    <li>Die Datei über einen lokalen Server (nicht file://) geladen wird</li>
+                    <li>Die Datei über einen lokalen Server geladen wird</li>
+                    <li>Die Datei <code>config.yaml</code> existiert (optional)</li>
                 </ul>
-                <p><strong>Tipp:</strong> Verwenden Sie <code>python -m http.server</code> oder einen ähnlichen lokalen Server.</p>
             </div>
         </div>
     </div>
 
     <script>
         let availablePDFs = [];
-        let pdfFields = new Map(); // Map von PDF-Datei zu deren Feldern
-        let fieldConfig = {}; // Konfiguration aus config.json
-        let allFormFields = new Set(); // Alle gefundenen Formularfelder
-        
-        // Standard-Konfiguration für Felder
-        const defaultFieldConfig = {
-            // Wird dynamisch aus config.json geladen
-        };
+        let pdfFields = new Map();
+        let fieldConfig = {};
+        let selectedPDFs = new Set();
 
-        // Beim Laden der Seite
         window.addEventListener('load', async function() {
             await initializeApp();
         });
 
         async function initializeApp() {
             try {
-                // Konfiguration laden
                 await loadFieldConfig();
-                
-                // PDFs aus ./formulare laden
                 await loadPDFsFromDirectory();
-                
-                // Formular generieren
-                generateForm();
-                
-                // URL-Parameter verarbeiten
+                generatePDFSelection();
                 handleUrlParams();
                 
-                // Hauptinhalt anzeigen
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
-                
             } catch (error) {
                 console.error('Fehler beim Initialisieren:', error);
                 showError();
             }
         }
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`#${tabName}`).classList.add('active');
+            
+            if (tabName === 'pdf-selection') {
+                document.querySelector('.tab:first-child').classList.add('active');
+            } else if (tabName === 'form-fields') {
+                document.querySelector('.tab:last-child').classList.add('active');
+            }
+        }
+
+        function goToFormFields() {
+            generateFormForSelectedPDFs();
+            switchTab('form-fields');
+        }
+
         async function loadFieldConfig() {
             try {
-                const response = await fetch('./config.json');
+                let response = await fetch('./config.yaml');
+                if (response.ok) {
+                    const yamlText = await response.text();
+                    fieldConfig = jsyaml.load(yamlText);
+                    document.getElementById('configPath').textContent = 'config.yaml';
+                    document.getElementById('configInfo').style.display = 'block';
+                    return;
+                }
+                
+                response = await fetch('./config.json');
                 if (response.ok) {
                     fieldConfig = await response.json();
-                } else {
-                    console.warn('config.json nicht gefunden, verwende Standard-Konfiguration');
-                    fieldConfig = {};
+                    document.getElementById('configPath').textContent = 'config.json';
+                    document.getElementById('configInfo').style.display = 'block';
+                    return;
                 }
+                
+                fieldConfig = {};
             } catch (error) {
-                console.warn('Fehler beim Laden der Konfiguration:', error);
                 fieldConfig = {};
             }
         }
 
         async function loadPDFsFromDirectory() {
-            try {
-                // Verzeichnis-Listing von Python HTTP Server abrufen
-                const dirResponse = await fetch('./formulare/');
-                if (!dirResponse.ok) {
-                    throw new Error('Verzeichnis ./formulare/ nicht erreichbar');
-                }
-                
-                const dirHTML = await dirResponse.text();
-                
-                // PDF-Dateinamen aus dem HTML extrahieren
-                const pdfNames = extractPDFNamesFromListing(dirHTML);
-                
-                if (pdfNames.length === 0) {
-                    throw new Error('Keine PDF-Dateien im Verzeichnis ./formulare/ gefunden');
-                }
-                
-                console.log('Gefundene PDFs:', pdfNames);
-                
-                // Jede gefundene PDF-Datei laden
-                for (const pdfName of pdfNames) {
-                    try {
-                        console.log(`Lade PDF: ${pdfName}`);
-                        const response = await fetch(`./formulare/${encodeURIComponent(pdfName)}`);
-                        if (response.ok) {
-                            const arrayBuffer = await response.arrayBuffer();
-                            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                            
-                            // PDF-Felder extrahieren
-                            const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
-                            
-                            availablePDFs.push({
-                                name: pdfName,
-                                path: `./formulare/${pdfName}`,
-                                document: pdfDoc,
-                                fields: fields
-                            });
-                            
-                            pdfFields.set(pdfName, fields);
-                            
-                            // Alle Felder zur Gesamtliste hinzufügen
-                            fields.forEach(field => allFormFields.add(field));
-                            
-                            console.log(`PDF ${pdfName} erfolgreich geladen mit ${fields.length} Feldern`);
-                        }
-                    } catch (error) {
-                        console.warn(`Fehler beim Laden von ${pdfName}:`, error);
+            const dirResponse = await fetch('./formulare/');
+            if (!dirResponse.ok) {
+                throw new Error('Verzeichnis ./formulare/ nicht erreichbar');
+            }
+            
+            const dirHTML = await dirResponse.text();
+            const pdfNames = extractPDFNamesFromListing(dirHTML);
+            
+            if (pdfNames.length === 0) {
+                throw new Error('Keine PDF-Dateien gefunden');
+            }
+            
+            for (const pdfName of pdfNames) {
+                try {
+                    const response = await fetch(`./formulare/${encodeURIComponent(pdfName)}`);
+                    if (response.ok) {
+                        const arrayBuffer = await response.arrayBuffer();
+                        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                        const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
+                        
+                        availablePDFs.push({
+                            name: pdfName,
+                            path: `./formulare/${pdfName}`,
+                            document: pdfDoc,
+                            fields: fields
+                        });
+                        
+                        pdfFields.set(pdfName, fields);
                     }
+                } catch (error) {
+                    console.warn(`Fehler beim Laden von ${pdfName}:`, error);
                 }
-                
-                if (availablePDFs.length === 0) {
-                    throw new Error('Keine PDF-Formulare konnten geladen werden');
-                }
-                
-                console.log(`Insgesamt ${availablePDFs.length} PDFs geladen`);
-                
-            } catch (error) {
-                console.error('Fehler beim Laden der PDFs:', error);
-                throw error;
+            }
+            
+            if (availablePDFs.length === 0) {
+                throw new Error('Keine PDF-Formulare konnten geladen werden');
             }
         }
 
         function extractPDFNamesFromListing(html) {
             const pdfNames = [];
-            
-            // Regex für Links zu PDF-Dateien im Python HTTP Server Listing
             const linkRegex = /<a href="([^"]+\.pdf)"/gi;
             let match;
             
             while ((match = linkRegex.exec(html)) !== null) {
-                const fileName = decodeURIComponent(match[1]);
-                pdfNames.push(fileName);
+                pdfNames.push(decodeURIComponent(match[1]));
             }
             
             return pdfNames;
@@ -492,68 +577,44 @@
             const extractedFields = [];
             
             try {
-                // Versuche zuerst echte PDF-Formularfelder zu extrahieren
                 const form = pdfDoc.getForm();
                 const fields = form.getFields();
                 
                 for (const field of fields) {
-                    const fieldName = field.getName();
-                    extractedFields.push(fieldName);
+                    extractedFields.push(field.getName());
                 }
-                
-                console.log(`PDF-Formularfelder in ${pdfName}:`, extractedFields);
-                
             } catch (error) {
-                console.log(`Keine Formularfelder in ${pdfName} gefunden:`, error);
+                console.log(`Keine Formularfelder in ${pdfName} gefunden`);
             }
             
-            // Falls keine Formularfelder gefunden wurden oder zusätzlich 
-            // nach Text-Platzhaltern suchen basierend auf PDF-Namen
             if (extractedFields.length === 0) {
-                console.log(`Verwende Standard-Felder für ${pdfName}`);
-                
-                // Basierend auf Ihren PDF-Namen intelligente Felder zuweisen
-                if (pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
+                if (pdfName.includes('5119') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
                     extractedFields.push(
-                        'firma', 'datum_formular', 'nachname', 'vorname', 'pk',
-                        'strasse', 'plz', 'ort', 'persnr', 'email', 'telefon',
-                        'datum_von', 'datum_bis', 'unterschrift_ort', 'datum_for'
+                        'NameDesUnternehmens', 'Datum', 'VornameDerReservistinDesReservisten',
+                        'NachnameDerReservistinDesReservisten', 'NameDerReservistinDesReservisten',
+                        'Personenkennziffer', 'Personalnummer', 'StrasseHausnummer',
+                        'PostleitzahlWohnort', 'EMailAdresse', 'Telefonnummer',
+                        'fromDate1', 'toDate1', 'fromDate2', 'toDate2', 'fromDate3', 'toDate3',
+                        'Ort', 'DatumDate2', 'JahrEinverstanden'
                     );
                 } else if (pdfName.includes('Anlage')) {
                     extractedFields.push(
                         'nachname', 'vorname', 'dienstgrad', 'persnr', 'pk',
-                        'strasse', 'plz', 'ort', 'datum_formular', 'telefon',
-                        'fax', 'email', 'datum_von', 'datum_bis'
+                        'strasse', 'plz', 'ort', 'telefon', 'fax', 'email'
                     );
                 } else if (pdfName.includes('Einverständnis') || pdfName.includes('Ableistung')) {
                     extractedFields.push(
                         'nachname', 'vorname', 'dienstgrad', 'persnr', 'pk',
-                        'strasse', 'plz', 'ort', 'telefon', 'fax', 'email',
-                        'datum_von', 'datum_bis', 'dienststelle_name', 'dienststelle_ort'
+                        'strasse', 'plz', 'ort', 'telefon', 'email'
                     );
-                } else if (pdfName.includes('reisekosten')) {
+                } else if (pdfName.includes('Reisekosten') || pdfName.includes('2012')) {
                     extractedFields.push(
-                        'nachname', 'vorname', 'datum_von', 'datum_bis',
-                        'ort', 'zweck', 'betrag'
-                    );
-                } else {
-                    // Standard-Felder für unbekannte PDFs
-                    extractedFields.push(
-                        'nachname', 'vorname', 'strasse', 'plz', 'ort',
-                        'telefon', 'email', 'datum_formular'
+                        'nachname', 'vorname', 'persnr', 'strasse', 'plz', 'ort'
                     );
                 }
             }
             
-            return [...new Set(extractedFields)]; // Duplikate entfernen
-        }
-
-        function generateForm() {
-            // PDF-Auswahl generieren
-            generatePDFSelection();
-            
-            // Formular-Felder generieren
-            generateFormFields();
+            return [...new Set(extractedFields)];
         }
 
         function generatePDFSelection() {
@@ -564,26 +625,90 @@
                 const div = document.createElement('div');
                 div.className = 'pdf-checkbox';
                 div.innerHTML = `
-                    <input type="checkbox" id="pdf_${index}" value="${pdf.name}">
+                    <input type="checkbox" id="pdf_${index}" value="${pdf.name}" onchange="onPDFSelectionChange()">
                     <div class="pdf-info">
                         <h4>${pdf.name}</h4>
                         <div class="pdf-path">${pdf.path}</div>
-                        <div class="pdf-fields">Felder: ${pdf.fields.length > 0 ? pdf.fields.join(', ') : 'Keine Felder erkannt'}</div>
+                        <div class="pdf-fields">Felder: ${pdf.fields.join(', ')}</div>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        function generateFormFields() {
+        function onPDFSelectionChange() {
+            selectedPDFs.clear();
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedPDFs.add(checkbox.value);
+                checkbox.closest('.pdf-checkbox').classList.add('selected');
+            });
+            
+            document.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(checkbox => {
+                checkbox.closest('.pdf-checkbox').classList.remove('selected');
+            });
+            
+            updateSelectionSummary();
+            updateNextButton();
+        }
+
+        function updateSelectionSummary() {
+            const summaryDiv = document.getElementById('selectionSummary');
+            const listDiv = document.getElementById('selectedPDFsList');
+            
+            if (selectedPDFs.size === 0) {
+                summaryDiv.style.display = 'none';
+            } else {
+                const pdfList = Array.from(selectedPDFs).map(pdfName => `<li>${pdfName}</li>`).join('');
+                listDiv.innerHTML = `<ul>${pdfList}</ul>`;
+                summaryDiv.style.display = 'block';
+            }
+        }
+
+        function updateNextButton() {
+            const nextButton = document.getElementById('nextButton');
+            const formFieldsTab = document.getElementById('formFieldsTab');
+            
+            if (selectedPDFs.size > 0) {
+                nextButton.disabled = false;
+                formFieldsTab.disabled = false;
+            } else {
+                nextButton.disabled = true;
+                formFieldsTab.disabled = true;
+            }
+        }
+
+        function generateFormForSelectedPDFs() {
             const container = document.getElementById('formSections');
             container.innerHTML = '';
             
-            // Felder nach Gruppen organisieren
-            const groupedFields = organizeFieldsByGroups();
+            if (selectedPDFs.size === 0) {
+                container.innerHTML = '<div class="form-section"><h3>ℹ️ Keine PDFs ausgewählt</h3><p class="description">Bitte gehen Sie zurück und wählen Sie mindestens ein PDF aus.</p></div>';
+                return;
+            }
             
-            // Gruppen generieren
+            const activeFields = new Set();
+            selectedPDFs.forEach(pdfName => {
+                const fields = pdfFields.get(pdfName) || [];
+                fields.forEach(field => {
+                    const fieldConf = fieldConfig.fields?.[field] || {};
+                    const hiddenForPDFs = fieldConf.hidden_for_pdfs || [];
+                    
+                    if (!hiddenForPDFs.some(hiddenPdf => pdfName.includes(hiddenPdf))) {
+                        activeFields.add(field);
+                    }
+                });
+            });
+            
+            if (activeFields.size === 0) {
+                container.innerHTML = '<div class="form-section"><h3>⚠️ Keine Felder verfügbar</h3></div>';
+                return;
+            }
+            
+            const groupedFields = organizeFieldsByGroups(activeFields);
+            
             for (const [groupName, fields] of Object.entries(groupedFields)) {
+                if (fields.length === 0) continue;
+                
                 const section = document.createElement('div');
                 section.className = 'form-section';
                 
@@ -607,9 +732,9 @@
             }
         }
 
-        function organizeFieldsByGroups() {
+        function organizeFieldsByGroups(activeFields) {
             const grouped = {};
-            const fieldsArray = Array.from(allFormFields);
+            const fieldsArray = Array.from(activeFields);
             
             fieldsArray.forEach(fieldName => {
                 const fieldConf = fieldConfig.fields?.[fieldName] || {};
@@ -628,7 +753,7 @@
             const fieldConf = fieldConfig.fields?.[fieldName] || {};
             const title = fieldConf.title || fieldName;
             const description = fieldConf.description || '';
-            const type = fieldConf.type || (fieldName.includes('datum') ? 'date' : 'text');
+            const type = fieldConf.type || (fieldName.includes('datum') || fieldName.includes('Date') ? 'date' : 'text');
             
             return `
                 <div class="form-group">
@@ -656,9 +781,8 @@
                 }
             }
             
-            // Standard-Werte für Datumsfelder setzen
             const today = new Date().toISOString().split('T')[0];
-            ['datum_formular', 'datum_for'].forEach(fieldName => {
+            ['Datum', 'DatumDate2'].forEach(fieldName => {
                 const element = document.getElementById(fieldName);
                 if (element && !element.value) {
                     element.value = today;
@@ -722,7 +846,6 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    // Formular mit geladenen Daten füllen
                     for (const [key, value] of Object.entries(data)) {
                         const element = document.getElementById(key);
                         if (element) {
@@ -740,28 +863,27 @@
 
         async function generatePDFs() {
             const data = getFormData();
-            const selectedPDFs = [];
+            const selectedPDFList = [];
             
-            // Prüfen welche PDFs ausgewählt sind
             document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
                 const pdfName = checkbox.value;
                 const pdf = availablePDFs.find(p => p.name === pdfName);
                 if (pdf) {
-                    selectedPDFs.push(pdf);
+                    selectedPDFList.push(pdf);
                 }
             });
             
-            if (selectedPDFs.length === 0) {
+            if (selectedPDFList.length === 0) {
                 showStatus('Bitte wählen Sie mindestens ein PDF-Formular aus.', 'error');
                 return;
             }
             
             try {
-                for (const pdf of selectedPDFs) {
+                for (const pdf of selectedPDFList) {
                     await fillAndDownloadPDF(pdf, data);
                 }
                 
-                showStatus(`${selectedPDFs.length} PDF(s) erfolgreich generiert!`);
+                showStatus(`${selectedPDFList.length} PDF(s) erfolgreich generiert!`);
                 
             } catch (error) {
                 showStatus('Fehler bei der PDF-Generierung: ' + error.message, 'error');
@@ -769,200 +891,83 @@
         }
 
         async function fillAndDownloadPDF(pdf, data) {
-            // Kopie des PDF-Dokuments erstellen
-            const pdfDoc = await PDFLib.PDFDocument.load(await pdf.document.save());
-            const form = pdfDoc.getForm();
-            
-            // Felder ausfüllen
-            pdf.fields.forEach(fieldName => {
-                const value = data[fieldName];
-                if (value) {
-                    try {
-                        const field = form.getField(fieldName);
-                        if (field) {
-                            field.setText(value);
+            try {
+                const pdfBytes = await pdf.document.save();
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const form = pdfDoc.getForm();
+                
+                console.log(`Verfügbare Felder in ${pdf.name}:`);
+                try {
+                    const allFields = form.getFields();
+                    allFields.forEach(field => {
+                        console.log(`- ${field.getName()} (${field.constructor.name})`);
+                    });
+                } catch (e) {
+                    console.log('Keine Formularfelder gefunden');
+                }
+                
+                let filledFields = 0;
+                pdf.fields.forEach(fieldName => {
+                    const value = data[fieldName];
+                    if (value && value.trim() !== '') {
+                        try {
+                            const field = form.getField(fieldName);
+                            if (field) {
+                                const fieldType = field.constructor.name;
+                                console.log(`Fülle Feld "${fieldName}" mit Wert "${value}" (Typ: ${fieldType})`);
+                                
+                                if (fieldType.includes('Text')) {
+                                    field.setText(String(value));
+                                    filledFields++;
+                                } else if (fieldType.includes('Dropdown')) {
+                                    field.select(String(value));
+                                    filledFields++;
+                                } else if (fieldType.includes('CheckBox')) {
+                                    if (value === 'true' || value === '1' || value === 'ja' || value === 'yes') {
+                                        field.check();
+                                    } else {
+                                        field.uncheck();
+                                    }
+                                    filledFields++;
+                                } else if (fieldType.includes('RadioGroup')) {
+                                    field.select(String(value));
+                                    filledFields++;
+                                } else {
+                                    field.setText(String(value));
+                                    filledFields++;
+                                }
+                            } else {
+                                console.warn(`Feld "${fieldName}" nicht im PDF gefunden`);
+                            }
+                        } catch (error) {
+                            console.warn(`Feld ${fieldName} konnte nicht ausgefüllt werden:`, error);
                         }
-                    } catch (error) {
-                        console.warn(`Feld ${fieldName} konnte nicht ausgefüllt werden:`, error);
                     }
-                }
-            });
-            
-            // PDF speichern und herunterladen
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `ausgefuellt-${pdf.name}`;
-            link.click();
-        }
-
-        function downloadSampleConfig() {
-            const sampleConfig = {
-                "groups": {
-                    "personal": {
-                        "title": "👤 Persönliche Daten",
-                        "description": "Grundlegende Personalinformationen"
-                    },
-                    "contact": {
-                        "title": "🏠 Kontaktdaten", 
-                        "description": "Ihre aktuellen Kontaktinformationen"
-                    },
-                    "service": {
-                        "title": "📅 Dienstleistung",
-                        "description": "Informationen zur Dienstleistung"
-                    },
-                    "employer": {
-                        "title": "🏢 Arbeitgeber",
-                        "description": "Informationen zum Arbeitgeber"
-                    },
-                    "military": {
-                        "title": "🎖️ Militärische Daten",
-                        "description": "Dienstgrad und militärische Kennungen"
-                    },
-                    "location": {
-                        "title": "🎯 Dienststelle",
-                        "description": "Ort und Details der Dienstleistung"
-                    }
-                },
-                "fields": {
-                    "nachname": {
-                        "title": "Nachname",
-                        "description": "Ihr Familienname wie im Ausweis",
-                        "group": "personal",
-                        "type": "text"
-                    },
-                    "vorname": {
-                        "title": "Vorname", 
-                        "description": "Ihr Vorname wie im Ausweis",
-                        "group": "personal",
-                        "type": "text"
-                    },
-                    "dienstgrad": {
-                        "title": "Dienstgrad der Reserve",
-                        "description": "Ihr aktueller Dienstgrad",
-                        "group": "military",
-                        "type": "text"
-                    },
-                    "pk": {
-                        "title": "Personenkennziffer",
-                        "description": "12-stellige Personenkennziffer der Bundeswehr",
-                        "group": "military",
-                        "type": "text"
-                    },
-                    "persnr": {
-                        "title": "Personalnummer",
-                        "description": "Ihre militärische Personalnummer",
-                        "group": "military",
-                        "type": "text"
-                    },
-                    "strasse": {
-                        "title": "Straße, Hausnummer",
-                        "description": "Vollständige Straßenadresse", 
-                        "group": "contact",
-                        "type": "text"
-                    },
-                    "plz": {
-                        "title": "Postleitzahl",
-                        "description": "5-stellige deutsche PLZ",
-                        "group": "contact", 
-                        "type": "text"
-                    },
-                    "ort": {
-                        "title": "Wohnort",
-                        "description": "Ihr Wohnort",
-                        "group": "contact",
-                        "type": "text"
-                    },
-                    "email": {
-                        "title": "E-Mail-Adresse",
-                        "description": "Ihre E-Mail-Adresse",
-                        "group": "contact",
-                        "type": "email"
-                    },
-                    "telefon": {
-                        "title": "Telefonnummer", 
-                        "description": "Ihre Telefonnummer",
-                        "group": "contact",
-                        "type": "tel"
-                    },
-                    "fax": {
-                        "title": "Fax",
-                        "description": "Faxnummer (optional)",
-                        "group": "contact",
-                        "type": "tel"
-                    },
-                    "datum_von": {
-                        "title": "Dienstleistung von",
-                        "description": "Beginn der Dienstleistung",
-                        "group": "service",
-                        "type": "date"
-                    },
-                    "datum_bis": {
-                        "title": "Dienstleistung bis", 
-                        "description": "Ende der Dienstleistung",
-                        "group": "service",
-                        "type": "date"
-                    },
-                    "datum_formular": {
-                        "title": "Datum Formular",
-                        "description": "Datum der Formularerstellung",
-                        "group": "service",
-                        "type": "date"
-                    },
-                    "datum_for": {
-                        "title": "Datum für Unterschrift",
-                        "description": "Datum für die Unterschrift",
-                        "group": "service",
-                        "type": "date"
-                    },
-                    "firma": {
-                        "title": "Firma/Unternehmen",
-                        "description": "Name des Arbeitgebers",
-                        "group": "employer",
-                        "type": "text"
-                    },
-                    "unterschrift_ort": {
-                        "title": "Unterschrift Ort",
-                        "description": "Ort für die Unterschrift des Arbeitgebers",
-                        "group": "employer",
-                        "type": "text"
-                    },
-                    "dienststelle_name": {
-                        "title": "Dienstleistungsdienststelle",
-                        "description": "Name der Dienststelle",
-                        "group": "location",
-                        "type": "text"
-                    },
-                    "dienststelle_ort": {
-                        "title": "Standort der Dienststelle",
-                        "description": "Ort der Dienststelle",
-                        "group": "location",
-                        "type": "text"
-                    },
-                    "zweck": {
-                        "title": "Zweck der Reise",
-                        "description": "Grund für die Dienstreise",
-                        "group": "service",
-                        "type": "text"
-                    },
-                    "betrag": {
-                        "title": "Betrag",
-                        "description": "Reisekosten in Euro",
-                        "group": "service",
-                        "type": "text"
-                    }
-                }
-            };
-            
-            const configStr = JSON.stringify(sampleConfig, null, 2);
-            const blob = new Blob([configStr], {type: 'application/json'});
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'config.json';
-            link.click();
-            
-            showStatus('Beispiel-Konfiguration heruntergeladen!');
+                });
+                
+                console.log(`${filledFields} Felder erfolgreich ausgefüllt`);
+                
+                const finalPdfBytes = await pdfDoc.save({
+                    useObjectStreams: false,
+                    addDefaultPage: false,
+                    objectsPerTick: 50,
+                    updateFieldAppearances: true
+                });
+                
+                const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                
+                const cleanName = pdf.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+                link.download = `ausgefuellt-${cleanName}`;
+                link.click();
+                
+                URL.revokeObjectURL(link.href);
+                
+            } catch (error) {
+                console.error('Fehler beim Ausfüllen des PDFs:', error);
+                throw error;
+            }
         }
     </script>
 </body>
