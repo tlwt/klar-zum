@@ -7,19 +7,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -28,29 +22,19 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        
         .header {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .content { padding: 30px; }
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
         }
-        
         .loading-spinner {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #4facfe;
@@ -60,18 +44,12 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .tabs {
             display: flex;
             border-bottom: 2px solid #e1e5e9;
             margin-bottom: 30px;
         }
-        
         .tab {
             padding: 15px 30px;
             cursor: pointer;
@@ -83,31 +61,18 @@
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
         }
-        
         .tab.active {
             color: #4facfe;
             border-bottom-color: #4facfe;
             background: #f8f9ff;
         }
-        
         .tab:hover:not(.active) {
             color: #4facfe;
             background: #f0f8ff;
         }
-        
-        .tab:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
+        .tab:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .form-section {
             margin-bottom: 30px;
             padding: 25px;
@@ -115,43 +80,33 @@
             border-radius: 10px;
             border-left: 4px solid #4facfe;
         }
-        
         .form-section h3 {
             color: #333;
             margin-bottom: 10px;
             font-size: 1.3rem;
         }
-        
         .form-section .description {
             color: #666;
             margin-bottom: 20px;
             font-style: italic;
         }
-        
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        
+        .form-group { display: flex; flex-direction: column; }
         .form-group label {
             font-weight: 600;
             margin-bottom: 8px;
             color: #555;
         }
-        
         .form-group .field-description {
             font-size: 0.9em;
             color: #777;
             margin-bottom: 8px;
             line-height: 1.4;
         }
-        
         .form-group input {
             padding: 12px;
             border: 2px solid #e1e5e9;
@@ -159,17 +114,12 @@
             font-size: 16px;
             transition: border-color 0.3s;
         }
-        
         .form-group input:focus {
             outline: none;
             border-color: #4facfe;
             box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
         }
-        
-        .pdf-selection {
-            margin: 20px 0;
-        }
-        
+        .pdf-selection { margin: 20px 0; }
         .pdf-checkbox {
             display: flex;
             align-items: flex-start;
@@ -180,52 +130,60 @@
             border: 2px solid #e1e5e9;
             transition: all 0.3s;
         }
-        
         .pdf-checkbox:hover {
             border-color: #4facfe;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
         .pdf-checkbox.selected {
             border-color: #4facfe;
             background: #f0f8ff;
         }
-        
         .pdf-checkbox input[type="checkbox"] {
             margin-right: 15px;
             margin-top: 3px;
             transform: scale(1.2);
         }
-        
-        .pdf-info {
-            flex: 1;
-        }
-        
+        .pdf-info { flex: 1; }
         .pdf-info h4 {
             margin-bottom: 8px;
             color: #333;
             font-size: 1.1rem;
         }
-        
         .pdf-info .pdf-path {
             font-size: 0.85em;
             color: #888;
             font-family: monospace;
             margin-bottom: 5px;
         }
-        
         .pdf-info .pdf-fields {
             font-size: 0.9em;
             color: #666;
         }
-        
+        .fields-preview {
+            margin-top: 8px;
+        }
+        .fields-short {
+            display: block;
+        }
+        .fields-full {
+            display: none;
+        }
+        .fields-toggle {
+            color: #4facfe;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        .fields-toggle:hover {
+            color: #2980b9;
+        }
         .button-group {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             margin-top: 30px;
         }
-        
         .btn {
             padding: 15px 30px;
             border: none;
@@ -238,38 +196,29 @@
             align-items: center;
             gap: 8px;
         }
-        
         .btn-primary {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
-        
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
         }
-        
         .btn-secondary {
             background: #f8f9ff;
             color: #4facfe;
             border: 2px solid #4facfe;
         }
-        
         .btn-secondary:hover {
             background: #4facfe;
             color: white;
         }
-        
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none !important;
         }
-        
-        .file-input {
-            display: none;
-        }
-        
+        .file-input { display: none; }
         .file-label {
             display: inline-flex;
             align-items: center;
@@ -283,31 +232,26 @@
             transition: all 0.3s;
             font-weight: 600;
         }
-        
         .file-label:hover {
             background: #4facfe;
             color: white;
         }
-        
         .status {
             margin-top: 20px;
             padding: 15px;
             border-radius: 8px;
             display: none;
         }
-        
         .status.success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
         .status.error {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        
         .url-params {
             background: #e8f4f8;
             padding: 15px;
@@ -315,7 +259,6 @@
             margin-bottom: 20px;
             border-left: 4px solid #17a2b8;
         }
-        
         .error-message {
             background: #f8d7da;
             color: #721c24;
@@ -324,7 +267,6 @@
             border-radius: 8px;
             margin: 20px 0;
         }
-        
         .config-info {
             background: #fff3cd;
             border: 1px solid #ffc107;
@@ -332,7 +274,6 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        
         .selection-summary {
             background: #d1ecf1;
             border: 1px solid #bee5eb;
@@ -340,27 +281,12 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        
         @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
-            
-            .tab {
-                text-align: center;
-            }
+            .form-grid { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; }
+            .header h1 { font-size: 2rem; }
+            .tabs { flex-direction: column; }
+            .tab { text-align: center; }
         }
     </style>
 </head>
@@ -378,22 +304,14 @@
             </div>
             
             <div id="mainContent" style="display: none;">
-                <div id="configInfo" class="config-info" style="display: none;">
-                    <strong>📄 Konfiguration geladen:</strong> <span id="configPath"></span>
-                </div>
-                
                 <div id="urlParams" class="url-params" style="display: none;">
                     <h4>🔗 URL-Parameter erkannt:</h4>
                     <div id="urlParamsContent"></div>
                 </div>
                 
                 <div class="tabs">
-                    <button class="tab active" onclick="switchTab('pdf-selection')">
-                        📄 PDF-Auswahl
-                    </button>
-                    <button class="tab" onclick="switchTab('form-fields')" id="formFieldsTab" disabled>
-                        📝 Formularfelder
-                    </button>
+                    <button class="tab active" onclick="switchTab('pdf-selection')">📄 PDF-Auswahl</button>
+                    <button class="tab" onclick="switchTab('form-fields')" id="formFieldsTab" disabled>📝 Formularfelder</button>
                 </div>
                 
                 <div id="pdf-selection" class="tab-content active">
@@ -421,19 +339,11 @@
                     </form>
                     
                     <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="generatePDFs()">
-                            📄 PDFs generieren
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="saveData()">
-                            💾 Daten speichern
-                        </button>
-                        <label for="loadFile" class="file-label">
-                            📁 Daten laden
-                        </label>
+                        <button type="button" class="btn btn-primary" onclick="generatePDFs()">📄 PDFs generieren</button>
+                        <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
+                        <label for="loadFile" class="file-label">📁 Daten laden</label>
                         <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
-                        <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">
-                            ⬅️ Zurück zur PDF-Auswahl
-                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">⬅️ Zurück zur PDF-Auswahl</button>
                     </div>
                 </div>
                 
@@ -488,6 +398,9 @@
                 document.querySelector('.tab:first-child').classList.add('active');
             } else if (tabName === 'form-fields') {
                 document.querySelector('.tab:last-child').classList.add('active');
+                if (selectedPDFs.size > 0) {
+                    generateFormForSelectedPDFs();
+                }
             }
         }
 
@@ -502,16 +415,12 @@
                 if (response.ok) {
                     const yamlText = await response.text();
                     fieldConfig = jsyaml.load(yamlText);
-                    document.getElementById('configPath').textContent = 'config.yaml';
-                    document.getElementById('configInfo').style.display = 'block';
                     return;
                 }
                 
                 response = await fetch('./config.json');
                 if (response.ok) {
                     fieldConfig = await response.json();
-                    document.getElementById('configPath').textContent = 'config.json';
-                    document.getElementById('configInfo').style.display = 'block';
                     return;
                 }
                 
@@ -597,20 +506,6 @@
                         'fromDate1', 'toDate1', 'fromDate2', 'toDate2', 'fromDate3', 'toDate3',
                         'Ort', 'DatumDate2', 'JahrEinverstanden'
                     );
-                } else if (pdfName.includes('Anlage')) {
-                    extractedFields.push(
-                        'nachname', 'vorname', 'dienstgrad', 'persnr', 'pk',
-                        'strasse', 'plz', 'ort', 'telefon', 'fax', 'email'
-                    );
-                } else if (pdfName.includes('Einverständnis') || pdfName.includes('Ableistung')) {
-                    extractedFields.push(
-                        'nachname', 'vorname', 'dienstgrad', 'persnr', 'pk',
-                        'strasse', 'plz', 'ort', 'telefon', 'email'
-                    );
-                } else if (pdfName.includes('Reisekosten') || pdfName.includes('2012')) {
-                    extractedFields.push(
-                        'nachname', 'vorname', 'persnr', 'strasse', 'plz', 'ort'
-                    );
                 }
             }
             
@@ -622,6 +517,7 @@
             container.innerHTML = '';
             
             availablePDFs.forEach((pdf, index) => {
+                const fieldsPreview = generateFieldsPreview(pdf.fields);
                 const div = document.createElement('div');
                 div.className = 'pdf-checkbox';
                 div.innerHTML = `
@@ -629,11 +525,37 @@
                     <div class="pdf-info">
                         <h4>${pdf.name}</h4>
                         <div class="pdf-path">${pdf.path}</div>
-                        <div class="pdf-fields">Felder: ${pdf.fields.join(', ')}</div>
+                        <div class="fields-preview">
+                            <div class="fields-short">Felder (${pdf.fields.length}): ${fieldsPreview.short}</div>
+                            <div class="fields-full">Felder (${pdf.fields.length}): ${fieldsPreview.full}</div>
+                            ${pdf.fields.length > 3 ? `<div class="fields-toggle" onclick="toggleFields(this)">Alle anzeigen</div>` : ''}
+                        </div>
                     </div>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function generateFieldsPreview(fields) {
+            const short = fields.slice(0, 3).join(', ') + (fields.length > 3 ? '...' : '');
+            const full = fields.join(', ');
+            return { short, full };
+        }
+
+        function toggleFields(element) {
+            const parent = element.closest('.fields-preview');
+            const shortDiv = parent.querySelector('.fields-short');
+            const fullDiv = parent.querySelector('.fields-full');
+            
+            if (shortDiv.style.display === 'none') {
+                shortDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+                element.textContent = 'Alle anzeigen';
+            } else {
+                shortDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+                element.textContent = 'Weniger anzeigen';
+            }
         }
 
         function onPDFSelectionChange() {
@@ -896,48 +818,47 @@
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                 const form = pdfDoc.getForm();
                 
-                console.log(`Verfügbare Felder in ${pdf.name}:`);
+                // 1) Standard-Schrift einbetten für Acrobat Kompatibilität
+                const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+                
+                // 2) AcroForm Default Resources (DR) Dictionary erstellen
+                // Das ist essentiell für Acrobat Reader Kompatibilität
                 try {
-                    const allFields = form.getFields();
-                    allFields.forEach(field => {
-                        console.log(`- ${field.getName()} (${field.constructor.name})`);
-                    });
-                } catch (e) {
-                    console.log('Keine Formularfelder gefunden');
+                    const acroForm = pdfDoc.catalog.getOrCreateAcroForm();
+                    acroForm.dict.set(
+                        PDFLib.PDFName.of('DR'),
+                        pdfDoc.context.obj({ 
+                            Font: pdfDoc.context.obj({ 
+                                Helv: helveticaFont.ref 
+                            }) 
+                        })
+                    );
+                    console.log('AcroForm Default Resources erfolgreich gesetzt');
+                } catch (error) {
+                    console.warn('Fehler beim Setzen der Default Resources:', error);
                 }
                 
+                // 3) Felder befüllen
                 let filledFields = 0;
+                const filledFieldsList = [];
                 pdf.fields.forEach(fieldName => {
                     const value = data[fieldName];
                     if (value && value.trim() !== '') {
                         try {
                             const field = form.getField(fieldName);
                             if (field) {
-                                const fieldType = field.constructor.name;
-                                console.log(`Fülle Feld "${fieldName}" mit Wert "${value}" (Typ: ${fieldType})`);
+                                field.setText(String(value));
                                 
-                                if (fieldType.includes('Text')) {
-                                    field.setText(String(value));
-                                    filledFields++;
-                                } else if (fieldType.includes('Dropdown')) {
-                                    field.select(String(value));
-                                    filledFields++;
-                                } else if (fieldType.includes('CheckBox')) {
-                                    if (value === 'true' || value === '1' || value === 'ja' || value === 'yes') {
-                                        field.check();
-                                    } else {
-                                        field.uncheck();
-                                    }
-                                    filledFields++;
-                                } else if (fieldType.includes('RadioGroup')) {
-                                    field.select(String(value));
-                                    filledFields++;
-                                } else {
-                                    field.setText(String(value));
-                                    filledFields++;
+                                // 4) Default Appearance (/DA) explizit setzen - KRITISCH für Acrobat Reader!
+                                try {
+                                    const fieldDict = field.acroField.dict;
+                                    fieldDict.set(PDFLib.PDFName.of('DA'), PDFLib.PDFString.of('/Helv 12 Tf 0 g'));
+                                } catch (daError) {
+                                    console.warn(`Default Appearance für ${fieldName} konnte nicht gesetzt werden:`, daError);
                                 }
-                            } else {
-                                console.warn(`Feld "${fieldName}" nicht im PDF gefunden`);
+                                
+                                filledFields++;
+                                filledFieldsList.push(fieldName);
                             }
                         } catch (error) {
                             console.warn(`Feld ${fieldName} konnte nicht ausgefüllt werden:`, error);
@@ -945,13 +866,34 @@
                     }
                 });
                 
-                console.log(`${filledFields} Felder erfolgreich ausgefüllt`);
+                // 5) Appearance-Streams mit eingebetteter Schrift aktualisieren
+                // Das ist der Schlüssel für Acrobat Reader Kompatibilität
+                try {
+                    form.updateFieldAppearances(helveticaFont);
+                    console.log('Field Appearances erfolgreich aktualisiert');
+                } catch (error) {
+                    console.warn('Fehler beim Aktualisieren der Appearances:', error);
+                    // Fallback: form.flatten() falls updateFieldAppearances fehlschlägt
+                    try {
+                        form.flatten();
+                        console.log('Fallback: PDF Form geflacht');
+                    } catch (flattenError) {
+                        console.warn('Fehler beim Flatten:', flattenError);
+                    }
+                }
                 
+                // 6) NeedAppearances auf FALSE setzen - teilt Acrobat mit, dass Appearances vorhanden sind
+                try {
+                    const acroForm = pdfDoc.catalog.getOrCreateAcroForm();
+                    acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.False);
+                    console.log('NeedAppearances auf False gesetzt');
+                } catch (error) {
+                    console.warn('Fehler beim Setzen von NeedAppearances:', error);
+                }
+                
+                // PDF speichern - useObjectStreams: false für Acrobat Kompatibilität
                 const finalPdfBytes = await pdfDoc.save({
-                    useObjectStreams: false,
-                    addDefaultPage: false,
-                    objectsPerTick: 50,
-                    updateFieldAppearances: true
+                    useObjectStreams: false
                 });
                 
                 const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
@@ -963,6 +905,9 @@
                 link.click();
                 
                 URL.revokeObjectURL(link.href);
+                
+                console.log(`${filledFields} Felder erfolgreich ausgefüllt für Acrobat Reader in ${pdf.name}`);
+                console.log('Ausgefüllte Felder:', filledFieldsList);
                 
             } catch (error) {
                 console.error('Fehler beim Ausfüllen des PDFs:', error);
