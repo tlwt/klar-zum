@@ -312,6 +312,7 @@
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('pdf-selection')">📄 PDF-Auswahl</button>
                     <button class="tab" onclick="switchTab('form-fields')" id="formFieldsTab" disabled>📝 Formularfelder</button>
+                    <button class="tab" onclick="switchTab('settings')">⚙️ Einstellungen</button>
                 </div>
                 
                 <div id="pdf-selection" class="tab-content active">
@@ -334,6 +335,11 @@
                 </div>
                 
                 <div id="form-fields" class="tab-content">
+                    <div class="button-group" style="margin-bottom: 20px;">
+                        <label for="loadFile" class="file-label">📁 Daten laden</label>
+                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                    </div>
+                    
                     <form id="dataForm">
                         <div id="formSections"></div>
                     </form>
@@ -341,9 +347,49 @@
                     <div class="button-group">
                         <button type="button" class="btn btn-primary" onclick="generatePDFs()">📄 PDFs generieren</button>
                         <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
-                        <label for="loadFile" class="file-label">📁 Daten laden</label>
-                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                        <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton" style="display: none;">📧 E-Mail erstellen</button>
                         <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">⬅️ Zurück zur PDF-Auswahl</button>
+                    </div>
+                </div>
+                
+                <div id="settings" class="tab-content">
+                    <div class="form-section">
+                        <h3>⚙️ Einstellungen</h3>
+                        <p class="description">Konfigurieren Sie Dateinamen und E-Mail-Einstellungen.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fileNamePattern">📝 Dateinamen-Muster</label>
+                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [PDF], [Datum]</div>
+                                <input type="text" id="fileNamePattern" name="fileNamePattern" value="[Nachname], [Vorname] - [PDF] - [Datum]">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="emailAddress">📧 E-Mail-Adresse</label>
+                                <input type="email" id="emailAddress" name="emailAddress" placeholder="empfaenger@example.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="emailSubject">📋 E-Mail-Betreff</label>
+                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [Datum]</div>
+                                <input type="text" id="emailSubject" name="emailSubject" value="Formularunterlagen - [Nachname], [Vorname]">
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="emailBody">📄 E-Mail-Text</label>
+                                <div class="field-description">Standard-Text für die E-Mail</div>
+                                <textarea id="emailBody" name="emailBody" rows="6" style="padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; resize: vertical; width: 100%; font-family: inherit;">Sehr geehrte Damen und Herren,
+
+anbei übersende ich Ihnen die ausgefüllten Formularunterlagen.
+
+Mit freundlichen Grüßen</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="button" class="btn btn-primary" onclick="saveSettings()">💾 Einstellungen speichern</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄 Zurücksetzen</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -368,6 +414,12 @@
         let pdfFields = new Map();
         let fieldConfig = {};
         let selectedPDFs = new Set();
+        let appSettings = {
+            fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
+            emailAddress: '',
+            emailSubject: 'Formularunterlagen - [Nachname], [Vorname]',
+            emailBody: 'Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen'
+        };
 
         window.addEventListener('load', async function() {
             await initializeApp();
@@ -397,10 +449,13 @@
             if (tabName === 'pdf-selection') {
                 document.querySelector('.tab:first-child').classList.add('active');
             } else if (tabName === 'form-fields') {
-                document.querySelector('.tab:last-child').classList.add('active');
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
                 if (selectedPDFs.size > 0) {
                     generateFormForSelectedPDFs();
                 }
+            } else if (tabName === 'settings') {
+                document.querySelector('.tab:nth-child(3)').classList.add('active');
+                loadSettingsToForm();
             }
         }
 
@@ -658,6 +713,9 @@
             const grouped = {};
             const fieldsArray = Array.from(activeFields);
             
+            // Definiere Gruppen-Reihenfolge
+            const groupOrder = ['Persönliche Daten', 'Kontaktdaten', 'Zeiträume', 'Sonstige'];
+            
             fieldsArray.forEach(fieldName => {
                 const fieldConf = fieldConfig.fields?.[fieldName] || {};
                 const group = fieldConf.group || 'Sonstige';
@@ -668,7 +726,22 @@
                 grouped[group].push(fieldName);
             });
             
-            return grouped;
+            // Sortiere Gruppen nach definierter Reihenfolge
+            const sortedGrouped = {};
+            groupOrder.forEach(groupName => {
+                if (grouped[groupName]) {
+                    sortedGrouped[groupName] = grouped[groupName];
+                }
+            });
+            
+            // Füge verbleibende Gruppen hinzu
+            Object.keys(grouped).forEach(groupName => {
+                if (!sortedGrouped[groupName]) {
+                    sortedGrouped[groupName] = grouped[groupName];
+                }
+            });
+            
+            return sortedGrouped;
         }
 
         function generateFormField(fieldName) {
@@ -746,9 +819,19 @@
             return data;
         }
 
+        function getAllData() {
+            const formData = getFormData();
+            return {
+                formData: formData,
+                settings: appSettings,
+                selectedPDFs: Array.from(selectedPDFs),
+                timestamp: new Date().toISOString()
+            };
+        }
+
         function saveData() {
-            const data = getFormData();
-            const dataStr = JSON.stringify(data, null, 2);
+            const allData = getAllData();
+            const dataStr = JSON.stringify(allData, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             
             const link = document.createElement('a');
@@ -768,11 +851,34 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    for (const [key, value] of Object.entries(data)) {
+                    // Lade Formulardaten
+                    const formData = data.formData || data; // Rückwärtskompatibilität
+                    for (const [key, value] of Object.entries(formData)) {
                         const element = document.getElementById(key);
                         if (element) {
                             element.value = value;
                         }
+                    }
+                    
+                    // Lade Einstellungen
+                    if (data.settings) {
+                        appSettings = { ...appSettings, ...data.settings };
+                        loadSettingsToForm();
+                    }
+                    
+                    // Lade PDF-Auswahl
+                    if (data.selectedPDFs) {
+                        selectedPDFs.clear();
+                        data.selectedPDFs.forEach(pdfName => {
+                            selectedPDFs.add(pdfName);
+                            const checkbox = document.querySelector(`input[value="${pdfName}"]`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                checkbox.closest('.pdf-checkbox').classList.add('selected');
+                            }
+                        });
+                        updateSelectionSummary();
+                        updateNextButton();
                     }
                     
                     showStatus('Daten erfolgreich geladen!');
@@ -805,11 +911,91 @@
                     await fillAndDownloadPDF(pdf, data);
                 }
                 
-                showStatus(`${selectedPDFList.length} PDF(s) erfolgreich generiert!`);
+                // Daten automatisch speichern nach PDF-Generierung
+                saveData();
+                
+                // E-Mail-Button anzeigen wenn E-Mail-Adresse konfiguriert ist
+                if (appSettings.emailAddress) {
+                    document.getElementById('emailButton').style.display = 'inline-flex';
+                }
+                
+                showStatus(`${selectedPDFList.length} PDF(s) erfolgreich generiert und Daten gespeichert!`);
                 
             } catch (error) {
                 showStatus('Fehler bei der PDF-Generierung: ' + error.message, 'error');
             }
+        }
+
+        function generateFileName(pdfName, data) {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            let fileName = appSettings.fileNamePattern;
+            
+            // Ersetze Platzhalter
+            fileName = fileName.replace(/\[PDF\]/g, pdfName.replace('.pdf', ''));
+            fileName = fileName.replace(/\[Datum\]/g, dateStr);
+            
+            // Ersetze Feldplatzhalter
+            Object.keys(data).forEach(fieldName => {
+                const regex = new RegExp(`\\[${fieldName}\\]`, 'g');
+                fileName = fileName.replace(regex, data[fieldName] || '');
+            });
+            
+            // Bereinige Dateinamen
+            fileName = fileName.replace(/[^a-zA-Z0-9äöüÄÖÜß\s,.-]/g, '_');
+            fileName = fileName.replace(/\s+/g, ' ').trim();
+            
+            return fileName + '.pdf';
+        }
+
+        function saveSettings() {
+            appSettings.fileNamePattern = document.getElementById('fileNamePattern').value;
+            appSettings.emailAddress = document.getElementById('emailAddress').value;
+            appSettings.emailSubject = document.getElementById('emailSubject').value;
+            appSettings.emailBody = document.getElementById('emailBody').value;
+            
+            showStatus('Einstellungen gespeichert!');
+        }
+
+        function loadSettingsToForm() {
+            document.getElementById('fileNamePattern').value = appSettings.fileNamePattern;
+            document.getElementById('emailAddress').value = appSettings.emailAddress;
+            document.getElementById('emailSubject').value = appSettings.emailSubject;
+            document.getElementById('emailBody').value = appSettings.emailBody;
+        }
+
+        function resetSettings() {
+            appSettings = {
+                fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
+                emailAddress: '',
+                emailSubject: 'Formularunterlagen - [Nachname], [Vorname]',
+                emailBody: 'Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen'
+            };
+            loadSettingsToForm();
+            showStatus('Einstellungen zurückgesetzt!');
+        }
+
+        function openEmailDraft() {
+            const data = getFormData();
+            
+            let subject = appSettings.emailSubject;
+            let body = appSettings.emailBody;
+            
+            // Ersetze Platzhalter im Betreff
+            Object.keys(data).forEach(fieldName => {
+                const regex = new RegExp(`\\[${fieldName}\\]`, 'g');
+                subject = subject.replace(regex, data[fieldName] || '');
+            });
+            
+            const today = new Date().toISOString().split('T')[0];
+            subject = subject.replace(/\[Datum\]/g, today);
+            
+            // Erstelle mailto-Link
+            const mailtoLink = `mailto:${appSettings.emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Öffne E-Mail-Client
+            window.location.href = mailtoLink;
         }
 
         async function fillAndDownloadPDF(pdf, data) {
@@ -900,8 +1086,9 @@
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 
-                const cleanName = pdf.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-                link.download = `ausgefuellt-${cleanName}`;
+                // Verwende konfigurierbaren Dateinamen
+                const customFileName = generateFileName(pdf.name, data);
+                link.download = customFileName;
                 link.click();
                 
                 URL.revokeObjectURL(link.href);

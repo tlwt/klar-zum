@@ -1,0 +1,153 @@
+# config.yaml - Beispielkonfiguration für PDF Formular Ausfüller
+
+groups:
+  "Persönliche Daten":
+    title: "👤 Persönliche Daten"
+    description: "Grundlegende Informationen zur Person"
+  "Kontaktdaten":
+    title: "📞 Kontaktdaten"
+    description: "Adresse und Kommunikationsdaten"
+  "Zeiträume":
+    title: "📅 Zeiträume"
+    description: "Datum und Zeitangaben"
+  "Unternehmen":
+    title: "🏢 Unternehmensdaten"
+    description: "Informationen zum Arbeitgeber/Unternehmen"
+
+fields:
+  # Persönliche Daten
+  Vorname:
+    group: "Persönliche Daten"
+    title: "Vorname"
+    description: "Ihr Vorname"
+    type: "text"
+  
+  VornameDerReservistinDesReservisten:
+    group: "Persönliche Daten"
+    title: "Vorname"
+    description: "Vorname der Person"
+    type: "text"
+  
+  Nachname:
+    group: "Persönliche Daten"
+    title: "Nachname"
+    description: "Ihr Nachname"
+    type: "text"
+    
+  NachnameDerReservistinDesReservisten:
+    group: "Persönliche Daten"
+    title: "Nachname"
+    description: "Nachname der Person"
+    type: "text"
+    
+  NameDerReservistinDesReservisten:
+    group: "Persönliche Daten"
+    title: "Vollständiger Name"
+    description: "Vor- und Nachname"
+    type: "text"
+  
+  Personenkennziffer:
+    group: "Persönliche Daten"
+    title: "Personenkennziffer"
+    description: "Eindeutige Personenkennziffer"
+    type: "text"
+    
+  Personalnummer:
+    group: "Persönliche Daten"
+    title: "Personalnummer"
+    description: "Interne Personalnummer"
+    type: "text"
+
+  # Kontaktdaten
+  StrasseHausnummer:
+    group: "Kontaktdaten"
+    title: "Straße und Hausnummer"
+    description: "Ihre vollständige Adresse"
+    type: "text"
+    
+  PostleitzahlWohnort:
+    group: "Kontaktdaten"
+    title: "PLZ und Ort"
+    description: "Postleitzahl und Wohnort"
+    type: "text"
+    
+  EMailAdresse:
+    group: "Kontaktdaten"
+    title: "E-Mail-Adresse"
+    description: "Ihre E-Mail-Adresse"
+    type: "email"
+    
+  Telefonnummer:
+    group: "Kontaktdaten"
+    title: "Telefonnummer"
+    description: "Ihre Telefonnummer"
+    type: "tel"
+    
+  Ort:
+    group: "Kontaktdaten"
+    title: "Ort"
+    description: "Ort/Stadt"
+    type: "text"
+
+  # Unternehmen
+  NameDesUnternehmens:
+    group: "Unternehmen"
+    title: "Name des Unternehmens"
+    description: "Vollständiger Firmenname"
+    type: "text"
+
+  # Zeiträume
+  Datum:
+    group: "Zeiträume"
+    title: "Datum"
+    description: "Allgemeines Datum"
+    type: "date"
+    
+  DatumDate2:
+    group: "Zeiträume"
+    title: "Zweites Datum"
+    description: "Zusätzliches Datum"
+    type: "date"
+    
+  fromDate1:
+    group: "Zeiträume"
+    title: "Von-Datum 1"
+    description: "Startdatum des ersten Zeitraums"
+    type: "date"
+    
+  toDate1:
+    group: "Zeiträume"
+    title: "Bis-Datum 1"
+    description: "Enddatum des ersten Zeitraums"
+    type: "date"
+    
+  fromDate2:
+    group: "Zeiträume"
+    title: "Von-Datum 2"
+    description: "Startdatum des zweiten Zeitraums"
+    type: "date"
+    
+  toDate2:
+    group: "Zeiträume"
+    title: "Bis-Datum 2"
+    description: "Enddatum des zweiten Zeitraums"
+    type: "date"
+    
+  fromDate3:
+    group: "Zeiträume"
+    title: "Von-Datum 3"
+    description: "Startdatum des dritten Zeitraums"
+    type: "date"
+    
+  toDate3:
+    group: "Zeiträume"
+    title: "Bis-Datum 3"
+    description: "Enddatum des dritten Zeitraums"
+    type: "date"
+
+  # Sonstiges
+  JahrEinverstanden:
+    group: "Sonstige"
+    title: "Jahr Einverständnis"
+    description: "Jahr der Einverständniserklärung"
+    type: "number"
