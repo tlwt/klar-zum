@@ -470,7 +470,11 @@ Mit freundlichen Grüßen</textarea>
                         Object.keys(currentFormData).forEach(key => {
                             const element = document.getElementById(key);
                             if (element) {
-                                element.value = currentFormData[key];
+                                if (element.type === 'checkbox') {
+                                    element.checked = currentFormData[key] === '1' || currentFormData[key] === 'true' || currentFormData[key] === true;
+                                } else {
+                                    element.value = currentFormData[key];
+                                }
                             }
                         });
                     }, 100);
@@ -755,7 +759,7 @@ Mit freundlichen Grüßen</textarea>
         function organizeFieldsByGroups(activeFields) {
             const grouped = {};
             const fieldsArray = Array.from(activeFields);
-            const groupOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Sonstige'];
+            const groupOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Einverständnis', 'Sonstige'];
             
             fieldsArray.forEach(fieldName => {
                 let group = 'Sonstige';
@@ -824,6 +828,22 @@ Mit freundlichen Grüßen</textarea>
                 }
             }
             
+            // Spezielle Behandlung für Checkboxen
+            if (type === 'checkbox') {
+                return `
+                    <div class="form-group">
+                        <div style="display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" id="${fieldName}" name="${fieldName}" value="1" style="margin-top: 4px; transform: scale(1.2);">
+                            <div style="flex: 1;">
+                                <label for="${fieldName}" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: #555;">${title}</label>
+                                ${description ? `<div class="field-description" style="margin-top: 4px;">${description}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Standard-Felder (text, email, tel, date, number)
             return `
                 <div class="form-group">
                     <label for="${fieldName}">${title}</label>
@@ -886,9 +906,15 @@ Mit freundlichen Grüßen</textarea>
             const formData = new FormData(form);
             const data = {};
             
+            // Standard-Felder auslesen
             for (let [key, value] of formData.entries()) {
                 data[key] = value;
             }
+            
+            // Checkboxen separat behandeln - nicht angehakte Checkboxen sind nicht in FormData
+            form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                data[checkbox.name] = checkbox.checked ? checkbox.value : '';
+            });
             
             return data;
         }
@@ -1099,12 +1125,12 @@ Mit freundlichen Grüßen</textarea>
                     let value = null;
                     
                     // Prüfe direkte Übereinstimmung
-                    if (formData[fieldName] && formData[fieldName].trim() !== '') {
+                    if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
                         value = formData[fieldName];
                     } else {
                         // Prüfe Mapping
                         const fieldConf = fieldConfig.fields?.[fieldName] || {};
-                        if (fieldConf.mapping && formData[fieldConf.mapping] && formData[fieldConf.mapping].trim() !== '') {
+                        if (fieldConf.mapping && formData[fieldConf.mapping] && formData[fieldConf.mapping].toString().trim() !== '') {
                             value = formData[fieldConf.mapping];
                         }
                     }
@@ -1113,7 +1139,18 @@ Mit freundlichen Grüßen</textarea>
                         try {
                             const field = form.getField(fieldName);
                             if (field) {
-                                field.setText(String(value));
+                                // Unterscheide zwischen Text- und Checkbox-Feldern
+                                if (field.constructor.name === 'PDFCheckBox') {
+                                    // Checkbox: setze check/uncheck basierend auf Wert
+                                    if (value === '1' || value === 'true' || value === true || value === 'on') {
+                                        field.check();
+                                    } else {
+                                        field.uncheck();
+                                    }
+                                } else {
+                                    // Textfeld: setze Text
+                                    field.setText(String(value));
+                                }
                                 
                                 try {
                                     const fieldDict = field.acroField.dict;
