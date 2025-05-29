@@ -619,21 +619,35 @@ Mit freundlichen Grüßen</textarea>
                 const fields = form.getFields();
                 
                 for (const field of fields) {
-                    extractedFields.push(field.getName());
+                    const fieldName = field.getName();
+                    extractedFields.push(fieldName);
+                    
+                    // Prüfe ob es sich um eine Radio Button Gruppe handelt
+                    if (field.constructor.name === 'PDFRadioGroup') {
+                        try {
+                            const options = field.getOptions();
+                            console.log(`Radio Group ${fieldName} gefunden mit Optionen:`, options);
+                        } catch (error) {
+                            console.warn(`Fehler beim Auslesen der Radio Group Optionen für ${fieldName}:`, error);
+                        }
+                    }
                 }
             } catch (error) {
                 console.log(`Keine Formularfelder in ${pdfName} gefunden`);
             }
             
             if (extractedFields.length === 0) {
-                if (pdfName.includes('5119') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
+                if (pdfName.includes('5120') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
                     extractedFields.push(
-                        'NameDesUnternehmens', 'Datum', 'VornameDerReservistinDesReservisten',
-                        'NachnameDerReservistinDesReservisten', 'NameDerReservistinDesReservisten',
-                        'Personenkennziffer', 'Personalnummer', 'StrasseHausnummer',
-                        'PostleitzahlWohnort', 'EMailAdresse', 'Telefonnummer',
-                        'fromDate1', 'toDate1', 'fromDate2', 'toDate2', 'fromDate3', 'toDate3',
-                        'Ort', 'DatumDate2', 'JahrEinverstanden'
+                        'Nachname', 'Vorname', 'DienstgradDerReserve', 'Personalnummer', 'Personenkennziffer',
+                        'StrasseHausnummerPostleitzahlOrt', 'Datum', 'Telefon', 'Fax', 'EMail',
+                        'AnschriftDienstleistungstruppenteil', 'Dienstleistungsdienststelle', 'OrtStandortDerDienstleistungsstelle',
+                        'EinverstaendnisZurAbleistung', 'Strafverfahren', 'KurzfristigeHeranziehung', 'HeranziehungsbescheidWiderspruch',
+                        'Mandatstraegerin', 'BeamtenArbeitsverhältnisBMVg', 'BeamtenArbeitsverhaeltnisOeffentlich',
+                        'Arbeitsverhaeltnis', 'Selbststaendig', 'KeinArbeitsverhaeltnis', 'PensionaerSchueler',
+                        'WiederverwendungBerufssoldatin', 'AnreiseGutscheine', 'InteressenskollisionAusgeschlossen',
+                        'UnternehmenGeschaeftsverbindungen', 'UnternehmenBewerber', 'OrganisationWirtschaft',
+                        'OrganisationInteressenvertreter', 'UebungZusammenhangBundeswehrauftrag'
                     );
                 }
             }
@@ -1015,6 +1029,7 @@ Mit freundlichen Grüßen</textarea>
             let title = fieldName;
             let description = '';
             let type = 'text';
+            let options = [];
             let isCalculated = calculatedFields.has(fieldName);
             
             // Suche in allen ausgewählten PDF-Konfigurationen
@@ -1026,6 +1041,7 @@ Mit freundlichen Grüßen</textarea>
                         title = directFieldConf.title || fieldName;
                         description = directFieldConf.description || '';
                         type = directFieldConf.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
+                        options = directFieldConf.options || [];
                         break;
                     } else {
                         // Suche nach Original-Feld, das auf diesen Namen mappt
@@ -1034,6 +1050,7 @@ Mit freundlichen Grüßen</textarea>
                                 title = fieldConfig.title || fieldName;
                                 description = fieldConfig.description || '';
                                 type = fieldConfig.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
+                                options = fieldConfig.options || [];
                                 break;
                             }
                         }
@@ -1059,6 +1076,33 @@ Mit freundlichen Grüßen</textarea>
                         </div>
                     </div>
                 `;
+            }
+            
+            // Spezielle Behandlung für Radio Buttons
+            if (type === 'radio' && options.length > 0) {
+                let radioHTML = `
+                    <div class="form-group">
+                        <label>${title}${calculatedBadge}</label>
+                        ${description ? `<div class="field-description">${description}</div>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                `;
+                
+                options.forEach((option, index) => {
+                    const isFirst = index === 0;
+                    radioHTML += `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}" 
+                                   ${isFirst ? 'checked' : ''} style="transform: scale(1.2);">
+                            <label for="${fieldName}_${index}" style="margin: 0; cursor: pointer;">${option}</label>
+                        </div>
+                    `;
+                });
+                
+                radioHTML += `
+                        </div>
+                    </div>
+                `;
+                return radioHTML;
             }
             
             // Standard-Felder (text, email, tel, date, number)
@@ -1167,12 +1211,21 @@ Mit freundlichen Grüßen</textarea>
                     formData[checkbox.name] = checkbox.checked ? checkbox.value : '';
                 });
                 
+                // Radio Buttons separat behandeln
+                form.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                    formData[radio.name] = radio.value;
+                });
+                
                 // Alle Input-Felder direkt auslesen (für den Fall, dass FormData nicht alles erfasst)
                 form.querySelectorAll('input, textarea, select').forEach(input => {
                     if (input.name || input.id) {
                         const fieldName = input.name || input.id;
                         if (input.type === 'checkbox') {
                             formData[fieldName] = input.checked ? input.value : '';
+                        } else if (input.type === 'radio') {
+                            if (input.checked) {
+                                formData[fieldName] = input.value;
+                            }
                         } else {
                             formData[fieldName] = input.value;
                         }
@@ -1187,6 +1240,10 @@ Mit freundlichen Grüßen</textarea>
                     const fieldName = input.name || input.id.replace('hidden_', '');
                     if (input.type === 'checkbox') {
                         formData[fieldName] = input.checked ? input.value : '';
+                    } else if (input.type === 'radio') {
+                        if (input.checked) {
+                            formData[fieldName] = input.value;
+                        }
                     } else {
                         formData[fieldName] = input.value;
                     }
@@ -1210,12 +1267,23 @@ Mit freundlichen Grüßen</textarea>
 
         function restoreFormData(data) {
             Object.keys(data).forEach(key => {
+                // Suche nach regulären Feldern
                 const element = document.getElementById(key);
                 if (element) {
                     if (element.type === 'checkbox') {
                         element.checked = data[key] === '1' || data[key] === 'true' || data[key] === true;
+                    } else if (element.type === 'radio') {
+                        element.checked = element.value === data[key];
                     } else {
                         element.value = data[key];
+                    }
+                } else {
+                    // Suche nach Radio Button Gruppen
+                    const radioButtons = document.querySelectorAll(`input[type="radio"][name="${key}"]`);
+                    if (radioButtons.length > 0) {
+                        radioButtons.forEach(radio => {
+                            radio.checked = radio.value === data[key];
+                        });
                     }
                 }
             });
@@ -1416,14 +1484,26 @@ Mit freundlichen Grüßen</textarea>
                     
                     // Formularfelder setzen (nur sichtbare Felder)
                     for (const [key, value] of Object.entries(formData)) {
+                        // Reguläre Felder
                         const element = document.getElementById(key);
                         if (element) {
                             if (element.type === 'checkbox') {
                                 element.checked = value === '1' || value === 'true' || value === true;
+                            } else if (element.type === 'radio') {
+                                element.checked = element.value === value;
                             } else {
                                 element.value = value;
                             }
                             console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
+                        } else {
+                            // Radio Button Gruppen
+                            const radioButtons = document.querySelectorAll(`input[type="radio"][name="${key}"]`);
+                            if (radioButtons.length > 0) {
+                                radioButtons.forEach(radio => {
+                                    radio.checked = radio.value === value;
+                                });
+                                console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
+                            }
                         }
                     }
                     

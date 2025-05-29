@@ -218,6 +218,11 @@
             width: auto;
             transform: scale(1.2);
         }
+        .field-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 4px;
+        }
         
         .unassigned-fields {
             background: #fff3cd;
@@ -387,11 +392,19 @@
                                     <option value="date">Datum</option>
                                     <option value="number">Zahl</option>
                                     <option value="checkbox">Checkbox</option>
+                                    <option value="radio">Radio Button</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="fieldMapping">Mapping:</label>
                                 <input type="text" id="fieldMapping" placeholder="Anderer Feldname (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldOptions">Radio Button Optionen:</label>
+                                <textarea id="fieldOptions" placeholder="Option1&#10;Option2&#10;Option3" style="display: none;"></textarea>
+                                <div class="field-description" id="radioOptionsHelp" style="display: none;">
+                                    Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="fieldCalculation">Berechnung:</label>
@@ -408,8 +421,7 @@
                 </div>
                 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="saveConfig()">💾 Konfiguration speichern</button>
-                    <button class="btn btn-secondary" onclick="downloadConfig()">📥 YAML herunterladen</button>
+                    <button class="btn btn-primary" onclick="saveAndDownloadConfig()">💾 Konfiguration speichern & herunterladen</button>
                     <button class="btn btn-secondary" onclick="previewConfig()">👁️ Vorschau</button>
                 </div>
                 
@@ -500,24 +512,99 @@
                 const form = pdfDoc.getForm();
                 const fields = form.getFields();
                 
+                console.log(`Analysiere ${fields.length} Felder in ${pdfName}`);
+                
                 for (const field of fields) {
-                    extractedFields.push(field.getName());
+                    const fieldName = field.getName();
+                    console.log(`Feld gefunden: ${fieldName}, Typ: ${field.constructor.name}`);
+                    
+                    extractedFields.push(fieldName);
+                    
+                    // Prüfe ob es sich um eine Radio Button Gruppe handelt
+                    if (field.constructor.name === 'PDFRadioGroup') {
+                        try {
+                            const options = field.getOptions();
+                            console.log(`Radio Group ${fieldName} gefunden mit Optionen:`, options);
+                            
+                            // Speichere die Optionen direkt in der Feld-Konfiguration
+                            if (!currentConfig.fields) currentConfig.fields = {};
+                            if (!currentConfig.fields[fieldName]) {
+                                currentConfig.fields[fieldName] = {
+                                    type: 'radio',
+                                    options: options,
+                                    group: 'Sonstige'
+                                };
+                            } else if (!currentConfig.fields[fieldName].options) {
+                                currentConfig.fields[fieldName].type = 'radio';
+                                currentConfig.fields[fieldName].options = options;
+                            }
+                        } catch (optionsError) {
+                            console.warn(`Fehler beim Auslesen der Radio Group Optionen für ${fieldName}:`, optionsError);
+                        }
+                    }
                 }
+                
+                // Versuche zusätzlich, alle Feldnamen aufzulisten für Radio Button Detection
+                try {
+                    const fieldNames = form.getFieldNames();
+                    console.log('Alle Feldnamen:', fieldNames);
+                    
+                    // Prüfe auf Radio Button Muster (Feldname mit Punkt-Notation)
+                    const potentialRadioGroups = new Map();
+                    fieldNames.forEach(name => {
+                        if (name.includes('.')) {
+                            const [groupName] = name.split('.');
+                            if (!potentialRadioGroups.has(groupName)) {
+                                potentialRadioGroups.set(groupName, []);
+                            }
+                            potentialRadioGroups.get(groupName).push(name);
+                        }
+                    });
+                    
+                    console.log('Potentielle Radio Groups:', potentialRadioGroups);
+                    
+                } catch (fieldNamesError) {
+                    console.warn('Fehler beim Auslesen der Feldnamen:', fieldNamesError);
+                }
+                
             } catch (error) {
                 console.log(`Keine Formularfelder in ${pdfName} gefunden`);
             }
             
             // Fallback für bekannte PDFs ohne erkennbare Felder
             if (extractedFields.length === 0) {
-                if (pdfName.includes('5119') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
-                    extractedFields.push(
-                        'NameDesUnternehmens', 'Datum', 'VornameDerReservistinDesReservisten',
-                        'NachnameDerReservistinDesReservisten', 'NameDerReservistinDesReservisten',
-                        'Personenkennziffer', 'Personalnummer', 'StrasseHausnummer',
-                        'PostleitzahlWohnort', 'EMailAdresse', 'Telefonnummer',
-                        'fromDate1', 'toDate1', 'fromDate2', 'toDate2', 'fromDate3', 'toDate3',
-                        'Ort', 'DatumDate2', 'JahrEinverstanden'
-                    );
+                if (pdfName.includes('5120') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
+                    const fallbackFields = [
+                        'Nachname', 'Vorname', 'DienstgradDerReserve', 'Personalnummer', 'Personenkennziffer',
+                        'StrasseHausnummerPostleitzahlOrt', 'Datum', 'Telefon', 'Fax', 'EMail',
+                        'AnschriftDienstleistungstruppenteil', 'Dienstleistungsdienststelle', 'OrtStandortDerDienstleistungsstelle',
+                        'KurzfristigeHeranziehung', 'HeranziehungsbescheidWiderspruch',
+                        'Mandatstraegerin', 'BeamtenArbeitsverhältnisBMVg', 'BeamtenArbeitsverhaeltnisOeffentlich',
+                        'Arbeitsverhaeltnis', 'Selbststaendig', 'KeinArbeitsverhaeltnis', 'PensionaerSchueler',
+                        'WiederverwendungBerufssoldatin', 'AnreiseGutscheine', 'InteressenskollisionAusgeschlossen',
+                        'UnternehmenGeschaeftsverbindungen', 'UnternehmenBewerber', 'OrganisationWirtschaft',
+                        'OrganisationInteressenvertreter', 'UebungZusammenhangBundeswehrauftrag'
+                    ];
+                    
+                    // Radio Button Gruppen mit Standardoptionen hinzufügen
+                    const radioGroups = {
+                        'EinverstaendnisZurAbleistung': ['einer Übung nach § 61 SG', 'eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft nach § 63b SG'],
+                        'Strafverfahren': ['Ja', 'Nein'],
+                        'WiederverwendungBerufssoldatin': ['Ja', 'Nein'],
+                        'AnreiseGutscheine': ['Ja', 'Nein']
+                    };
+                    
+                    Object.keys(radioGroups).forEach(groupName => {
+                        fallbackFields.push(groupName);
+                        if (!currentConfig.fields) currentConfig.fields = {};
+                        currentConfig.fields[groupName] = {
+                            type: 'radio',
+                            options: radioGroups[groupName],
+                            group: 'Einverständnis'
+                        };
+                    });
+                    
+                    extractedFields.push(...fallbackFields);
                 }
             }
             
@@ -575,6 +662,14 @@
                                 title: '📞 Kontaktinformationen', 
                                 description: 'Wie können wir Sie erreichen?'
                             },
+                            'Dienstleistung': {
+                                title: '🎖️ Dienstleistungsangaben',
+                                description: 'Informationen zur Dienstleistung'
+                            },
+                            'Einverständnis': {
+                                title: '✅ Einverständniserklärungen',
+                                description: 'Erforderliche Zustimmungen'
+                            },
                             'Sonstige': {
                                 title: '📋 Sonstige Felder',
                                 description: 'Weitere Informationen'
@@ -601,7 +696,7 @@
             groupsOrder = Object.keys(currentConfig.groups || {});
             // Standard-Reihenfolge falls keine Gruppen vorhanden
             if (groupsOrder.length === 0) {
-                groupsOrder = ['Persönliche Daten', 'Kontaktdaten', 'Sonstige'];
+                groupsOrder = ['Persönliche Daten', 'Kontaktdaten', 'Dienstleistung', 'Einverständnis', 'Sonstige'];
                 groupsOrder.forEach(groupName => {
                     if (!currentConfig.groups) currentConfig.groups = {};
                     if (!currentConfig.groups[groupName]) {
@@ -800,6 +895,29 @@
             document.getElementById('fieldMapping').value = fieldConfig.mapping || '';
             document.getElementById('fieldCalculation').value = fieldConfig.berechnung || '';
             document.getElementById('fieldHidden').checked = (fieldConfig.hidden_for_pdfs && fieldConfig.hidden_for_pdfs.length > 0) || false;
+            
+            // Radio Button Optionen anzeigen/verstecken
+            const fieldType = fieldConfig.type || 'text';
+            toggleRadioOptions(fieldType);
+            
+            if (fieldType === 'radio' && fieldConfig.options) {
+                document.getElementById('fieldOptions').value = fieldConfig.options.join('\n');
+            } else {
+                document.getElementById('fieldOptions').value = '';
+            }
+        }
+
+        function toggleRadioOptions(fieldType) {
+            const optionsField = document.getElementById('fieldOptions');
+            const optionsHelp = document.getElementById('radioOptionsHelp');
+            
+            if (fieldType === 'radio') {
+                optionsField.style.display = 'block';
+                optionsHelp.style.display = 'block';
+            } else {
+                optionsField.style.display = 'none';
+                optionsHelp.style.display = 'none';
+            }
         }
 
         function initializeSortable() {
@@ -932,6 +1050,16 @@
                 fieldConfig.berechnung = document.getElementById('fieldCalculation').value;
                 fieldConfig.group = currentGroup;
                 
+                // Radio Button Optionen
+                if (fieldConfig.type === 'radio') {
+                    const optionsText = document.getElementById('fieldOptions').value.trim();
+                    if (optionsText) {
+                        fieldConfig.options = optionsText.split('\n').map(opt => opt.trim()).filter(opt => opt.length > 0);
+                    }
+                } else {
+                    delete fieldConfig.options;
+                }
+                
                 // Hidden-Status
                 const isHidden = document.getElementById('fieldHidden').checked;
                 if (isHidden) {
@@ -963,9 +1091,13 @@
             // Feld-Eigenschaften
             document.getElementById('fieldTitle').addEventListener('input', saveCurrentProperties);
             document.getElementById('fieldDescription').addEventListener('input', saveCurrentProperties);
-            document.getElementById('fieldType').addEventListener('change', saveCurrentProperties);
+            document.getElementById('fieldType').addEventListener('change', function() {
+                toggleRadioOptions(this.value);
+                saveCurrentProperties();
+            });
             document.getElementById('fieldMapping').addEventListener('input', saveCurrentProperties);
             document.getElementById('fieldCalculation').addEventListener('input', saveCurrentProperties);
+            document.getElementById('fieldOptions').addEventListener('input', saveCurrentProperties);
             document.getElementById('fieldHidden').addEventListener('change', saveCurrentProperties);
         });
 
@@ -977,32 +1109,46 @@
                 fields: {}
             };
             
-            // Gruppen in richtiger Reihenfolge
+            // Gruppen in richtiger Reihenfolge (basierend auf groupsOrder)
             groupsOrder.forEach(groupName => {
                 if (currentConfig.groups[groupName]) {
                     finalConfig.groups[groupName] = { ...currentConfig.groups[groupName] };
                 }
             });
             
-            // Felder mit Gruppenzuordnung
-            Object.keys(currentConfig.fields).forEach(fieldName => {
-                const fieldConfig = { ...currentConfig.fields[fieldName] };
-                
-                // Gruppe basierend auf fieldsOrder setzen
-                for (const [groupName, fields] of Object.entries(fieldsOrder)) {
-                    if (fields.includes(fieldName)) {
+            // Felder mit Gruppenzuordnung und in der richtigen Reihenfolge
+            groupsOrder.forEach(groupName => {
+                const fieldsInGroup = fieldsOrder[groupName] || [];
+                fieldsInGroup.forEach(fieldName => {
+                    if (currentConfig.fields[fieldName]) {
+                        const fieldConfig = { ...currentConfig.fields[fieldName] };
                         fieldConfig.group = groupName;
-                        break;
+                        finalConfig.fields[fieldName] = fieldConfig;
                     }
+                });
+            });
+            
+            // Füge übrige Felder hinzu, die nicht in fieldsOrder stehen
+            Object.keys(currentConfig.fields).forEach(fieldName => {
+                if (!finalConfig.fields[fieldName]) {
+                    const fieldConfig = { ...currentConfig.fields[fieldName] };
+                    // Gruppe basierend auf fieldsOrder setzen
+                    let foundGroup = 'Sonstige';
+                    for (const [groupName, fields] of Object.entries(fieldsOrder)) {
+                        if (fields.includes(fieldName)) {
+                            foundGroup = groupName;
+                            break;
+                        }
+                    }
+                    fieldConfig.group = foundGroup;
+                    finalConfig.fields[fieldName] = fieldConfig;
                 }
-                
-                finalConfig.fields[fieldName] = fieldConfig;
             });
             
             return finalConfig;
         }
 
-        function saveConfig() {
+        function saveAndDownloadConfig() {
             if (!currentPDF) {
                 showStatus('Kein PDF ausgewählt!', 'error');
                 return;
@@ -1016,33 +1162,18 @@
                 sortKeys: false
             });
             
-            console.log('Generierte Konfiguration:', config);
-            console.log('YAML:', yamlString);
-            
-            showStatus('Konfiguration wurde generiert! (Siehe Konsole für Details)', 'success');
-        }
-
-        function downloadConfig() {
-            if (!currentPDF) {
-                showStatus('Kein PDF ausgewählt!', 'error');
-                return;
-            }
-            
-            const config = buildFinalConfig();
-            const yamlString = jsyaml.dump(config, {
-                indent: 2,
-                lineWidth: -1,
-                noRefs: true,
-                sortKeys: false
-            });
-            
+            // YAML-Datei herunterladen
             const blob = new Blob([yamlString], { type: 'text/yaml' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = currentPDF.name.replace('.pdf', '.yaml');
             link.click();
             
-            showStatus('YAML-Datei wurde heruntergeladen!', 'success');
+            // Auch in Konsole ausgeben für Debugging
+            console.log('Generierte Konfiguration:', config);
+            console.log('YAML:', yamlString);
+            
+            showStatus('YAML-Konfiguration wurde heruntergeladen!', 'success');
         }
 
         function previewConfig() {
