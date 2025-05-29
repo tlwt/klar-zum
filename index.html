@@ -844,8 +844,56 @@ Mit freundlichen Grüßen</textarea>
         function organizeFieldsByGroups(activeFields) {
             const grouped = {};
             const fieldsArray = Array.from(activeFields);
-            const groupOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Einverständnis', 'Sonstige'];
             
+            // Sammle alle Gruppenkonfigurationen und deren Reihenfolge
+            const allGroupConfigs = new Map();
+            const groupOrders = new Map();
+            
+            selectedPDFs.forEach(pdfName => {
+                const config = pdfConfigs.get(pdfName) || {};
+                if (config.groups) {
+                    Object.keys(config.groups).forEach(groupName => {
+                        if (!allGroupConfigs.has(groupName)) {
+                            allGroupConfigs.set(groupName, config.groups[groupName]);
+                        }
+                    });
+                    
+                    // Extrahiere Reihenfolge aus der YAML-Struktur (Reihenfolge der Schlüssel)
+                    const groupKeys = Object.keys(config.groups);
+                    groupOrders.set(pdfName, groupKeys);
+                }
+            });
+            
+            // Bestimme die finale Gruppen-Reihenfolge
+            let finalGroupOrder = [];
+            
+            // Sammle alle verfügbaren Gruppenreihenfolgen
+            const allOrders = Array.from(groupOrders.values());
+            if (allOrders.length > 0) {
+                // Verwende die erste verfügbare Reihenfolge als Basis
+                finalGroupOrder = [...allOrders[0]];
+                
+                // Ergänze um Gruppen aus anderen Konfigurationen
+                allOrders.forEach(order => {
+                    order.forEach(groupName => {
+                        if (!finalGroupOrder.includes(groupName)) {
+                            finalGroupOrder.push(groupName);
+                        }
+                    });
+                });
+            }
+            
+            // Fallback auf Standard-Reihenfolge
+            const defaultOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Einverständnis', 'Sonstige'];
+            defaultOrder.forEach(groupName => {
+                if (!finalGroupOrder.includes(groupName)) {
+                    finalGroupOrder.push(groupName);
+                }
+            });
+            
+            console.log('Finale Gruppen-Reihenfolge:', finalGroupOrder);
+            
+            // Felder den Gruppen zuordnen mit Berücksichtigung der Feld-Reihenfolge
             fieldsArray.forEach(fieldName => {
                 let group = 'Sonstige';
                 
@@ -872,23 +920,26 @@ Mit freundlichen Grüßen</textarea>
                     }
                 }
                 
-                if (group === 'Sonstige') {
-                    console.log(`Feld ${fieldName} → KEINE KONFIGURATION GEFUNDEN → Sonstige`);
-                }
-                
                 if (!grouped[group]) {
                     grouped[group] = [];
                 }
                 grouped[group].push(fieldName);
             });
             
+            // Sortiere Felder innerhalb jeder Gruppe basierend auf Konfiguration
+            Object.keys(grouped).forEach(groupName => {
+                grouped[groupName] = sortFieldsInGroup(grouped[groupName], groupName);
+            });
+            
+            // Erstelle das finale sortierte Objekt basierend auf der Gruppen-Reihenfolge
             const sortedGrouped = {};
-            groupOrder.forEach(groupName => {
+            finalGroupOrder.forEach(groupName => {
                 if (grouped[groupName] && grouped[groupName].length > 0) {
                     sortedGrouped[groupName] = grouped[groupName];
                 }
             });
             
+            // Füge übrige Gruppen hinzu, die nicht in der Reihenfolge stehen
             Object.keys(grouped).forEach(groupName => {
                 if (!sortedGrouped[groupName] && grouped[groupName].length > 0) {
                     sortedGrouped[groupName] = grouped[groupName];
@@ -896,6 +947,68 @@ Mit freundlichen Grüßen</textarea>
             });
             
             return sortedGrouped;
+        }
+
+        function sortFieldsInGroup(fields, groupName) {
+            // Sammle alle Feld-Reihenfolgen aus den Konfigurationen
+            const fieldOrders = new Map();
+            
+            selectedPDFs.forEach(pdfName => {
+                const config = pdfConfigs.get(pdfName) || {};
+                if (config.fields) {
+                    const groupFields = [];
+                    
+                    // Extrahiere Felder für diese Gruppe in der Reihenfolge wie sie in der YAML stehen
+                    Object.keys(config.fields).forEach(fieldName => {
+                        const fieldConfig = config.fields[fieldName];
+                        if (fieldConfig.group === groupName) {
+                            groupFields.push(fieldName);
+                        }
+                        // Auch gemappte Felder berücksichtigen
+                        if (fieldConfig.mapping && fields.includes(fieldConfig.mapping) && fieldConfig.group === groupName) {
+                            if (!groupFields.includes(fieldConfig.mapping)) {
+                                groupFields.push(fieldConfig.mapping);
+                            }
+                        }
+                    });
+                    
+                    fieldOrders.set(pdfName, groupFields);
+                }
+            });
+            
+            console.log(`Feld-Reihenfolgen für Gruppe ${groupName}:`, Array.from(fieldOrders.entries()));
+            
+            // Bestimme die finale Feld-Reihenfolge
+            let finalFieldOrder = [];
+            
+            // Verwende die erste verfügbare Reihenfolge als Basis
+            const allFieldOrders = Array.from(fieldOrders.values());
+            if (allFieldOrders.length > 0) {
+                finalFieldOrder = [...allFieldOrders[0]];
+                
+                // Ergänze um Felder aus anderen Konfigurationen
+                allFieldOrders.forEach(order => {
+                    order.forEach(fieldName => {
+                        if (fields.includes(fieldName) && !finalFieldOrder.includes(fieldName)) {
+                            finalFieldOrder.push(fieldName);
+                        }
+                    });
+                });
+            }
+            
+            // Füge übrige Felder hinzu, die nicht in der Reihenfolge stehen
+            fields.forEach(fieldName => {
+                if (!finalFieldOrder.includes(fieldName)) {
+                    finalFieldOrder.push(fieldName);
+                }
+            });
+            
+            // Entferne Felder, die nicht in der aktuellen Feldliste stehen
+            finalFieldOrder = finalFieldOrder.filter(fieldName => fields.includes(fieldName));
+            
+            console.log(`Finale Feld-Reihenfolge für Gruppe ${groupName}:`, finalFieldOrder);
+            
+            return finalFieldOrder;
         }
 
         function generateFormField(fieldName) {
@@ -1041,7 +1154,7 @@ Mit freundlichen Grüßen</textarea>
         function getAllFormData() {
             const formData = {};
             
-            // Reguläre Formularfelder
+            // Reguläre Formularfelder (sichtbare Felder haben Vorrang)
             const form = document.getElementById('dataForm');
             if (form) {
                 const formDataObj = new FormData(form);
@@ -1053,27 +1166,41 @@ Mit freundlichen Grüßen</textarea>
                 form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                     formData[checkbox.name] = checkbox.checked ? checkbox.value : '';
                 });
-            }
-            
-            // Versteckte Felder
-            const hiddenFields = document.getElementById('hiddenDataFields');
-            if (hiddenFields) {
-                hiddenFields.querySelectorAll('input, textarea, select').forEach(input => {
-                    if (input.type === 'checkbox') {
-                        formData[input.name] = input.checked ? input.value : '';
-                    } else {
-                        formData[input.name] = input.value;
+                
+                // Alle Input-Felder direkt auslesen (für den Fall, dass FormData nicht alles erfasst)
+                form.querySelectorAll('input, textarea, select').forEach(input => {
+                    if (input.name || input.id) {
+                        const fieldName = input.name || input.id;
+                        if (input.type === 'checkbox') {
+                            formData[fieldName] = input.checked ? input.value : '';
+                        } else {
+                            formData[fieldName] = input.value;
+                        }
                     }
                 });
             }
             
-            // Versteckte Daten aus hiddenData hinzufügen
+            // Versteckte Felder aus dem separaten Bereich
+            const hiddenFields = document.getElementById('hiddenDataFields');
+            if (hiddenFields) {
+                hiddenFields.querySelectorAll('input, textarea, select').forEach(input => {
+                    const fieldName = input.name || input.id.replace('hidden_', '');
+                    if (input.type === 'checkbox') {
+                        formData[fieldName] = input.checked ? input.value : '';
+                    } else {
+                        formData[fieldName] = input.value;
+                    }
+                });
+            }
+            
+            // Versteckte Daten aus hiddenData hinzufügen (nur wenn nicht bereits über Formular erfasst)
             Object.keys(hiddenData).forEach(key => {
                 if (!formData.hasOwnProperty(key)) {
                     formData[key] = hiddenData[key];
                 }
             });
             
+            console.log('Gesammelte Formulardaten:', formData);
             return formData;
         }
 
@@ -1107,7 +1234,16 @@ Mit freundlichen Grüßen</textarea>
             hiddenDataFields.innerHTML = '';
             let count = 0;
             
+            console.log('Versteckte Daten:', hiddenData);
+            
             Object.keys(hiddenData).forEach(key => {
+                // Prüfe ob das Feld bereits im sichtbaren Formular existiert
+                const visibleElement = document.getElementById(key);
+                if (visibleElement) {
+                    console.log(`Feld ${key} ist bereits sichtbar - nicht als versteckt anzeigen`);
+                    return; // Überspringe sichtbare Felder
+                }
+                
                 const value = hiddenData[key];
                 const div = document.createElement('div');
                 div.className = 'form-group';
@@ -1120,7 +1256,12 @@ Mit freundlichen Grüßen</textarea>
             });
             
             hiddenDataCount.textContent = count;
-            hiddenDataSection.style.display = 'block';
+            
+            if (count > 0) {
+                hiddenDataSection.style.display = 'block';
+            } else {
+                hiddenDataSection.style.display = 'none';
+            }
         }
 
         function toggleHiddenData() {
@@ -1243,21 +1384,37 @@ Mit freundlichen Grüßen</textarea>
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    // Versteckte Daten laden
+                    // Versteckte Daten zurücksetzen
+                    hiddenData = {};
+                    
+                    // Versteckte Daten aus dem Datensatz laden
                     if (data.hiddenData) {
                         hiddenData = { ...data.hiddenData };
                     }
                     
                     const formData = data.formData || data;
                     
-                    // Alle Daten aus dem Datensatz in hiddenData speichern
-                    Object.keys(formData).forEach(key => {
-                        if (!hiddenData.hasOwnProperty(key)) {
-                            hiddenData[key] = formData[key];
+                    // Sammle alle sichtbaren Feldnamen aus dem aktuellen Formular
+                    const visibleFieldNames = new Set();
+                    document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select').forEach(element => {
+                        if (element.name || element.id) {
+                            visibleFieldNames.add(element.name || element.id);
                         }
                     });
                     
-                    // Formularfelder setzen
+                    console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
+                    
+                    // Nur Daten in hiddenData speichern, die NICHT in sichtbaren Feldern vorkommen
+                    Object.keys(formData).forEach(key => {
+                        if (!visibleFieldNames.has(key)) {
+                            hiddenData[key] = formData[key];
+                            console.log(`Feld ${key} als versteckt markiert`);
+                        } else {
+                            console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
+                        }
+                    });
+                    
+                    // Formularfelder setzen (nur sichtbare Felder)
                     for (const [key, value] of Object.entries(formData)) {
                         const element = document.getElementById(key);
                         if (element) {
@@ -1266,6 +1423,7 @@ Mit freundlichen Grüßen</textarea>
                             } else {
                                 element.value = value;
                             }
+                            console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
                         }
                     }
                     
