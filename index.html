@@ -119,6 +119,33 @@
             border-color: #5a7c47;
             box-shadow: 0 0 0 3px rgba(90, 124, 71, 0.1);
         }
+        .calculated-field {
+            background-color: #f0f8ff !important;
+            border-color: #5a7c47 !important;
+        }
+        .calculated-field:focus {
+            border-color: #3d5a2e !important;
+        }
+        .calculated-badge {
+            font-size: 0.8em;
+            background: #5a7c47;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        .hidden-field {
+            background-color: #fff8dc !important;
+            border-color: #ffc107 !important;
+        }
+        .hidden-badge {
+            font-size: 0.8em;
+            background: #ffc107;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
         .pdf-selection { margin: 20px 0; }
         .pdf-checkbox {
             display: flex;
@@ -158,6 +185,16 @@
         .pdf-info .pdf-fields {
             font-size: 0.9em;
             color: #666;
+        }
+        .config-status {
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        .config-found {
+            color: #28a745;
+        }
+        .config-missing {
+            color: #dc3545;
         }
         .fields-preview {
             margin-top: 8px;
@@ -281,6 +318,22 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
+        .hidden-data-section {
+            background: #fff8dc;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .hidden-data-toggle {
+            cursor: pointer;
+            color: #856404;
+            text-decoration: underline;
+        }
+        .hidden-data-content {
+            display: none;
+            margin-top: 15px;
+        }
         @media (max-width: 768px) {
             .form-grid { grid-template-columns: 1fr; }
             .button-group { flex-direction: column; }
@@ -294,13 +347,13 @@
     <div class="container">
         <div class="header">
             <h1>PDF Formular Ausfüller</h1>
-            <p>Automatisches Ausfüllen von PDF-Formularen mit YAML-Konfiguration</p>
+            <p>Automatisches Ausfüllen von PDF-Formularen mit individueller YAML-Konfiguration</p>
         </div>
         
         <div class="content">
             <div id="loading" class="loading">
                 <div class="loading-spinner"></div>
-                <p>Lade PDF-Formulare und Konfiguration...</p>
+                <p>Lade PDF-Formulare und Konfigurationen...</p>
             </div>
             
             <div id="mainContent" style="display: none;">
@@ -338,6 +391,18 @@
                     <div class="button-group" style="margin-bottom: 20px;">
                         <label for="loadFile" class="file-label">📁 Daten laden</label>
                         <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                        <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
+                    </div>
+                    
+                    <div id="hiddenDataSection" class="hidden-data-section" style="display: none;">
+                        <h4>🗃️ Versteckte Daten aus Datensatz</h4>
+                        <p>Folgende Daten aus dem geladenen Datensatz werden gespeichert, obwohl sie in keinem Formular verwendet werden:</p>
+                        <div class="hidden-data-toggle" onclick="toggleHiddenData()">
+                            <span id="hiddenDataToggleText">Anzeigen</span> (<span id="hiddenDataCount">0</span> Felder)
+                        </div>
+                        <div id="hiddenDataContent" class="hidden-data-content">
+                            <div class="form-grid" id="hiddenDataFields"></div>
+                        </div>
                     </div>
                     
                     <form id="dataForm">
@@ -402,7 +467,7 @@ Mit freundlichen Grüßen</textarea>
                     <li>Das Verzeichnis <code>./formulare/</code> existiert</li>
                     <li>PDF-Dateien im Verzeichnis vorhanden sind</li>
                     <li>Die Datei über einen lokalen Server geladen wird</li>
-                    <li>Die Datei <code>config.yaml</code> existiert (optional)</li>
+                    <li>Optional: <code>NameDesPDFs.yaml</code> Konfigurationsdateien für individuelle PDF-Einstellungen</li>
                 </ul>
             </div>
         </div>
@@ -411,8 +476,10 @@ Mit freundlichen Grüßen</textarea>
     <script>
         let availablePDFs = [];
         let pdfFields = new Map();
-        let fieldConfig = {};
+        let pdfConfigs = new Map(); // Individuelle Konfigurationen pro PDF
         let selectedPDFs = new Set();
+        let calculatedFields = new Set(); // Felder mit Berechnungen
+        let hiddenData = {}; // Daten, die nicht in Formularen verwendet werden
         let appSettings = {
             fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
             emailAddress: '',
@@ -426,7 +493,6 @@ Mit freundlichen Grüßen</textarea>
 
         async function initializeApp() {
             try {
-                await loadFieldConfig();
                 await loadPDFsFromDirectory();
                 generatePDFSelection();
                 handleUrlParams();
@@ -441,18 +507,7 @@ Mit freundlichen Grüßen</textarea>
 
         function switchTab(tabName) {
             // Formularwerte temporär speichern
-            const currentFormData = {};
-            const form = document.getElementById('dataForm');
-            if (form) {
-                const formDataObj = new FormData(form);
-                for (let [key, value] of formDataObj.entries()) {
-                    currentFormData[key] = value;
-                }
-                // Speichere auch direkt die Input-Werte
-                form.querySelectorAll('input, textarea, select').forEach(input => {
-                    currentFormData[input.id || input.name] = input.value;
-                });
-            }
+            const currentFormData = getAllFormData();
             
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -467,16 +522,8 @@ Mit freundlichen Grüßen</textarea>
                     generateFormForSelectedPDFs();
                     // Formularwerte wiederherstellen
                     setTimeout(() => {
-                        Object.keys(currentFormData).forEach(key => {
-                            const element = document.getElementById(key);
-                            if (element) {
-                                if (element.type === 'checkbox') {
-                                    element.checked = currentFormData[key] === '1' || currentFormData[key] === 'true' || currentFormData[key] === true;
-                                } else {
-                                    element.value = currentFormData[key];
-                                }
-                            }
-                        });
+                        restoreFormData(currentFormData);
+                        calculateAllFields();
                     }, 100);
                 }
             } else if (tabName === 'settings') {
@@ -490,25 +537,22 @@ Mit freundlichen Grüßen</textarea>
             switchTab('form-fields');
         }
 
-        async function loadFieldConfig() {
+        async function loadPDFConfigForFile(pdfName) {
             try {
-                let response = await fetch('./config.yaml');
+                const configName = pdfName.replace('.pdf', '.yaml');
+                const response = await fetch(`./formulare/${encodeURIComponent(configName)}`);
                 if (response.ok) {
                     const yamlText = await response.text();
-                    fieldConfig = jsyaml.load(yamlText);
-                    return;
+                    const config = jsyaml.load(yamlText);
+                    pdfConfigs.set(pdfName, config);
+                    console.log(`Konfiguration für ${pdfName} geladen:`, config);
+                    return true;
                 }
-                
-                response = await fetch('./config.json');
-                if (response.ok) {
-                    fieldConfig = await response.json();
-                    return;
-                }
-                
-                fieldConfig = {};
             } catch (error) {
-                fieldConfig = {};
+                console.log(`Keine Konfiguration für ${pdfName} gefunden oder Fehler beim Laden`);
             }
+            pdfConfigs.set(pdfName, {});
+            return false;
         }
 
         async function loadPDFsFromDirectory() {
@@ -532,11 +576,15 @@ Mit freundlichen Grüßen</textarea>
                         const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
                         const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
                         
+                        // Lade individuelle Konfiguration für dieses PDF
+                        const hasConfig = await loadPDFConfigForFile(pdfName);
+                        
                         availablePDFs.push({
                             name: pdfName,
                             path: `./formulare/${pdfName}`,
                             document: pdfDoc,
-                            fields: fields
+                            fields: fields,
+                            hasConfig: hasConfig
                         });
                         
                         pdfFields.set(pdfName, fields);
@@ -599,6 +647,10 @@ Mit freundlichen Grüßen</textarea>
             
             availablePDFs.forEach((pdf, index) => {
                 const fieldsPreview = generateFieldsPreview(pdf.fields);
+                const configStatus = pdf.hasConfig ? 
+                    '<div class="config-status config-found">✅ Konfiguration gefunden</div>' :
+                    '<div class="config-status config-missing">⚠️ Keine Konfiguration</div>';
+                
                 const div = document.createElement('div');
                 div.className = 'pdf-checkbox';
                 div.innerHTML = `
@@ -606,6 +658,7 @@ Mit freundlichen Grüßen</textarea>
                     <div class="pdf-info">
                         <h4>${pdf.name}</h4>
                         <div class="pdf-path">${pdf.path}</div>
+                        ${configStatus}
                         <div class="fields-preview">
                             <div class="fields-short">Felder (${pdf.fields.length}): ${fieldsPreview.short}</div>
                             <div class="fields-full">Felder (${pdf.fields.length}): ${fieldsPreview.full}</div>
@@ -683,6 +736,7 @@ Mit freundlichen Grüßen</textarea>
         function generateFormForSelectedPDFs() {
             const container = document.getElementById('formSections');
             container.innerHTML = '';
+            calculatedFields.clear();
             
             if (selectedPDFs.size === 0) {
                 container.innerHTML = '<div class="form-section"><h3>ℹ️ Keine PDFs ausgewählt</h3><p class="description">Bitte gehen Sie zurück und wählen Sie mindestens ein PDF aus.</p></div>';
@@ -691,16 +745,19 @@ Mit freundlichen Grüßen</textarea>
             
             const activeFields = new Set();
             const fieldMappings = new Map();
+            const fieldCalculations = new Map();
             
             console.log('=== DEBUG: Feldanalyse ===');
-            console.log('fieldConfig:', fieldConfig);
             
             selectedPDFs.forEach(pdfName => {
                 const fields = pdfFields.get(pdfName) || [];
+                const pdfConfig = pdfConfigs.get(pdfName) || {};
+                
                 console.log(`PDF ${pdfName} hat Felder:`, fields);
+                console.log(`PDF ${pdfName} Konfiguration:`, pdfConfig);
                 
                 fields.forEach(field => {
-                    const fieldConf = fieldConfig.fields?.[field] || {};
+                    const fieldConf = pdfConfig.fields?.[field] || {};
                     const hiddenForPDFs = fieldConf.hidden_for_pdfs || [];
                     
                     console.log(`Feld ${field}:`, fieldConf);
@@ -715,12 +772,21 @@ Mit freundlichen Grüßen</textarea>
                             fieldMappings.set(mappedName, []);
                         }
                         fieldMappings.get(mappedName).push(field);
+                        
+                        // Berechnung speichern, falls vorhanden
+                        if (fieldConf.berechnung) {
+                            fieldCalculations.set(mappedName, fieldConf.berechnung);
+                            calculatedFields.add(mappedName);
+                            console.log(`Feld ${mappedName} hat Berechnung: ${fieldConf.berechnung}`);
+                        }
                     }
                 });
             });
             
             console.log('Aktive Felder nach Mapping:', Array.from(activeFields));
+            console.log('Berechnete Felder:', Array.from(calculatedFields));
             window.currentFieldMappings = fieldMappings;
+            window.currentFieldCalculations = fieldCalculations;
             
             if (activeFields.size === 0) {
                 container.innerHTML = '<div class="form-section"><h3>⚠️ Keine Felder verfügbar</h3></div>';
@@ -736,7 +802,7 @@ Mit freundlichen Grüßen</textarea>
                 const section = document.createElement('div');
                 section.className = 'form-section';
                 
-                const groupConfig = fieldConfig.groups?.[groupName] || {};
+                const groupConfig = getGroupConfig(groupName);
                 const groupTitle = groupConfig.title || groupName;
                 const groupDescription = groupConfig.description || '';
                 
@@ -754,6 +820,25 @@ Mit freundlichen Grüßen</textarea>
                 section.innerHTML = sectionHTML;
                 container.appendChild(section);
             }
+            
+            // Versteckte Daten anzeigen
+            updateHiddenDataSection();
+            
+            // Event-Listener für Berechnungen hinzufügen
+            setTimeout(() => {
+                addCalculationEventListeners();
+                calculateAllFields();
+            }, 100);
+        }
+
+        function getGroupConfig(groupName) {
+            // Suche in allen PDF-Konfigurationen nach Gruppenkonfiguration
+            for (const [pdfName, config] of pdfConfigs.entries()) {
+                if (selectedPDFs.has(pdfName) && config.groups && config.groups[groupName]) {
+                    return config.groups[groupName];
+                }
+            }
+            return {};
         }
 
         function organizeFieldsByGroups(activeFields) {
@@ -764,23 +849,31 @@ Mit freundlichen Grüßen</textarea>
             fieldsArray.forEach(fieldName => {
                 let group = 'Sonstige';
                 
-                // Direkte Suche nach Feldkonfiguration
-                const directFieldConf = fieldConfig.fields?.[fieldName];
-                if (directFieldConf && directFieldConf.group) {
-                    group = directFieldConf.group;
-                    console.log(`Feld ${fieldName} → Gruppe: ${group} (direkt)`);
-                } else {
-                    // Suche nach Original-Feld, das auf diesen Namen mappt
-                    for (const [originalField, config] of Object.entries(fieldConfig.fields || {})) {
-                        if (config.mapping === fieldName && config.group) {
-                            group = config.group;
-                            console.log(`Feld ${fieldName} → Gruppe: ${group} (via mapping von ${originalField})`);
+                // Suche in allen ausgewählten PDF-Konfigurationen
+                for (const [pdfName, config] of pdfConfigs.entries()) {
+                    if (selectedPDFs.has(pdfName)) {
+                        // Direkte Suche nach Feldkonfiguration
+                        const directFieldConf = config.fields?.[fieldName];
+                        if (directFieldConf && directFieldConf.group) {
+                            group = directFieldConf.group;
+                            console.log(`Feld ${fieldName} → Gruppe: ${group} (direkt aus ${pdfName})`);
                             break;
+                        } else {
+                            // Suche nach Original-Feld, das auf diesen Namen mappt
+                            for (const [originalField, fieldConfig] of Object.entries(config.fields || {})) {
+                                if (fieldConfig.mapping === fieldName && fieldConfig.group) {
+                                    group = fieldConfig.group;
+                                    console.log(`Feld ${fieldName} → Gruppe: ${group} (via mapping von ${originalField} aus ${pdfName})`);
+                                    break;
+                                }
+                            }
                         }
+                        if (group !== 'Sonstige') break;
                     }
-                    if (group === 'Sonstige') {
-                        console.log(`Feld ${fieldName} → KEINE KONFIGURATION GEFUNDEN → Sonstige`);
-                    }
+                }
+                
+                if (group === 'Sonstige') {
+                    console.log(`Feld ${fieldName} → KEINE KONFIGURATION GEFUNDEN → Sonstige`);
                 }
                 
                 if (!grouped[group]) {
@@ -809,24 +902,36 @@ Mit freundlichen Grüßen</textarea>
             let title = fieldName;
             let description = '';
             let type = 'text';
+            let isCalculated = calculatedFields.has(fieldName);
             
-            // Direkte Suche nach Feldkonfiguration
-            const directFieldConf = fieldConfig.fields?.[fieldName];
-            if (directFieldConf) {
-                title = directFieldConf.title || fieldName;
-                description = directFieldConf.description || '';
-                type = directFieldConf.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
-            } else {
-                // Suche nach Original-Feld, das auf diesen Namen mappt
-                for (const [originalField, config] of Object.entries(fieldConfig.fields || {})) {
-                    if (config.mapping === fieldName) {
-                        title = config.title || fieldName;
-                        description = config.description || '';
-                        type = config.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
+            // Suche in allen ausgewählten PDF-Konfigurationen
+            for (const [pdfName, config] of pdfConfigs.entries()) {
+                if (selectedPDFs.has(pdfName)) {
+                    // Direkte Suche nach Feldkonfiguration
+                    const directFieldConf = config.fields?.[fieldName];
+                    if (directFieldConf) {
+                        title = directFieldConf.title || fieldName;
+                        description = directFieldConf.description || '';
+                        type = directFieldConf.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
                         break;
+                    } else {
+                        // Suche nach Original-Feld, das auf diesen Namen mappt
+                        for (const [originalField, fieldConfig] of Object.entries(config.fields || {})) {
+                            if (fieldConfig.mapping === fieldName) {
+                                title = fieldConfig.title || fieldName;
+                                description = fieldConfig.description || '';
+                                type = fieldConfig.type || (fieldName.toLowerCase().includes('datum') || fieldName.toLowerCase().includes('date') ? 'date' : 'text');
+                                break;
+                            }
+                        }
                     }
+                    if (title !== fieldName) break;
                 }
             }
+            
+            const calculatedClass = isCalculated ? 'calculated-field' : '';
+            const calculatedBadge = isCalculated ? '<span class="calculated-badge">🧮 Berechnet</span>' : '';
+            const readonlyAttr = isCalculated ? 'readonly' : '';
             
             // Spezielle Behandlung für Checkboxen
             if (type === 'checkbox') {
@@ -835,7 +940,7 @@ Mit freundlichen Grüßen</textarea>
                         <div style="display: flex; align-items: flex-start; gap: 12px;">
                             <input type="checkbox" id="${fieldName}" name="${fieldName}" value="1" style="margin-top: 4px; transform: scale(1.2);">
                             <div style="flex: 1;">
-                                <label for="${fieldName}" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: #555;">${title}</label>
+                                <label for="${fieldName}" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: #555;">${title}${calculatedBadge}</label>
                                 ${description ? `<div class="field-description" style="margin-top: 4px;">${description}</div>` : ''}
                             </div>
                         </div>
@@ -846,11 +951,189 @@ Mit freundlichen Grüßen</textarea>
             // Standard-Felder (text, email, tel, date, number)
             return `
                 <div class="form-group">
-                    <label for="${fieldName}">${title}</label>
+                    <label for="${fieldName}">${title}${calculatedBadge}</label>
                     ${description ? `<div class="field-description">${description}</div>` : ''}
-                    <input type="${type}" id="${fieldName}" name="${fieldName}">
+                    <input type="${type}" id="${fieldName}" name="${fieldName}" class="${calculatedClass}" ${readonlyAttr}>
                 </div>
             `;
+        }
+
+        function addCalculationEventListeners() {
+            // Event-Listener für alle Input-Felder hinzufügen
+            document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select, #hiddenDataFields input, #hiddenDataFields textarea').forEach(input => {
+                input.addEventListener('input', calculateAllFields);
+                input.addEventListener('change', calculateAllFields);
+            });
+        }
+
+        function calculateAllFields() {
+            if (!window.currentFieldCalculations) return;
+            
+            const formData = getAllFormData();
+            
+            window.currentFieldCalculations.forEach((calculation, fieldName) => {
+                const calculatedValue = evaluateCalculation(calculation, formData);
+                const element = document.getElementById(fieldName);
+                if (element && calculatedValue !== null) {
+                    element.value = calculatedValue;
+                }
+            });
+        }
+
+        function evaluateCalculation(calculation, formData) {
+            try {
+                // Ersetze Feldnamen in der Berechnung durch ihre Werte
+                let expression = calculation;
+                
+                // Finde alle Feldnamen in geschweiften Klammern
+                const fieldMatches = expression.match(/{([^}]+)}/g);
+                if (fieldMatches) {
+                    fieldMatches.forEach(match => {
+                        const fieldName = match.slice(1, -1); // Entferne { und }
+                        const fieldValue = formData[fieldName] || '';
+                        expression = expression.replace(match, `"${fieldValue}"`);
+                    });
+                }
+                
+                // Spezielle Funktionen unterstützen
+                if (expression.includes('CONCAT')) {
+                    // CONCAT({Vorname}, " ", {Nachname}) -> "Vorname" + " " + "Nachname"
+                    expression = expression.replace(/CONCAT\(/g, '').replace(/\)$/, '');
+                    expression = expression.replace(/,\s*/g, ' + ');
+                }
+                
+                // Sichere Auswertung der Expression
+                const result = evaluateExpression(expression);
+                return result;
+                
+            } catch (error) {
+                console.warn('Fehler bei Berechnung:', error);
+                return null;
+            }
+        }
+
+        function evaluateExpression(expression) {
+            // Sichere Auswertung ohne eval()
+            try {
+                // Einfache String-Konkatenation
+                if (expression.includes('+')) {
+                    const parts = expression.split('+').map(part => part.trim());
+                    return parts.map(part => {
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return part.slice(1, -1);
+                        }
+                        return part;
+                    }).join('');
+                }
+                
+                // Einzelner String-Wert
+                if (expression.startsWith('"') && expression.endsWith('"')) {
+                    return expression.slice(1, -1);
+                }
+                
+                return expression;
+            } catch (error) {
+                console.warn('Fehler bei Expression-Auswertung:', error);
+                return '';
+            }
+        }
+
+        function getAllFormData() {
+            const formData = {};
+            
+            // Reguläre Formularfelder
+            const form = document.getElementById('dataForm');
+            if (form) {
+                const formDataObj = new FormData(form);
+                for (let [key, value] of formDataObj.entries()) {
+                    formData[key] = value;
+                }
+                
+                // Checkboxen separat behandeln
+                form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    formData[checkbox.name] = checkbox.checked ? checkbox.value : '';
+                });
+            }
+            
+            // Versteckte Felder
+            const hiddenFields = document.getElementById('hiddenDataFields');
+            if (hiddenFields) {
+                hiddenFields.querySelectorAll('input, textarea, select').forEach(input => {
+                    if (input.type === 'checkbox') {
+                        formData[input.name] = input.checked ? input.value : '';
+                    } else {
+                        formData[input.name] = input.value;
+                    }
+                });
+            }
+            
+            // Versteckte Daten aus hiddenData hinzufügen
+            Object.keys(hiddenData).forEach(key => {
+                if (!formData.hasOwnProperty(key)) {
+                    formData[key] = hiddenData[key];
+                }
+            });
+            
+            return formData;
+        }
+
+        function getFormData() {
+            return getAllFormData();
+        }
+
+        function restoreFormData(data) {
+            Object.keys(data).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = data[key] === '1' || data[key] === 'true' || data[key] === true;
+                    } else {
+                        element.value = data[key];
+                    }
+                }
+            });
+        }
+
+        function updateHiddenDataSection() {
+            const hiddenDataSection = document.getElementById('hiddenDataSection');
+            const hiddenDataFields = document.getElementById('hiddenDataFields');
+            const hiddenDataCount = document.getElementById('hiddenDataCount');
+            
+            if (Object.keys(hiddenData).length === 0) {
+                hiddenDataSection.style.display = 'none';
+                return;
+            }
+            
+            hiddenDataFields.innerHTML = '';
+            let count = 0;
+            
+            Object.keys(hiddenData).forEach(key => {
+                const value = hiddenData[key];
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
+                    <input type="text" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
+                `;
+                hiddenDataFields.appendChild(div);
+                count++;
+            });
+            
+            hiddenDataCount.textContent = count;
+            hiddenDataSection.style.display = 'block';
+        }
+
+        function toggleHiddenData() {
+            const content = document.getElementById('hiddenDataContent');
+            const toggleText = document.getElementById('hiddenDataToggleText');
+            
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'block';
+                toggleText.textContent = 'Verbergen';
+            } else {
+                content.style.display = 'none';
+                toggleText.textContent = 'Anzeigen';
+            }
         }
 
         function handleUrlParams() {
@@ -862,10 +1145,16 @@ Mit freundlichen Grüßen</textarea>
             let content = '<ul>';
             
             for (const [key, value] of urlParams) {
+                // In hiddenData speichern, falls Feld nicht existiert
+                hiddenData[key] = value;
+                
                 const element = document.getElementById(key);
                 if (element) {
                     element.value = value;
                     content += `<li><strong>${key}:</strong> ${value}</li>`;
+                    hasParams = true;
+                } else {
+                    content += `<li><strong>${key}:</strong> ${value} (versteckt)</li>`;
                     hasParams = true;
                 }
             }
@@ -883,6 +1172,11 @@ Mit freundlichen Grüßen</textarea>
                 paramsContent.innerHTML = content;
                 paramsDiv.style.display = 'block';
             }
+            
+            // Berechnungen nach dem Setzen der URL-Parameter ausführen
+            setTimeout(() => {
+                calculateAllFields();
+            }, 500);
         }
 
         function showError() {
@@ -901,28 +1195,11 @@ Mit freundlichen Grüßen</textarea>
             }, 5000);
         }
 
-        function getFormData() {
-            const form = document.getElementById('dataForm');
-            const formData = new FormData(form);
-            const data = {};
-            
-            // Standard-Felder auslesen
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
-            
-            // Checkboxen separat behandeln - nicht angehakte Checkboxen sind nicht in FormData
-            form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                data[checkbox.name] = checkbox.checked ? checkbox.value : '';
-            });
-            
-            return data;
-        }
-
         function getAllData() {
-            const formData = getFormData();
+            const formData = getAllFormData();
             return {
                 formData: formData,
+                hiddenData: hiddenData,
                 settings: appSettings,
                 selectedPDFs: Array.from(selectedPDFs),
                 timestamp: new Date().toISOString()
@@ -934,7 +1211,7 @@ Mit freundlichen Grüßen</textarea>
             const dataStr = JSON.stringify(allData, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             
-            const data = getFormData();
+            const data = getAllFormData();
             let fileName = appSettings.fileNamePattern;
             const today = new Date().toISOString().split('T')[0];
             
@@ -966,11 +1243,29 @@ Mit freundlichen Grüßen</textarea>
                 try {
                     const data = JSON.parse(e.target.result);
                     
+                    // Versteckte Daten laden
+                    if (data.hiddenData) {
+                        hiddenData = { ...data.hiddenData };
+                    }
+                    
                     const formData = data.formData || data;
+                    
+                    // Alle Daten aus dem Datensatz in hiddenData speichern
+                    Object.keys(formData).forEach(key => {
+                        if (!hiddenData.hasOwnProperty(key)) {
+                            hiddenData[key] = formData[key];
+                        }
+                    });
+                    
+                    // Formularfelder setzen
                     for (const [key, value] of Object.entries(formData)) {
                         const element = document.getElementById(key);
                         if (element) {
-                            element.value = value;
+                            if (element.type === 'checkbox') {
+                                element.checked = value === '1' || value === 'true' || value === true;
+                            } else {
+                                element.value = value;
+                            }
                         }
                     }
                     
@@ -993,6 +1288,13 @@ Mit freundlichen Grüßen</textarea>
                         updateNextButton();
                     }
                     
+                    // Versteckte Daten anzeigen und Berechnungen nach dem Laden ausführen
+                    setTimeout(() => {
+                        updateHiddenDataSection();
+                        addCalculationEventListeners();
+                        calculateAllFields();
+                    }, 100);
+                    
                     showStatus('Daten erfolgreich geladen!');
                 } catch (error) {
                     showStatus('Fehler beim Laden der Daten: ' + error.message, 'error');
@@ -1002,11 +1304,10 @@ Mit freundlichen Grüßen</textarea>
         }
 
         async function generatePDFs() {
-            const data = getFormData();
+            const data = getAllFormData();
             const selectedPDFList = [];
             
-            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
-                const pdfName = checkbox.value;
+            selectedPDFs.forEach(pdfName => {
                 const pdf = availablePDFs.find(p => p.name === pdfName);
                 if (pdf) {
                     selectedPDFList.push(pdf);
@@ -1079,7 +1380,7 @@ Mit freundlichen Grüßen</textarea>
         }
 
         function openEmailDraft() {
-            const data = getFormData();
+            const data = getAllFormData();
             
             let subject = appSettings.emailSubject;
             let body = appSettings.emailBody;
@@ -1119,7 +1420,8 @@ Mit freundlichen Grüßen</textarea>
                 }
                 
                 let filledFields = 0;
-                const formData = getFormData();
+                const formData = getAllFormData();
+                const pdfConfig = pdfConfigs.get(pdf.name) || {};
                 
                 pdf.fields.forEach(fieldName => {
                     let value = null;
@@ -1128,8 +1430,8 @@ Mit freundlichen Grüßen</textarea>
                     if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
                         value = formData[fieldName];
                     } else {
-                        // Prüfe Mapping
-                        const fieldConf = fieldConfig.fields?.[fieldName] || {};
+                        // Prüfe Mapping aus der PDF-spezifischen Konfiguration
+                        const fieldConf = pdfConfig.fields?.[fieldName] || {};
                         if (fieldConf.mapping && formData[fieldConf.mapping] && formData[fieldConf.mapping].toString().trim() !== '') {
                             value = formData[fieldConf.mapping];
                         }
