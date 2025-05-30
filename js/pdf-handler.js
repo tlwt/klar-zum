@@ -145,6 +145,28 @@ async function fillAndDownloadPDF(pdf, data) {
         const formData = getAllFormData();
         const pdfConfig = window.pdfConfigs.get(pdf.name) || {};
         
+        // DEBUG: Alle Felder im PDF anzeigen
+        console.log('\n=== PDF FELDANALYSE ===');
+        console.log(`PDF: ${pdf.name}`);
+        const allFields = form.getFields();
+        console.log(`Gefundene Felder im PDF (${allFields.length}):`);
+        allFields.forEach((field, index) => {
+            const fieldName = field.getName();
+            const fieldType = field.constructor.name;
+            console.log(`  ${index + 1}. "${fieldName}" (${fieldType})`);
+            
+            // Spezielle Info für Radio Groups
+            if (fieldType === 'PDFRadioGroup') {
+                try {
+                    const options = field.getOptions();
+                    console.log(`     Optionen: [${options.join(', ')}]`);
+                } catch (e) {
+                    console.log(`     Optionen: Fehler beim Auslesen`);
+                }
+            }
+        });
+        console.log('=== ENDE FELDANALYSE ===\n');
+        
         pdf.fields.forEach(fieldName => {
             let value = null;
             
@@ -160,25 +182,35 @@ async function fillAndDownloadPDF(pdf, data) {
             }
             
             if (value) {
+                const fieldConf = pdfConfig.fields?.[fieldName] || {};
+                console.log(`\n--- VERARBEITE FELD: ${fieldName} ---`);
+                console.log(`Wert: "${value}"`);
+                console.log(`PDF-Config für Feld:`, fieldConf);
+                
                 try {
                     const field = form.getField(fieldName);
                     if (field) {
+                        const fieldType = field.constructor.name;
+                        console.log(`Feld gefunden: ${fieldName} (${fieldType})`);
+                        
                         // Unterscheide zwischen verschiedenen Feldtypen
                         if (field.constructor.name === 'PDFCheckBox') {
                             // Checkbox: setze check/uncheck basierend auf Wert
-                            if (value === '1' || value === 'true' || value === true || value === 'on') {
+                            if (value === '1' || value === 'true' || value === true || value === 'on' || value === 'Ja') {
                                 field.check();
+                                console.log(`✓ Checkbox ${fieldName} aktiviert`);
                             } else {
                                 field.uncheck();
+                                console.log(`✓ Checkbox ${fieldName} deaktiviert`);
                             }
                         } else if (field.constructor.name === 'PDFRadioGroup') {
-                            // Radio Group: verwende erweiterte Behandlung basierend auf Testskript
+                            // Radio Group: verwende erweiterte Behandlung basierend auf test3.html
                             try {
                                 field.select(String(value));
                                 console.log(`Radio Group ${fieldName} auf Wert '${value}' gesetzt`);
                             } catch (radioError) {
                                 console.warn(`Radio Group ${fieldName} Wert '${value}' nicht gefunden:`, radioError);
-                                // Erweiterte Behandlung über AcroField wie im Testskript
+                                // Erweiterte Behandlung über AcroField wie in test3.html
                                 try {
                                     const acroField = field.acroField;
                                     if (acroField) {
@@ -209,89 +241,68 @@ async function fillAndDownloadPDF(pdf, data) {
                         filledFields++;
                     }
                 } catch (error) {
-                    // Erweiterte Fallback-Behandlung basierend auf Testskript
-                    try {
-                        // Methode 1: Versuche als Radio Group
-                        const radioGroup = form.getRadioGroup(fieldName);
-                        if (radioGroup) {
-                            radioGroup.select(String(value));
-                            console.log(`Radio Group ${fieldName} (via getRadioGroup) auf Wert '${value}' gesetzt`);
-                            filledFields++;
-                        } else {
-                            // Methode 2: Suche nach Feldnamen-Varianten (für Radio Groups ohne direkte Zuordnung)
-                            let fieldFound = false;
+                    // Generische Fallback-Behandlung basierend auf test3.html
+                    console.log(`Feld ${fieldName} mit Standard-Methode nicht gefunden, verwende test3.html Logik...`);
+                    
+                    let fieldFound = false;
+                    
+                    // test3.html Logik: Durchsuche ALLE Felder im PDF und wende die Methoden an
+                    const allFields = form.getFields();
+                    allFields.forEach(testField => {
+                        const testFieldName = testField.getName();
+                        
+                        // Prüfe ob dieser PDF-Feldname zu unserem gesuchten Feld passt
+                        if (testFieldName === fieldName || 
+                            testFieldName.toLowerCase() === fieldName.toLowerCase() ||
+                            testFieldName.includes(fieldName) ||
+                            fieldName.includes(testFieldName)) {
                             
-                            // Teste verschiedene mögliche Feldnamen
-                            const variations = [
-                                fieldName,
-                                fieldName.toLowerCase(),
-                                fieldName.toUpperCase(),
-                                value, // Der Wert selbst könnte der Feldname sein (z.B. "Ja", "Nein")
-                                value.toLowerCase(),
-                                value.toUpperCase()
-                            ];
+                            console.log(`Mögliches Feld gefunden: "${testFieldName}" für gesuchtes Feld "${fieldName}"`);
                             
-                            for (const variation of variations) {
-                                try {
-                                    const varField = form.getField(variation);
-                                    if (varField) {
-                                        console.log(`Feld-Variation gefunden: ${variation} für ${fieldName}`);
-                                        
-                                        // Checkbox-Behandlung für Radio-ähnliche Felder
-                                        if (varField.constructor.name === 'PDFCheckBox') {
-                                            if (variation === value || 
-                                                (value === 'Ja' && (variation === 'Ja' || variation === 'ja')) ||
-                                                (value === 'Nein' && (variation === 'Nein' || variation === 'nein'))) {
-                                                varField.check();
-                                                console.log(`Checkbox ${variation} aktiviert für Wert ${value}`);
-                                            } else {
-                                                varField.uncheck();
-                                                console.log(`Checkbox ${variation} deaktiviert für Wert ${value}`);
-                                            }
-                                            fieldFound = true;
-                                            filledFields++;
-                                            break;
-                                        }
-                                        
-                                        // AcroField direkt setzen wie im Testskript
-                                        const acroField = varField.acroField;
-                                        if (acroField) {
-                                            acroField.V = PDFLib.PDFName.of(String(value));
-                                            console.log(`AcroField.V für ${variation} gesetzt`);
-                                            
-                                            if (acroField.dict) {
-                                                acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
-                                                console.log(`AcroField.dict.V für ${variation} gesetzt`);
-                                            }
-                                        }
-                                        
-                                        // Zusätzliche Checkbox-Methoden falls verfügbar
-                                        if (typeof varField.check === 'function') {
-                                            if (value === 'Ja' || value === 'ja' || value === '1' || value === 'true') {
-                                                varField.check();
-                                                console.log(`${variation} aktiviert`);
-                                            } else {
-                                                varField.uncheck();
-                                                console.log(`${variation} deaktiviert`);
-                                            }
-                                        }
-                                        
-                                        fieldFound = true;
-                                        filledFields++;
-                                        break;
+                            try {
+                                // test3.html Methode 1: Checkbox-Behandlung
+                                if (typeof testField.check === 'function' && typeof testField.uncheck === 'function') {
+                                    if (value === 'Ja' || value === 'ja' || value === '1' || value === 'true' || value === true) {
+                                        testField.check();
+                                        console.log(`✓ Checkbox ${testFieldName} aktiviert (${value})`);
+                                    } else {
+                                        testField.uncheck();
+                                        console.log(`✓ Checkbox ${testFieldName} deaktiviert (${value})`);
                                     }
-                                } catch (varError) {
-                                    // Variation nicht gefunden, weiter versuchen
-                                    continue;
+                                    fieldFound = true;
                                 }
-                            }
-                            
-                            if (!fieldFound) {
-                                console.warn(`Feld ${fieldName} konnte nicht ausgefüllt werden:`, error);
+                                
+                                // test3.html Methode 2: AcroField direkt setzen
+                                const acroField = testField.acroField;
+                                if (acroField) {
+                                    acroField.V = PDFLib.PDFName.of(String(value));
+                                    console.log(`✓ acroField.V für ${testFieldName} gesetzt auf "${value}"`);
+                                    
+                                    if (acroField.dict) {
+                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
+                                        console.log(`✓ dict.V für ${testFieldName} gesetzt auf "${value}"`);
+                                    }
+                                    fieldFound = true;
+                                }
+                                
+                                // test3.html Methode 3: setText falls vorhanden
+                                if (typeof testField.setText === 'function') {
+                                    testField.setText(String(value));
+                                    console.log(`✓ setText() für ${testFieldName} ausgeführt mit "${value}"`);
+                                    fieldFound = true;
+                                }
+                                
+                            } catch (e) {
+                                console.warn(`❌ Fehler bei test3.html Methode für ${testFieldName}:`, e.message);
                             }
                         }
-                    } catch (radioError) {
-                        console.warn(`Alle Fallback-Methoden für ${fieldName} fehlgeschlagen:`, error);
+                    });
+                    
+                    if (fieldFound) {
+                        console.log(`✓ Feld ${fieldName} erfolgreich über test3.html Logik gesetzt`);
+                        filledFields++;
+                    } else {
+                        console.warn(`❌ Feld ${fieldName} konnte auch mit test3.html Logik nicht gesetzt werden`);
                     }
                 }
             }
