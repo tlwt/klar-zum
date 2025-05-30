@@ -60,9 +60,65 @@ function extractFieldOrderFromYaml(yamlText) {
     // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
     const lines = yamlText.split('\n');
     let inFieldsSection = false;
-    let currentGroup = '';
     const extractedOrder = {};
+    const fieldToGroupMap = {};
     
+    // Erst alle Felder sammeln und deren Gruppen bestimmen
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        if (line.trim() === 'fields:') {
+            inFieldsSection = true;
+            continue;
+        }
+        
+        if (inFieldsSection) {
+            // Ende der fields-Sektion erreicht
+            if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+                break;
+            }
+            
+            // Feld-Definition (beginnt mit 2 Leerzeichen, gefolgt von Feldname:)
+            // Wichtig: Schließe bekannte YAML-Eigenschaften aus
+            const fieldMatch = line.match(/^  ([^:]+):/);
+            if (fieldMatch) {
+                const fieldName = fieldMatch[1].trim();
+                
+                // Filtere YAML-Eigenschaften aus (diese sind keine Feldnamen)
+                const yamlProperties = ['group', 'type', 'options', 'title', 'description', 
+                                      'mapping', 'berechnung', 'hidden_for_pdfs'];
+                
+                if (yamlProperties.includes(fieldName)) {
+                    continue; // Überspringe YAML-Eigenschaften
+                }
+                
+                let fieldGroup = 'Sonstige'; // Fallback
+                
+                // Suche nach der group-Zeile für dieses Feld
+                for (let j = i + 1; j < lines.length; j++) {
+                    const nextLine = lines[j];
+                    
+                    // Wenn wir das nächste Feld erreichen, stoppe die Suche
+                    if (nextLine.match(/^  [^:]+:/) && 
+                        !yamlProperties.includes(nextLine.match(/^  ([^:]+):/)?.[1]?.trim())) {
+                        break;
+                    }
+                    
+                    // Gruppe gefunden
+                    const groupMatch = nextLine.match(/^\s+group:\s*(.+)$/);
+                    if (groupMatch) {
+                        fieldGroup = groupMatch[1].trim();
+                        break;
+                    }
+                }
+                
+                fieldToGroupMap[fieldName] = fieldGroup;
+            }
+        }
+    }
+    
+    // Jetzt die Felder in der ursprünglichen Reihenfolge zu ihren Gruppen zuordnen
+    inFieldsSection = false;
     for (const line of lines) {
         if (line.trim() === 'fields:') {
             inFieldsSection = true;
@@ -80,24 +136,20 @@ function extractFieldOrderFromYaml(yamlText) {
             if (fieldMatch) {
                 const fieldName = fieldMatch[1].trim();
                 
-                // Suche nach der Gruppenzugehörigkeit in den folgenden Zeilen
-                // oder verwende die bereits bekannte Gruppe
-                if (window.currentConfig.fields[fieldName] && window.currentConfig.fields[fieldName].group) {
-                    currentGroup = window.currentConfig.fields[fieldName].group;
-                } else {
-                    currentGroup = 'Sonstige'; // Fallback
+                // Filtere YAML-Eigenschaften aus
+                const yamlProperties = ['group', 'type', 'options', 'title', 'description', 
+                                      'mapping', 'berechnung', 'hidden_for_pdfs'];
+                
+                if (yamlProperties.includes(fieldName)) {
+                    continue; // Überspringe YAML-Eigenschaften
                 }
                 
-                if (!extractedOrder[currentGroup]) {
-                    extractedOrder[currentGroup] = [];
+                const groupName = fieldToGroupMap[fieldName] || 'Sonstige';
+                
+                if (!extractedOrder[groupName]) {
+                    extractedOrder[groupName] = [];
                 }
-                extractedOrder[currentGroup].push(fieldName);
-            }
-            
-            // Gruppe aus dem field-Eintrag extrahieren
-            const groupMatch = line.match(/^\s+group:\s*(.+)$/);
-            if (groupMatch) {
-                currentGroup = groupMatch[1].trim();
+                extractedOrder[groupName].push(fieldName);
             }
         }
     }
@@ -109,6 +161,8 @@ function extractFieldOrderFromYaml(yamlText) {
         }
         window.fieldsOrder[groupName] = extractedOrder[groupName];
     });
+    
+    console.log('YAML-Feldreihenfolge extrahiert (bereinigt):', extractedOrder);
 }
 
 function buildGroupsOrder() {
