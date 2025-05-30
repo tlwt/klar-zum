@@ -1,0 +1,233 @@
+/* config/styles/config.css - Config-spezifische Styles */
+
+.pdf-selector {
+    background: #f8f9ff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 4px solid #5a7c47;
+}
+
+.pdf-dropdown {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+}
+
+.pdf-dropdown:focus {
+    outline: none;
+    border-color: #5a7c47;
+}
+
+.config-editor {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 30px;
+    min-height: 600px;
+}
+
+.groups-panel, .fields-panel, .properties-panel {
+    background: #f8f9ff;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e1e5e9;
+}
+
+.panel-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-item, .field-item {
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-item:hover, .field-item:hover {
+    border-color: #5a7c47;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.group-item.active, .field-item.active {
+    border-color: #5a7c47;
+    background: #f0f8ff;
+}
+
+.group-item:active, .field-item:active {
+    cursor: grabbing;
+}
+
+.drag-handle {
+    color: #999;
+    cursor: grab;
+}
+
+.group-name, .field-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.group-count {
+    background: #5a7c47;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+.field-type {
+    background: #17a2b8;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.field-mapped {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.field-hidden {
+    background: #dc3545;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.add-group-btn, .delete-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.add-group-btn {
+    background: #28a745;
+    color: white;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.add-group-btn:hover {
+    background: #218838;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+.properties-form {
+    display: none;
+}
+
+.properties-form.active {
+    display: block;
+}
+
+/* Config-spezifische Form-Styles - überschreibt main.css */
+.properties-panel .form-group {
+    margin-bottom: 20px;
+}
+
+.properties-panel .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.properties-panel .form-group input, 
+.properties-panel .form-group select, 
+.properties-panel .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    font-family: inherit;
+}
+
+.properties-panel .form-group input:focus, 
+.properties-panel .form-group select:focus, 
+.properties-panel .form-group textarea:focus {
+    outline: none;
+    border-color: #5a7c47;
+    box-shadow: 0 0 0 3px rgba(90, 124, 71, 0.1);
+}
+
+.properties-panel .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    transform: scale(1.2);
+}
+
+.unassigned-fields {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.unassigned-title {
+    font-weight: 700;
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.sortable-ghost {
+    opacity: 0.5;
+}
+
+.sortable-chosen {
+    border-color: #5a7c47 !important;
+    background: #f0f8ff !important;
+}
+
+@media (max-width: 1200px) {
+    .config-editor {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}

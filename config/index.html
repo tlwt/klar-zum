@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Konfiguration Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="styles/config.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PDF Konfiguration Editor</h1>
+            <p>Erstellen und bearbeiten Sie YAML-Konfigurationen für PDF-Formulare</p>
+        </div>
+        
+        <div class="content">
+            <div id="loading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Lade PDF-Formulare...</p>
+            </div>
+            
+            <div id="mainContent" style="display: none;">
+                <div class="pdf-selector">
+                    <h3>📄 PDF-Formular auswählen</h3>
+                    <select id="pdfSelector" class="pdf-dropdown" onchange="loadPDFConfig()">
+                        <option value="">-- PDF auswählen --</option>
+                    </select>
+                </div>
+                
+                <div id="configEditor" class="config-editor" style="display: none;">
+                    <!-- Gruppen Panel -->
+                    <div class="groups-panel">
+                        <div class="panel-title">
+                            📁 Gruppen
+                        </div>
+                        <button class="add-group-btn" onclick="addNewGroup()">
+                            ➕ Neue Gruppe
+                        </button>
+                        <div id="groupsList"></div>
+                    </div>
+                    
+                    <!-- Felder Panel -->
+                    <div class="fields-panel">
+                        <div class="panel-title">
+                            📝 Felder
+                            <span id="selectedGroupName"></span>
+                        </div>
+                        <div id="fieldsContainer">
+                            <div id="fieldsList"></div>
+                            <div id="unassignedFields" class="unassigned-fields" style="display: none;">
+                                <div class="unassigned-title">🗃️ Nicht zugewiesene Felder</div>
+                                <div id="unassignedFieldsList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Eigenschaften Panel -->
+                    <div class="properties-panel">
+                        <div class="panel-title">
+                            ⚙️ Eigenschaften
+                        </div>
+                        
+                        <!-- Gruppen-Eigenschaften -->
+                        <div id="groupProperties" class="properties-form">
+                            <div class="form-group">
+                                <label for="groupTitle">Titel:</label>
+                                <input type="text" id="groupTitle" placeholder="z.B. Persönliche Daten">
+                            </div>
+                            <div class="form-group">
+                                <label for="groupDescription">Beschreibung:</label>
+                                <textarea id="groupDescription" placeholder="Beschreibung der Gruppe"></textarea>
+                            </div>
+                            <button class="delete-btn" onclick="deleteGroup()" style="width: 100%; margin-top: 10px;">
+                                🗑️ Gruppe löschen
+                            </button>
+                        </div>
+                        
+                        <!-- Feld-Eigenschaften -->
+                        <div id="fieldProperties" class="properties-form">
+                            <div class="form-group">
+                                <label for="fieldTitle">Titel:</label>
+                                <input type="text" id="fieldTitle" placeholder="Angezeigter Name">
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldDescription">Beschreibung:</label>
+                                <textarea id="fieldDescription" placeholder="Hilfetext für das Feld"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldType">Typ:</label>
+                                <select id="fieldType">
+                                    <option value="text">Text</option>
+                                    <option value="email">E-Mail</option>
+                                    <option value="tel">Telefon</option>
+                                    <option value="date">Datum</option>
+                                    <option value="number">Zahl</option>
+                                    <option value="checkbox">Checkbox</option>
+                                    <option value="radio">Radio Button</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldMapping">Mapping:</label>
+                                <input type="text" id="fieldMapping" placeholder="Anderer Feldname (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldOptions">Radio Button Optionen:</label>
+                                <textarea id="fieldOptions" placeholder="Option1&#10;Option2&#10;Option3" style="display: none;"></textarea>
+                                <div class="field-description" id="radioOptionsHelp" style="display: none;">
+                                    Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fieldCalculation">Berechnung:</label>
+                                <input type="text" id="fieldCalculation" placeholder='z.B. CONCAT({Vorname}, " ", {Nachname})'>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="fieldHidden">
+                                    <label for="fieldHidden">Feld verstecken</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveAndDownloadConfig()">💾 Konfiguration speichern & herunterladen</button>
+                    <button class="btn btn-secondary" onclick="previewConfig()">👁️ Vorschau</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='../index.html'">⬅️ Zurück zur Hauptanwendung</button>
+                </div>
+                
+                <div id="status" class="status"></div>
+            </div>
+            
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <h4>❌ Fehler beim Laden</h4>
+                <p>Die PDF-Formulare konnten nicht geladen werden. Stellen Sie sicher, dass:</p>
+                <ul>
+                    <li>Das Verzeichnis <code>../formulare/</code> existiert</li>
+                    <li>PDF-Dateien im Verzeichnis vorhanden sind</li>
+                    <li>Die Datei über einen lokalen Server geladen wird</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geteilte Komponenten aus der Hauptanwendung -->
+    <script src="../js/config.js"></script>
+    <script src="../js/pdf-handler.js"></script>
+    
+    <!-- Config-spezifische Module -->
+    <script src="js/config-core.js"></script>
+    <script src="js/config-ui.js"></script>
+    <script src="js/config-app.js"></script>
+</body>
+</html>
