@@ -16,6 +16,10 @@ async function loadExistingConfig(pdfName) {
         if (response.ok) {
             const yamlText = await response.text();
             window.currentConfig = jsyaml.load(yamlText) || { fields: {}, groups: {} };
+            
+            // Extrahiere die ursprüngliche Feldreihenfolge aus dem YAML-Text
+            extractFieldOrderFromYaml(yamlText);
+            
             showConfigStatus('Existierende Konfiguration geladen', 'success');
         } else {
             // Neue Konfiguration mit Standard-Gruppen
@@ -52,6 +56,61 @@ async function loadExistingConfig(pdfName) {
     }
 }
 
+function extractFieldOrderFromYaml(yamlText) {
+    // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
+    const lines = yamlText.split('\n');
+    let inFieldsSection = false;
+    let currentGroup = '';
+    const extractedOrder = {};
+    
+    for (const line of lines) {
+        if (line.trim() === 'fields:') {
+            inFieldsSection = true;
+            continue;
+        }
+        
+        if (inFieldsSection) {
+            // Ende der fields-Sektion erreicht
+            if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+                break;
+            }
+            
+            // Feld-Definition (beginnt mit 2 Leerzeichen, gefolgt von Feldname:)
+            const fieldMatch = line.match(/^  ([^:]+):/);
+            if (fieldMatch) {
+                const fieldName = fieldMatch[1].trim();
+                
+                // Suche nach der Gruppenzugehörigkeit in den folgenden Zeilen
+                // oder verwende die bereits bekannte Gruppe
+                if (window.currentConfig.fields[fieldName] && window.currentConfig.fields[fieldName].group) {
+                    currentGroup = window.currentConfig.fields[fieldName].group;
+                } else {
+                    currentGroup = 'Sonstige'; // Fallback
+                }
+                
+                if (!extractedOrder[currentGroup]) {
+                    extractedOrder[currentGroup] = [];
+                }
+                extractedOrder[currentGroup].push(fieldName);
+            }
+            
+            // Gruppe aus dem field-Eintrag extrahieren
+            const groupMatch = line.match(/^\s+group:\s*(.+)$/);
+            if (groupMatch) {
+                currentGroup = groupMatch[1].trim();
+            }
+        }
+    }
+    
+    // Übernehme die extrahierte Reihenfolge in fieldsOrder
+    Object.keys(extractedOrder).forEach(groupName => {
+        if (!window.fieldsOrder[groupName]) {
+            window.fieldsOrder[groupName] = [];
+        }
+        window.fieldsOrder[groupName] = extractedOrder[groupName];
+    });
+}
+
 function buildGroupsOrder() {
     window.groupsOrder = Object.keys(window.currentConfig.groups || {});
     // Standard-Reihenfolge falls keine Gruppen vorhanden
@@ -70,6 +129,40 @@ function buildGroupsOrder() {
 }
 
 function buildFieldsOrder() {
+    // Wenn bereits eine Feldreihenfolge aus YAML extrahiert wurde, verwende diese
+    if (Object.keys(window.fieldsOrder).length > 0) {
+        // Ergänze fehlende Felder zur 'Sonstige' Gruppe
+        const allFields = [...window.currentPDF.fields];
+        const assignedFields = new Set();
+        
+        // Sammle alle bereits zugewiesenen Felder
+        Object.values(window.fieldsOrder).forEach(fields => {
+            fields.forEach(field => assignedFields.add(field));
+        });
+        
+        // Füge nicht zugewiesene Felder zur 'Sonstige' Gruppe hinzu
+        if (!window.fieldsOrder['Sonstige']) {
+            window.fieldsOrder['Sonstige'] = [];
+        }
+        
+        allFields.forEach(fieldName => {
+            if (!assignedFields.has(fieldName)) {
+                window.fieldsOrder['Sonstige'].push(fieldName);
+                // Feld-Konfiguration erstellen falls nicht vorhanden
+                if (!window.currentConfig.fields[fieldName]) {
+                    window.currentConfig.fields[fieldName] = {
+                        group: 'Sonstige'
+                    };
+                } else {
+                    window.currentConfig.fields[fieldName].group = 'Sonstige';
+                }
+            }
+        });
+        
+        return; // Früher Ausstieg, da Reihenfolge bereits existiert
+    }
+    
+    // Fallback: Alte Logik für neue Konfigurationen
     window.fieldsOrder = {};
     
     // Alle PDF-Felder als Basis
@@ -177,7 +270,7 @@ function buildFinalConfig() {
         }
     });
     
-    // Felder mit Gruppenzuordnung und in der richtigen Reihenfolge
+    // Felder mit Gruppenzuordnung und in der richtigen Reihenfolge BEIBEHALTEN
     window.groupsOrder.forEach(groupName => {
         const fieldsInGroup = window.fieldsOrder[groupName] || [];
         fieldsInGroup.forEach(fieldName => {
