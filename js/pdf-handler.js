@@ -1,5 +1,5 @@
 // js/pdf-handler.js
-// PDF-Verarbeitung und -Verwaltung - KORRIGIERT
+// PDF-Verarbeitung und -Verwaltung - Aktualisiert für config.yaml
 
 function extractFieldOrderFromYaml(yamlText, pdfName) {
     // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
@@ -197,9 +197,6 @@ async function loadPDFsFromDirectory() {
         throw error;
     }
 }
-
-// Funktion wird nicht mehr benötigt, da config.yaml verwendet wird
-// function extractPDFNamesFromListing(html) { ... }
 
 async function extractFieldsFromPDF(pdfDoc, pdfName) {
     const extractedFields = [];

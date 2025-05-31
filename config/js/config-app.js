@@ -1,5 +1,5 @@
 // config/js/config-app.js
-// Config App Initialisierung - Aktualisiert für config.yaml
+// Config App Initialisierung - Aktualisiert für config.yaml und Dropdown-Support
 
 window.addEventListener('load', async function() {
     await initializeConfigApp();
@@ -180,6 +180,12 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
                 'AnreiseGutscheine': ['Ja', 'Nein']
             };
             
+            // Zusätzliche Dropdown-Beispiele für Demonstration
+            const dropdownGroups = {
+                'Dienstgrad': ['Leutnant d.R.', 'Oberleutnant d.R.', 'Hauptmann d.R.', 'Major d.R.', 'Oberstleutnant d.R.', 'Oberst d.R.'],
+                'Standort': ['Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt']
+            };
+            
             Object.keys(radioGroups).forEach(groupName => {
                 fallbackFields.push(groupName);
                 if (!window.currentConfig.fields) window.currentConfig.fields = {};
@@ -187,6 +193,16 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
                     type: 'radio',
                     options: radioGroups[groupName],
                     group: 'Einverständnis'
+                };
+            });
+            
+            Object.keys(dropdownGroups).forEach(groupName => {
+                fallbackFields.push(groupName);
+                if (!window.currentConfig.fields) window.currentConfig.fields = {};
+                window.currentConfig.fields[groupName] = {
+                    type: 'select',
+                    options: dropdownGroups[groupName],
+                    group: 'Persönliche Daten'
                 };
             });
             

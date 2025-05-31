@@ -105,6 +105,7 @@
                                     <option value="number">Zahl</option>
                                     <option value="checkbox">Checkbox</option>
                                     <option value="radio">Radio Button</option>
+                                    <option value="select">Dropdown</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -112,9 +113,9 @@
                                 <input type="text" id="fieldMapping" placeholder="Anderer Feldname (optional)">
                             </div>
                             <div class="form-group">
-                                <label for="fieldOptions">Radio Button Optionen:</label>
+                                <label for="fieldOptions">Optionen:</label>
                                 <textarea id="fieldOptions" placeholder="Option1&#10;Option2&#10;Option3" style="display: none;"></textarea>
-                                <div class="field-description" id="radioOptionsHelp" style="display: none;">
+                                <div class="field-description" id="optionsHelp" style="display: none;">
                                     Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.
                                 </div>
                             </div>
@@ -148,6 +149,7 @@
                     <li>Das Verzeichnis <code>../formulare/</code> existiert</li>
                     <li>PDF-Dateien im Verzeichnis vorhanden sind</li>
                     <li>Die Datei über einen lokalen Server geladen wird</li>
+                    <li>Die Datei <code>../config.yaml</code> existiert und gültige PDF-Liste enthält</li>
                 </ul>
             </div>
         </div>

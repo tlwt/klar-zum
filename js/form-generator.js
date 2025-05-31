@@ -1,5 +1,5 @@
 // js/form-generator.js
-// Formular-Generierung und -Verwaltung
+// Formular-Generierung und -Verwaltung - Erweitert mit Dropdown-Support
 
 function generateFormForSelectedPDFs() {
     const container = document.getElementById('formSections');
@@ -427,6 +427,27 @@ function generateFormField(fieldName) {
             </div>
         `;
         return radioHTML;
+    }
+    
+    // Spezielle Behandlung für Dropdown/Select
+    if (type === 'select' && options.length > 0) {
+        let selectHTML = `
+            <div class="form-group">
+                <label for="${fieldName}">${title}${calculatedBadge}</label>
+                ${description ? `<div class="field-description">${description}</div>` : ''}
+                <select id="${fieldName}" name="${fieldName}" class="${calculatedClass}" ${readonlyAttr}>
+        `;
+        
+        options.forEach((option, index) => {
+            const isFirst = index === 0;
+            selectHTML += `<option value="${option}" ${isFirst ? 'selected' : ''}>${option}</option>`;
+        });
+        
+        selectHTML += `
+                </select>
+            </div>
+        `;
+        return selectHTML;
     }
     
     // Standard-Felder (text, email, tel, date, number)

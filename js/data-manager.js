@@ -22,6 +22,11 @@ function getAllFormData() {
             formData[radio.name] = radio.value;
         });
         
+        // Select-Felder separat behandeln
+        form.querySelectorAll('select').forEach(select => {
+            formData[select.name] = select.value;
+        });
+        
         // Alle Input-Felder direkt auslesen (für den Fall, dass FormData nicht alles erfasst)
         form.querySelectorAll('input, textarea, select').forEach(input => {
             if (input.name || input.id) {
@@ -57,9 +62,9 @@ function getAllFormData() {
     }
     
     // Versteckte Daten aus hiddenData hinzufügen (nur wenn nicht bereits über Formular erfasst)
-    Object.keys(hiddenData).forEach(key => {
+    Object.keys(window.hiddenData).forEach(key => {
         if (!formData.hasOwnProperty(key)) {
-            formData[key] = hiddenData[key];
+            formData[key] = window.hiddenData[key];
         }
     });
     
@@ -100,7 +105,7 @@ function updateHiddenDataSection() {
     const hiddenDataFields = document.getElementById('hiddenDataFields');
     const hiddenDataCount = document.getElementById('hiddenDataCount');
     
-    if (Object.keys(hiddenData).length === 0) {
+    if (Object.keys(window.hiddenData).length === 0) {
         hiddenDataSection.style.display = 'none';
         return;
     }
@@ -108,9 +113,9 @@ function updateHiddenDataSection() {
     hiddenDataFields.innerHTML = '';
     let count = 0;
     
-    console.log('Versteckte Daten:', hiddenData);
+    console.log('Versteckte Daten:', window.hiddenData);
     
-    Object.keys(hiddenData).forEach(key => {
+    Object.keys(window.hiddenData).forEach(key => {
         // Prüfe ob das Feld bereits im sichtbaren Formular existiert
         const visibleElement = document.getElementById(key);
         if (visibleElement) {
@@ -118,7 +123,7 @@ function updateHiddenDataSection() {
             return; // Überspringe sichtbare Felder
         }
         
-        const value = hiddenData[key];
+        const value = window.hiddenData[key];
         const div = document.createElement('div');
         div.className = 'form-group';
         div.innerHTML = `
@@ -155,9 +160,9 @@ function getAllData() {
     const formData = getAllFormData();
     return {
         formData: formData,
-        hiddenData: hiddenData,
-        settings: appSettings,
-        selectedPDFs: Array.from(selectedPDFs),
+        hiddenData: window.hiddenData,
+        settings: window.appSettings,
+        selectedPDFs: Array.from(window.selectedPDFs),
         timestamp: new Date().toISOString()
     };
 }
@@ -168,7 +173,7 @@ function saveData() {
     const dataBlob = new Blob([dataStr], {type: 'application/json'});
     
     const data = getAllFormData();
-    let fileName = appSettings.fileNamePattern;
+    let fileName = window.appSettings.fileNamePattern;
     const today = new Date().toISOString().split('T')[0];
     
     fileName = fileName.replace(/\[PDF\]/g, 'Daten');
@@ -200,11 +205,11 @@ function loadData(event) {
             const data = JSON.parse(e.target.result);
             
             // Versteckte Daten zurücksetzen
-            hiddenData = {};
+            window.hiddenData = {};
             
             // Versteckte Daten aus dem Datensatz laden
             if (data.hiddenData) {
-                hiddenData = { ...data.hiddenData };
+                window.hiddenData = { ...data.hiddenData };
             }
             
             const formData = data.formData || data;
@@ -222,7 +227,7 @@ function loadData(event) {
             // Nur Daten in hiddenData speichern, die NICHT in sichtbaren Feldern vorkommen
             Object.keys(formData).forEach(key => {
                 if (!visibleFieldNames.has(key)) {
-                    hiddenData[key] = formData[key];
+                    window.hiddenData[key] = formData[key];
                     console.log(`Feld ${key} als versteckt markiert`);
                 } else {
                     console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
@@ -255,14 +260,14 @@ function loadData(event) {
             }
             
             if (data.settings) {
-                appSettings = { ...appSettings, ...data.settings };
+                window.appSettings = { ...window.appSettings, ...data.settings };
                 loadSettingsToForm();
             }
             
             if (data.selectedPDFs) {
-                selectedPDFs.clear();
+                window.selectedPDFs.clear();
                 data.selectedPDFs.forEach(pdfName => {
-                    selectedPDFs.add(pdfName);
+                    window.selectedPDFs.add(pdfName);
                     const checkbox = document.querySelector(`input[value="${pdfName}"]`);
                     if (checkbox) {
                         checkbox.checked = true;
@@ -298,7 +303,7 @@ function handleUrlParams() {
     
     for (const [key, value] of urlParams) {
         // In hiddenData speichern, falls Feld nicht existiert
-        hiddenData[key] = value;
+        window.hiddenData[key] = value;
         
         const element = document.getElementById(key);
         if (element) {

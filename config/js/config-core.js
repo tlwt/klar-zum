@@ -1,5 +1,5 @@
 // config/js/config-core.js
-// Core Konfiguration Logic
+// Core Konfiguration Logic - Erweitert mit Dropdown-Support
 
 // Config-spezifische globale Variablen
 window.currentPDF = null;
@@ -277,8 +277,8 @@ function saveCurrentProperties() {
         fieldConfig.berechnung = document.getElementById('fieldCalculation').value;
         fieldConfig.group = window.currentGroup;
         
-        // Radio Button Optionen
-        if (fieldConfig.type === 'radio') {
+        // Optionen für Radio Button und Dropdown
+        if (fieldConfig.type === 'radio' || fieldConfig.type === 'select') {
             const optionsText = document.getElementById('fieldOptions').value.trim();
             if (optionsText) {
                 fieldConfig.options = optionsText.split('\n').map(opt => opt.trim()).filter(opt => opt.length > 0);

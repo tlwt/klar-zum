@@ -1,5 +1,5 @@
 // config/js/config-ui.js
-// UI Management für Config Editor
+// UI Management für Config Editor - Erweitert mit Dropdown-Support
 
 function populatePDFSelector() {
     const selector = document.getElementById('pdfSelector');
@@ -184,27 +184,38 @@ function showFieldProperties(fieldName) {
     document.getElementById('fieldCalculation').value = fieldConfig.berechnung || '';
     document.getElementById('fieldHidden').checked = (fieldConfig.hidden_for_pdfs && fieldConfig.hidden_for_pdfs.length > 0) || false;
     
-    // Radio Button Optionen anzeigen/verstecken
+    // Optionen anzeigen/verstecken und Hilfetexte aktualisieren
     const fieldType = fieldConfig.type || 'text';
-    toggleRadioOptions(fieldType);
+    toggleOptionsField(fieldType);
     
-    if (fieldType === 'radio' && fieldConfig.options) {
+    if ((fieldType === 'radio' || fieldType === 'select') && fieldConfig.options) {
         document.getElementById('fieldOptions').value = fieldConfig.options.join('\n');
     } else {
         document.getElementById('fieldOptions').value = '';
     }
 }
 
-function toggleRadioOptions(fieldType) {
+function toggleOptionsField(fieldType) {
     const optionsField = document.getElementById('fieldOptions');
-    const optionsHelp = document.getElementById('radioOptionsHelp');
+    const optionsHelp = document.getElementById('optionsHelp');
+    const optionsLabel = document.querySelector('label[for="fieldOptions"]');
     
-    if (fieldType === 'radio') {
+    if (fieldType === 'radio' || fieldType === 'select') {
         optionsField.style.display = 'block';
         optionsHelp.style.display = 'block';
+        
+        // Label und Hilfetext je nach Typ anpassen
+        if (fieldType === 'radio') {
+            optionsLabel.textContent = 'Radio Button Optionen:';
+            optionsHelp.textContent = 'Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.';
+        } else if (fieldType === 'select') {
+            optionsLabel.textContent = 'Dropdown Optionen:';
+            optionsHelp.textContent = 'Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.';
+        }
     } else {
         optionsField.style.display = 'none';
         optionsHelp.style.display = 'none';
+        optionsLabel.textContent = 'Optionen:';
     }
 }
 
@@ -391,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fieldTitle) fieldTitle.addEventListener('input', saveCurrentProperties);
     if (fieldDescription) fieldDescription.addEventListener('input', saveCurrentProperties);
     if (fieldType) fieldType.addEventListener('change', function() {
-        toggleRadioOptions(this.value);
+        toggleOptionsField(this.value);
         saveCurrentProperties();
     });
     if (fieldMapping) fieldMapping.addEventListener('input', saveCurrentProperties);
