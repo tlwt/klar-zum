@@ -1,5 +1,118 @@
 // js/pdf-handler.js
-// PDF-Verarbeitung und -Verwaltung
+// PDF-Verarbeitung und -Verwaltung - KORRIGIERT
+
+function extractFieldOrderFromYaml(yamlText, pdfName) {
+    // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
+    const lines = yamlText.split('\n');
+    let inFieldsSection = false;
+    const extractedOrder = {};
+    const fieldToGroupMap = {};
+    const fieldOrder = []; // Originale Reihenfolge aller Felder
+    
+    console.log(`=== YAML-PARSING für ${pdfName} ===`);
+    
+    // Erst alle Felder sammeln und deren Gruppen bestimmen
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        if (line.trim() === 'fields:') {
+            inFieldsSection = true;
+            console.log('Fields-Sektion gefunden');
+            continue;
+        }
+        
+        if (inFieldsSection) {
+            // Ende der fields-Sektion erreicht
+            if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+                console.log('Ende der Fields-Sektion erreicht');
+                break;
+            }
+            
+            // Feld-Definition (beginnt mit 2 Leerzeichen, gefolgt von Feldname:)
+            const fieldMatch = line.match(/^  ([^:]+):/);
+            if (fieldMatch) {
+                const fieldName = fieldMatch[1].trim();
+                fieldOrder.push(fieldName); // Originale Reihenfolge speichern
+                console.log(`Feld gefunden: ${fieldName} (Position ${fieldOrder.length})`);
+                
+                let fieldGroup = 'Sonstige'; // Fallback
+                
+                // Suche nach der group-Zeile für dieses Feld
+                for (let j = i + 1; j < lines.length; j++) {
+                    const nextLine = lines[j];
+                    
+                    // Wenn wir das nächste Feld erreichen, stoppe die Suche
+                    if (nextLine.match(/^  [^:]+:/)) {
+                        break;
+                    }
+                    
+                    // Gruppe gefunden
+                    const groupMatch = nextLine.match(/^\s+group:\s*(.+)$/);
+                    if (groupMatch) {
+                        fieldGroup = groupMatch[1].trim();
+                        console.log(`  → Gruppe: ${fieldGroup}`);
+                        break;
+                    }
+                }
+                
+                fieldToGroupMap[fieldName] = fieldGroup;
+            }
+        }
+    }
+    
+    // Jetzt die Felder in der ursprünglichen Reihenfolge zu ihren Gruppen zuordnen
+    fieldOrder.forEach(fieldName => {
+        const groupName = fieldToGroupMap[fieldName] || 'Sonstige';
+        
+        if (!extractedOrder[groupName]) {
+            extractedOrder[groupName] = [];
+        }
+        extractedOrder[groupName].push(fieldName);
+    });
+    
+    // Zusätzlich: Gruppen-Reihenfolge aus groups-Sektion extrahieren
+    const groupOrder = [];
+    let inGroupsSection = false;
+    
+    for (const line of lines) {
+        if (line.trim() === 'groups:') {
+            inGroupsSection = true;
+            continue;
+        }
+        
+        if (inGroupsSection) {
+            if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+                break;
+            }
+            
+            const groupMatch = line.match(/^  ([^:]+):/);
+            if (groupMatch) {
+                const groupName = groupMatch[1].trim();
+                if (!groupOrder.includes(groupName)) {
+                    groupOrder.push(groupName);
+                    console.log(`Gruppe gefunden: ${groupName} (Position ${groupOrder.length})`);
+                }
+            }
+        }
+    }
+    
+    // Speichere beide Ordnungen in globalen Maps
+    if (!window.yamlFieldOrders) {
+        window.yamlFieldOrders = new Map();
+    }
+    if (!window.yamlGroupOrders) {
+        window.yamlGroupOrders = new Map();
+    }
+    
+    window.yamlFieldOrders.set(pdfName, extractedOrder);
+    window.yamlGroupOrders.set(pdfName, groupOrder);
+    
+    console.log(`YAML-Feldreihenfolge für ${pdfName} extrahiert:`, extractedOrder);
+    console.log(`YAML-Gruppenreihenfolge für ${pdfName} extrahiert:`, groupOrder);
+    console.log(`=== ENDE YAML-PARSING ===\n`);
+    
+    return extractedOrder;
+}
 
 async function loadPDFConfigForFile(pdfName) {
     try {
@@ -9,6 +122,10 @@ async function loadPDFConfigForFile(pdfName) {
             const yamlText = await response.text();
             const config = jsyaml.load(yamlText);
             window.pdfConfigs.set(pdfName, config);
+            
+            // Extrahiere Feldreihenfolge aus YAML-Text
+            extractFieldOrderFromYaml(yamlText, pdfName);
+            
             console.log(`Konfiguration für ${pdfName} geladen:`, config);
             return true;
         }
@@ -20,60 +137,69 @@ async function loadPDFConfigForFile(pdfName) {
 }
 
 async function loadPDFsFromDirectory() {
-    const dirResponse = await fetch('./formulare/');
-    if (!dirResponse.ok) {
-        throw new Error('Verzeichnis ./formulare/ nicht erreichbar');
-    }
-    
-    const dirHTML = await dirResponse.text();
-    const pdfNames = extractPDFNamesFromListing(dirHTML);
-    
-    if (pdfNames.length === 0) {
-        throw new Error('Keine PDF-Dateien gefunden');
-    }
-    
-    for (const pdfName of pdfNames) {
-        try {
-            const response = await fetch(`./formulare/${encodeURIComponent(pdfName)}`);
-            if (response.ok) {
-                const arrayBuffer = await response.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
-                
-                // Lade individuelle Konfiguration für dieses PDF
-                const hasConfig = await loadPDFConfigForFile(pdfName);
-                
-                window.availablePDFs.push({
-                    name: pdfName,
-                    path: `./formulare/${pdfName}`,
-                    document: pdfDoc,
-                    fields: fields,
-                    hasConfig: hasConfig
-                });
-                
-                window.pdfFields.set(pdfName, fields);
-            }
-        } catch (error) {
-            console.warn(`Fehler beim Laden von ${pdfName}:`, error);
+    try {
+        // Lade config.yaml für PDF-Liste
+        const configResponse = await fetch('./config.yaml');
+        if (!configResponse.ok) {
+            throw new Error('config.yaml nicht gefunden im Hauptverzeichnis');
         }
-    }
-    
-    if (window.availablePDFs.length === 0) {
-        throw new Error('Keine PDF-Formulare konnten geladen werden');
+        
+        const configText = await configResponse.text();
+        const config = jsyaml.load(configText);
+        
+        if (!config.pdfs || !Array.isArray(config.pdfs)) {
+            throw new Error('Keine PDFs in config.yaml definiert');
+        }
+        
+        console.log(`Lade ${config.pdfs.length} PDFs aus config.yaml`);
+        
+        for (const pdfInfo of config.pdfs) {
+            const pdfName = pdfInfo.name;
+            
+            try {
+                const response = await fetch(`./formulare/${encodeURIComponent(pdfName)}`);
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                    const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
+                    
+                    // Lade individuelle Konfiguration für dieses PDF
+                    const hasConfig = await loadPDFConfigForFile(pdfName);
+                    
+                    window.availablePDFs.push({
+                        name: pdfName,
+                        path: `./formulare/${pdfName}`,
+                        document: pdfDoc,
+                        fields: fields,
+                        hasConfig: hasConfig,
+                        description: pdfInfo.description || '',
+                        category: pdfInfo.category || 'Sonstige'
+                    });
+                    
+                    window.pdfFields.set(pdfName, fields);
+                    console.log(`✓ PDF geladen: ${pdfName}`);
+                } else {
+                    console.warn(`PDF nicht gefunden: ${pdfName}`);
+                }
+            } catch (error) {
+                console.warn(`Fehler beim Laden von ${pdfName}:`, error);
+            }
+        }
+        
+        if (window.availablePDFs.length === 0) {
+            throw new Error('Keine PDF-Formulare konnten geladen werden');
+        }
+        
+        console.log(`Insgesamt ${window.availablePDFs.length} PDFs erfolgreich geladen`);
+        
+    } catch (error) {
+        console.error('Fehler beim Laden der PDF-Konfiguration:', error);
+        throw error;
     }
 }
 
-function extractPDFNamesFromListing(html) {
-    const pdfNames = [];
-    const linkRegex = /<a href="([^"]+\.pdf)"/gi;
-    let match;
-    
-    while ((match = linkRegex.exec(html)) !== null) {
-        pdfNames.push(decodeURIComponent(match[1]));
-    }
-    
-    return pdfNames;
-}
+// Funktion wird nicht mehr benötigt, da config.yaml verwendet wird
+// function extractPDFNamesFromListing(html) { ... }
 
 async function extractFieldsFromPDF(pdfDoc, pdfName) {
     const extractedFields = [];
@@ -181,7 +307,7 @@ async function fillAndDownloadPDF(pdf, data) {
                 }
             }
             
-            if (value) {
+            if (value !== null && value !== undefined) {
                 const fieldConf = pdfConfig.fields?.[fieldName] || {};
                 console.log(`\n--- VERARBEITE FELD: ${fieldName} ---`);
                 console.log(`Wert: "${value}"`);
@@ -195,22 +321,58 @@ async function fillAndDownloadPDF(pdf, data) {
                         
                         // Unterscheide zwischen verschiedenen Feldtypen
                         if (field.constructor.name === 'PDFCheckBox') {
-                            // Checkbox: setze check/uncheck basierend auf Wert
-                            if (value === '1' || value === 'true' || value === true || value === 'on' || value === 'Ja') {
-                                field.check();
-                                console.log(`✓ Checkbox ${fieldName} aktiviert`);
+                            // Checkbox: erweiterte Behandlung
+                            const shouldCheck = value === '1' || value === 'true' || value === true || 
+                                              value === 'on' || value === 'Ja' || value === 'ja' || 
+                                              value === 'YES' || value === 'yes' || value === 'checked';
+                            
+                            if (shouldCheck) {
+                                try {
+                                    field.check();
+                                    console.log(`✓ Checkbox ${fieldName} aktiviert`);
+                                } catch (checkError) {
+                                    console.warn(`Standard check() fehlgeschlagen für ${fieldName}:`, checkError);
+                                }
+                                
+                                // Zusätzliche direkte Wert-Setzung für problematische PDFs
+                                try {
+                                    const acroField = field.acroField;
+                                    if (acroField && acroField.dict) {
+                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
+                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
+                                        console.log(`✓ Zusätzliche acroField-Werte für Checkbox ${fieldName} gesetzt`);
+                                    }
+                                } catch (acroError) {
+                                    console.warn(`Acro-Fallback für Checkbox ${fieldName} fehlgeschlagen:`, acroError);
+                                }
                             } else {
-                                field.uncheck();
-                                console.log(`✓ Checkbox ${fieldName} deaktiviert`);
+                                try {
+                                    field.uncheck();
+                                    console.log(`✓ Checkbox ${fieldName} deaktiviert`);
+                                } catch (uncheckError) {
+                                    console.warn(`Standard uncheck() fehlgeschlagen für ${fieldName}:`, uncheckError);
+                                }
+                                
+                                // Zusätzliche direkte Wert-Setzung für problematische PDFs
+                                try {
+                                    const acroField = field.acroField;
+                                    if (acroField && acroField.dict) {
+                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
+                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
+                                        console.log(`✓ Zusätzliche acroField-Werte für Checkbox ${fieldName} gesetzt (unchecked)`);
+                                    }
+                                } catch (acroError) {
+                                    console.warn(`Acro-Fallback für Checkbox ${fieldName} fehlgeschlagen:`, acroError);
+                                }
                             }
                         } else if (field.constructor.name === 'PDFRadioGroup') {
-                            // Radio Group: verwende erweiterte Behandlung basierend auf test3.html
+                            // Radio Group: verwende erweiterte Behandlung
                             try {
                                 field.select(String(value));
                                 console.log(`Radio Group ${fieldName} auf Wert '${value}' gesetzt`);
                             } catch (radioError) {
                                 console.warn(`Radio Group ${fieldName} Wert '${value}' nicht gefunden:`, radioError);
-                                // Erweiterte Behandlung über AcroField wie in test3.html
+                                // Erweiterte Behandlung über AcroField
                                 try {
                                     const acroField = field.acroField;
                                     if (acroField) {
@@ -241,12 +403,12 @@ async function fillAndDownloadPDF(pdf, data) {
                         filledFields++;
                     }
                 } catch (error) {
-                    // Generische Fallback-Behandlung basierend auf test3.html
-                    console.log(`Feld ${fieldName} mit Standard-Methode nicht gefunden, verwende test3.html Logik...`);
+                    // Generische Fallback-Behandlung für fehlende Felder
+                    console.log(`Feld ${fieldName} mit Standard-Methode nicht gefunden, verwende Fallback-Logik...`);
                     
                     let fieldFound = false;
                     
-                    // test3.html Logik: Durchsuche ALLE Felder im PDF und wende die Methoden an
+                    // Durchsuche ALLE Felder im PDF und wende die Methoden an
                     const allFields = form.getFields();
                     allFields.forEach(testField => {
                         const testFieldName = testField.getName();
@@ -260,7 +422,7 @@ async function fillAndDownloadPDF(pdf, data) {
                             console.log(`Mögliches Feld gefunden: "${testFieldName}" für gesuchtes Feld "${fieldName}"`);
                             
                             try {
-                                // test3.html Methode 1: Checkbox-Behandlung
+                                // Checkbox-Behandlung
                                 if (typeof testField.check === 'function' && typeof testField.uncheck === 'function') {
                                     if (value === 'Ja' || value === 'ja' || value === '1' || value === 'true' || value === true) {
                                         testField.check();
@@ -272,20 +434,29 @@ async function fillAndDownloadPDF(pdf, data) {
                                     fieldFound = true;
                                 }
                                 
-                                // test3.html Methode 2: AcroField direkt setzen
+                                // AcroField direkt setzen
                                 const acroField = testField.acroField;
                                 if (acroField) {
-                                    acroField.V = PDFLib.PDFName.of(String(value));
-                                    console.log(`✓ acroField.V für ${testFieldName} gesetzt auf "${value}"`);
-                                    
-                                    if (acroField.dict) {
-                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
-                                        console.log(`✓ dict.V für ${testFieldName} gesetzt auf "${value}"`);
+                                    if (typeof testField.check === 'function') {
+                                        // Checkbox
+                                        const shouldCheck = value === 'Ja' || value === 'ja' || value === '1' || value === 'true' || value === true;
+                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(shouldCheck ? 'Yes' : 'Off'));
+                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of(shouldCheck ? 'Yes' : 'Off'));
+                                        console.log(`✓ acroField für Checkbox ${testFieldName} gesetzt auf "${shouldCheck ? 'Yes' : 'Off'}"`);
+                                    } else {
+                                        // Anderes Feld
+                                        acroField.V = PDFLib.PDFName.of(String(value));
+                                        console.log(`✓ acroField.V für ${testFieldName} gesetzt auf "${value}"`);
+                                        
+                                        if (acroField.dict) {
+                                            acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
+                                            console.log(`✓ dict.V für ${testFieldName} gesetzt auf "${value}"`);
+                                        }
                                     }
                                     fieldFound = true;
                                 }
                                 
-                                // test3.html Methode 3: setText falls vorhanden
+                                // setText falls vorhanden
                                 if (typeof testField.setText === 'function') {
                                     testField.setText(String(value));
                                     console.log(`✓ setText() für ${testFieldName} ausgeführt mit "${value}"`);
@@ -293,16 +464,16 @@ async function fillAndDownloadPDF(pdf, data) {
                                 }
                                 
                             } catch (e) {
-                                console.warn(`❌ Fehler bei test3.html Methode für ${testFieldName}:`, e.message);
+                                console.warn(`❌ Fehler bei Fallback-Methode für ${testFieldName}:`, e.message);
                             }
                         }
                     });
                     
                     if (fieldFound) {
-                        console.log(`✓ Feld ${fieldName} erfolgreich über test3.html Logik gesetzt`);
+                        console.log(`✓ Feld ${fieldName} erfolgreich über Fallback-Logik gesetzt`);
                         filledFields++;
                     } else {
-                        console.warn(`❌ Feld ${fieldName} konnte auch mit test3.html Logik nicht gesetzt werden`);
+                        console.warn(`❌ Feld ${fieldName} konnte auch mit Fallback-Logik nicht gesetzt werden`);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 // config/js/config-app.js
-// Config App Initialisierung
+// Config App Initialisierung - Aktualisiert für config.yaml
 
 window.addEventListener('load', async function() {
     await initializeConfigApp();
@@ -7,8 +7,8 @@ window.addEventListener('load', async function() {
 
 async function initializeConfigApp() {
     try {
-        // Verwende die geteilten PDF-Handler Funktionen, aber mit angepassten Pfaden
-        await loadPDFsFromDirectoryConfig();
+        // Verwende config.yaml anstatt Verzeichnis-Listing
+        await loadPDFsFromConfig();
         populatePDFSelector();
         
         document.getElementById('loading').style.display = 'none';
@@ -21,40 +21,59 @@ async function initializeConfigApp() {
     }
 }
 
-async function loadPDFsFromDirectoryConfig() {
-    const dirResponse = await fetch('../formulare/');
-    if (!dirResponse.ok) {
-        throw new Error('Verzeichnis ../formulare/ nicht erreichbar');
-    }
-    
-    const dirHTML = await dirResponse.text();
-    const pdfNames = extractPDFNamesFromListing(dirHTML);
-    
-    if (pdfNames.length === 0) {
-        throw new Error('Keine PDF-Dateien gefunden');
-    }
-    
-    for (const pdfName of pdfNames) {
-        try {
-            const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
-            if (response.ok) {
-                const arrayBuffer = await response.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                const fields = await extractFieldsFromPDFConfig(pdfDoc, pdfName);
-                
-                window.availablePDFs.push({
-                    name: pdfName,
-                    path: `../formulare/${pdfName}`,
-                    fields: fields
-                });
-            }
-        } catch (error) {
-            console.warn(`Fehler beim Laden von ${pdfName}:`, error);
+async function loadPDFsFromConfig() {
+    try {
+        // Lade config.yaml für PDF-Liste (aus Hauptverzeichnis)
+        const configResponse = await fetch('../config.yaml');
+        if (!configResponse.ok) {
+            throw new Error('config.yaml nicht gefunden im Hauptverzeichnis');
         }
-    }
-    
-    if (window.availablePDFs.length === 0) {
-        throw new Error('Keine PDF-Formulare konnten geladen werden');
+        
+        const configText = await configResponse.text();
+        const config = jsyaml.load(configText);
+        
+        if (!config.pdfs || !Array.isArray(config.pdfs)) {
+            throw new Error('Keine PDFs in config.yaml definiert');
+        }
+        
+        console.log(`Lade ${config.pdfs.length} PDFs aus config.yaml`);
+        
+        for (const pdfInfo of config.pdfs) {
+            const pdfName = pdfInfo.name;
+            
+            try {
+                const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                    const fields = await extractFieldsFromPDFConfig(pdfDoc, pdfName);
+                    
+                    window.availablePDFs.push({
+                        name: pdfName,
+                        path: `../formulare/${pdfName}`,
+                        fields: fields,
+                        description: pdfInfo.description || '',
+                        category: pdfInfo.category || 'Sonstige'
+                    });
+                    
+                    console.log(`✓ PDF geladen: ${pdfName} (${fields.length} Felder)`);
+                } else {
+                    console.warn(`PDF nicht gefunden: ${pdfName}`);
+                }
+            } catch (error) {
+                console.warn(`Fehler beim Laden von ${pdfName}:`, error);
+            }
+        }
+        
+        if (window.availablePDFs.length === 0) {
+            throw new Error('Keine PDF-Formulare konnten geladen werden');
+        }
+        
+        console.log(`Insgesamt ${window.availablePDFs.length} PDFs erfolgreich geladen`);
+        
+    } catch (error) {
+        console.error('Fehler beim Laden der PDF-Konfiguration:', error);
+        throw error;
     }
 }
 

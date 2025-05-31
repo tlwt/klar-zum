@@ -257,29 +257,43 @@ function organizeFieldsByGroups(activeFields) {
 }
 
 function sortFieldsInGroup(fields, groupName) {
-    // Sammle alle Feld-Reihenfolgen aus den Konfigurationen
+    console.log(`Sortiere Felder für Gruppe: ${groupName}, Felder:`, fields);
+    
+    // Sammle alle Feld-Reihenfolgen aus den YAML-extrahierten Ordnungen
     const fieldOrders = new Map();
     
     window.selectedPDFs.forEach(pdfName => {
-        const config = window.pdfConfigs.get(pdfName) || {};
-        if (config.fields) {
-            const groupFields = [];
-            
-            // Extrahiere Felder für diese Gruppe in der Reihenfolge wie sie in der YAML stehen
-            Object.keys(config.fields).forEach(fieldName => {
-                const fieldConfig = config.fields[fieldName];
-                if (fieldConfig.group === groupName) {
-                    groupFields.push(fieldName);
-                }
-                // Auch gemappte Felder berücksichtigen
-                if (fieldConfig.mapping && fields.includes(fieldConfig.mapping) && fieldConfig.group === groupName) {
-                    if (!groupFields.includes(fieldConfig.mapping)) {
-                        groupFields.push(fieldConfig.mapping);
+        // Verwende die aus YAML extrahierte Reihenfolge
+        if (window.yamlFieldOrders && window.yamlFieldOrders.has(pdfName)) {
+            const yamlOrder = window.yamlFieldOrders.get(pdfName);
+            if (yamlOrder[groupName]) {
+                fieldOrders.set(pdfName, yamlOrder[groupName]);
+                console.log(`YAML-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, yamlOrder[groupName]);
+            }
+        } else {
+            // Fallback: Verwende die Reihenfolge aus der Konfiguration (unzuverlässig)
+            const config = window.pdfConfigs.get(pdfName) || {};
+            if (config.fields) {
+                const groupFields = [];
+                
+                Object.keys(config.fields).forEach(fieldName => {
+                    const fieldConfig = config.fields[fieldName];
+                    if (fieldConfig.group === groupName) {
+                        groupFields.push(fieldName);
                     }
+                    // Auch gemappte Felder berücksichtigen
+                    if (fieldConfig.mapping && fields.includes(fieldConfig.mapping) && fieldConfig.group === groupName) {
+                        if (!groupFields.includes(fieldConfig.mapping)) {
+                            groupFields.push(fieldConfig.mapping);
+                        }
+                    }
+                });
+                
+                if (groupFields.length > 0) {
+                    fieldOrders.set(pdfName + '_fallback', groupFields);
+                    console.log(`Fallback-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, groupFields);
                 }
-            });
-            
-            fieldOrders.set(pdfName, groupFields);
+            }
         }
     });
     
@@ -291,7 +305,15 @@ function sortFieldsInGroup(fields, groupName) {
     // Verwende die erste verfügbare Reihenfolge als Basis
     const allFieldOrders = Array.from(fieldOrders.values());
     if (allFieldOrders.length > 0) {
-        finalFieldOrder = [...allFieldOrders[0]];
+        // Bevorzuge YAML-basierte Reihenfolgen vor Fallback-Reihenfolgen
+        const yamlOrders = Array.from(fieldOrders.entries()).filter(([key, _]) => !key.includes('_fallback'));
+        if (yamlOrders.length > 0) {
+            finalFieldOrder = [...yamlOrders[0][1]];
+            console.log(`Verwende YAML-basierte Reihenfolge von ${yamlOrders[0][0]}`);
+        } else {
+            finalFieldOrder = [...allFieldOrders[0]];
+            console.log(`Verwende Fallback-Reihenfolge`);
+        }
         
         // Ergänze um Felder aus anderen Konfigurationen
         allFieldOrders.forEach(order => {

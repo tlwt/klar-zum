@@ -5,6 +5,7 @@
 window.availablePDFs = [];
 window.pdfFields = new Map();
 window.pdfConfigs = new Map(); // Individuelle Konfigurationen pro PDF
+window.yamlFieldOrders = new Map(); // YAML-Feldreihenfolgen pro PDF
 window.selectedPDFs = new Set();
 window.calculatedFields = new Set(); // Felder mit Berechnungen
 window.hiddenData = {}; // Daten, die nicht in Formularen verwendet werden
