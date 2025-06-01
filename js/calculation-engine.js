@@ -1,11 +1,19 @@
 // js/calculation-engine.js
-// Berechnungslogik für Formularfelder
+// Berechnungslogik für Formularfelder - Erweitert mit Unterschrift-Unterstützung
 
 function addCalculationEventListeners() {
     // Event-Listener für alle Input-Felder hinzufügen
     document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select, #hiddenDataFields input, #hiddenDataFields textarea').forEach(input => {
         input.addEventListener('input', calculateAllFields);
         input.addEventListener('change', calculateAllFields);
+    });
+    
+    // Spezielle Event-Listener für Unterschrift-Felder
+    document.querySelectorAll('.signature-data').forEach(signatureInput => {
+        signatureInput.addEventListener('change', () => {
+            console.log(`Unterschrift-Feld ${signatureInput.id} geändert`);
+            calculateAllFields();
+        });
     });
 }
 
@@ -18,7 +26,10 @@ function calculateAllFields() {
         const calculatedValue = evaluateCalculation(calculation, formData);
         const element = document.getElementById(fieldName);
         if (element && calculatedValue !== null) {
-            element.value = calculatedValue;
+            // Spezielle Behandlung für Unterschrift-Felder (diese sollten nicht überschrieben werden)
+            if (!element.classList.contains('signature-data')) {
+                element.value = calculatedValue;
+            }
         }
     });
 }
@@ -33,7 +44,14 @@ function evaluateCalculation(calculation, formData) {
         if (fieldMatches) {
             fieldMatches.forEach(match => {
                 const fieldName = match.slice(1, -1); // Entferne { und }
-                const fieldValue = formData[fieldName] || '';
+                let fieldValue = formData[fieldName] || '';
+                
+                // Spezielle Behandlung für Unterschrift-Felder
+                if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
+                    fieldValue && fieldValue.startsWith('data:image/')) {
+                    fieldValue = '[Unterschrift vorhanden]';
+                }
+                
                 expression = expression.replace(match, `"${fieldValue}"`);
             });
         }

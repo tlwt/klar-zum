@@ -1,5 +1,5 @@
 // js/form-generator.js
-// Formular-Generierung und -Verwaltung - Erweitert mit Dropdown-Support
+// Formular-Generierung und -Verwaltung - Erweitert mit Dropdown- und Unterschrift-Support
 
 function generateFormForSelectedPDFs() {
     const container = document.getElementById('formSections');
@@ -133,6 +133,9 @@ function generateFormForSelectedPDFs() {
     setTimeout(() => {
         addCalculationEventListeners();
         calculateAllFields();
+        
+        // Unterschrift-Felder initialisieren
+        initializeAllSignatureFields();
     }, 100);
     
     console.log('=== DEBUGGING ENDE ===\n');
@@ -191,7 +194,7 @@ function organizeFieldsByGroups(activeFields) {
     }
     
     // Fallback auf Standard-Reihenfolge
-    const defaultOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Einverständnis', 'Sonstige'];
+    const defaultOrder = ['Persönliche Daten', 'Kontaktdaten', 'Unternehmen', 'Zeiträume', 'Einverständnis', 'Unterschrift', 'Sonstige'];
     defaultOrder.forEach(groupName => {
         if (!finalGroupOrder.includes(groupName)) {
             finalGroupOrder.push(groupName);
@@ -354,6 +357,8 @@ function generateFormField(fieldName) {
         type = 'email';
     } else if (fieldName.toLowerCase().includes('telefon') || fieldName.toLowerCase().includes('phone')) {
         type = 'tel';
+    } else if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
+        type = 'signature';
     }
     
     // Suche in allen ausgewählten PDF-Konfigurationen für erweiterte Konfiguration
@@ -386,6 +391,46 @@ function generateFormField(fieldName) {
     const calculatedClass = isCalculated ? 'calculated-field' : '';
     const calculatedBadge = isCalculated ? '<span class="calculated-badge">🧮 Berechnet</span>' : '';
     const readonlyAttr = isCalculated ? 'readonly' : '';
+    
+    // Spezielle Behandlung für Unterschrift
+    if (type === 'signature') {
+        return `
+            <div class="form-group signature-field">
+                <label>${title}${calculatedBadge}</label>
+                ${description ? `<div class="field-description">${description}</div>` : ''}
+                
+                <div class="signature-mode-tabs">
+                    <button type="button" class="signature-tab active" onclick="switchSignatureMode('draw', '${fieldName}')">✏️ Zeichnen</button>
+                    <button type="button" class="signature-tab" onclick="switchSignatureMode('upload', '${fieldName}')">📁 Hochladen</button>
+                </div>
+                
+                <div id="signature-draw-${fieldName}" class="signature-content active">
+                    <div class="signature-preview">
+                        <canvas id="signature-canvas-${fieldName}" class="signature-canvas" width="400" height="150"></canvas>
+                    </div>
+                    <div class="signature-controls">
+                        <button type="button" onclick="clearSignature('${fieldName}')">🗑️ Löschen</button>
+                        <button type="button" onclick="undoSignature('${fieldName}')">↶ Rückgängig</button>
+                    </div>
+                </div>
+                
+                <div id="signature-upload-${fieldName}" class="signature-content">
+                    <div class="signature-preview" id="signature-preview-${fieldName}">
+                        <div class="signature-placeholder">Klicken Sie hier oder ziehen Sie ein Bild hinein</div>
+                    </div>
+                    <div class="signature-controls">
+                        <label for="signature-file-${fieldName}" style="margin: 0;">
+                            <button type="button">📁 Datei auswählen</button>
+                        </label>
+                        <input type="file" id="signature-file-${fieldName}" accept="image/*" onchange="uploadSignature('${fieldName}', this)">
+                        <button type="button" onclick="clearSignature('${fieldName}')">🗑️ Löschen</button>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="${fieldName}" name="${fieldName}" value="" class="signature-data">
+            </div>
+        `;
+    }
     
     // Spezielle Behandlung für Checkboxen
     if (type === 'checkbox') {
@@ -458,4 +503,303 @@ function generateFormField(fieldName) {
             <input type="${type}" id="${fieldName}" name="${fieldName}" class="${calculatedClass}" ${readonlyAttr}>
         </div>
     `;
+}
+
+// Unterschrift-Verwaltung
+function initializeAllSignatureFields() {
+    document.querySelectorAll('.signature-field').forEach(field => {
+        const hiddenInput = field.querySelector('.signature-data');
+        if (hiddenInput) {
+            const fieldId = hiddenInput.id;
+            initializeSignature(fieldId);
+        }
+    });
+}
+
+function initializeSignature(fieldId) {
+    if (!window.signatures) {
+        window.signatures = new Map();
+    }
+    
+    if (!window.signatures.has(fieldId)) {
+        window.signatures.set(fieldId, new SignatureManager(fieldId));
+    }
+    
+    // Drag & Drop für Upload-Bereich
+    const preview = document.getElementById(`signature-preview-${fieldId}`);
+    if (preview) {
+        preview.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            preview.style.borderColor = '#5a7c47';
+            preview.style.backgroundColor = '#f0f8ff';
+        });
+        
+        preview.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            preview.style.borderColor = '#ccc';
+            preview.style.backgroundColor = 'white';
+        });
+        
+        preview.addEventListener('drop', (e) => {
+            e.preventDefault();
+            preview.style.borderColor = '#ccc';
+            preview.style.backgroundColor = 'white';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const input = document.getElementById(`signature-file-${fieldId}`);
+                input.files = files;
+                uploadSignature(fieldId, input);
+            }
+        });
+        
+        preview.addEventListener('click', () => {
+            const activeMode = document.querySelector(`#signature-upload-${fieldId}.active`);
+            if (activeMode) {
+                document.getElementById(`signature-file-${fieldId}`).click();
+            }
+        });
+    }
+}
+
+// Globale Unterschrift-Funktionen
+window.switchSignatureMode = function(mode, fieldId) {
+    // Tab-Aktivierung
+    document.querySelectorAll(`#signature-draw-${fieldId}, #signature-upload-${fieldId}`).forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    document.querySelectorAll(`[onclick*="switchSignatureMode"][onclick*="${fieldId}"]`).forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.getElementById(`signature-${mode}-${fieldId}`).classList.add('active');
+    event.target.classList.add('active');
+};
+
+window.clearSignature = function(fieldId) {
+    // Canvas löschen
+    if (window.signatures && window.signatures.has(fieldId)) {
+        window.signatures.get(fieldId).clear();
+    }
+    
+    // Upload-Preview löschen
+    const preview = document.getElementById(`signature-preview-${fieldId}`);
+    if (preview) {
+        preview.innerHTML = '<div class="signature-placeholder">Klicken Sie hier oder ziehen Sie ein Bild hinein</div>';
+        preview.classList.remove('has-signature');
+    }
+    
+    // Hidden input löschen
+    const hiddenInput = document.getElementById(fieldId);
+    if (hiddenInput) {
+        hiddenInput.value = '';
+        hiddenInput.dispatchEvent(new Event('change'));
+    }
+};
+
+window.undoSignature = function(fieldId) {
+    if (window.signatures && window.signatures.has(fieldId)) {
+        window.signatures.get(fieldId).undo();
+    }
+};
+
+window.uploadSignature = function(fieldId, input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Bitte wählen Sie eine Bilddatei aus.');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        
+        // Preview aktualisieren
+        const preview = document.getElementById(`signature-preview-${fieldId}`);
+        if (preview) {
+            preview.innerHTML = `<img src="${dataUrl}" alt="Unterschrift">`;
+            preview.classList.add('has-signature');
+        }
+        
+        // Hidden input aktualisieren
+        const hiddenInput = document.getElementById(fieldId);
+        if (hiddenInput) {
+            hiddenInput.value = dataUrl;
+            hiddenInput.dispatchEvent(new Event('change'));
+        }
+        
+        // Canvas aktualisieren (falls im Draw-Modus)
+        if (window.signatures && window.signatures.has(fieldId)) {
+            window.signatures.get(fieldId).setImageData(dataUrl);
+        }
+    };
+    reader.readAsDataURL(file);
+};
+
+// SignatureManager Klasse
+class SignatureManager {
+    constructor(fieldId) {
+        this.fieldId = fieldId;
+        this.canvas = document.getElementById(`signature-canvas-${fieldId}`);
+        this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+        this.isDrawing = false;
+        this.paths = [];
+        this.currentPath = [];
+        
+        if (this.canvas) {
+            this.setupCanvas();
+        }
+    }
+    
+    setupCanvas() {
+        const scale = window.devicePixelRatio || 1;
+        
+        this.canvas.width = 400 * scale;
+        this.canvas.height = 150 * scale;
+        this.canvas.style.width = '400px';
+        this.canvas.style.height = '150px';
+        
+        this.ctx.scale(scale, scale);
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        
+        // Event Listeners
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+        
+        // Touch Events
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.canvas.dispatchEvent(mouseEvent);
+        });
+    }
+    
+    getCanvasPosition(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    startDrawing(e) {
+        this.isDrawing = true;
+        const pos = this.getCanvasPosition(e);
+        this.currentPath = [pos];
+        this.ctx.beginPath();
+        this.ctx.moveTo(pos.x, pos.y);
+    }
+    
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const pos = this.getCanvasPosition(e);
+        this.currentPath.push(pos);
+        this.ctx.lineTo(pos.x, pos.y);
+        this.ctx.stroke();
+    }
+    
+    stopDrawing() {
+        if (!this.isDrawing) return;
+        this.isDrawing = false;
+        
+        if (this.currentPath.length > 1) {
+            this.paths.push([...this.currentPath]);
+            this.updateSignatureData();
+        }
+        this.currentPath = [];
+    }
+    
+    clear() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.paths = [];
+        this.updateSignatureData();
+    }
+    
+    undo() {
+        if (this.paths.length > 0) {
+            this.paths.pop();
+            this.redrawCanvas();
+            this.updateSignatureData();
+        }
+    }
+    
+    redrawCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.paths.forEach(path => {
+            if (path.length > 1) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(path[0].x, path[0].y);
+                for (let i = 1; i < path.length; i++) {
+                    this.ctx.lineTo(path[i].x, path[i].y);
+                }
+                this.ctx.stroke();
+            }
+        });
+    }
+    
+    updateSignatureData() {
+        const dataUrl = this.canvas.toDataURL('image/png');
+        const hiddenInput = document.getElementById(this.fieldId);
+        if (hiddenInput) {
+            hiddenInput.value = dataUrl;
+            hiddenInput.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    setImageData(dataUrl) {
+        const img = new Image();
+        img.onload = () => {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Bild proportional einpassen
+            const canvasRatio = this.canvas.width / this.canvas.height;
+            const imgRatio = img.width / img.height;
+            
+            let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+            
+            if (imgRatio > canvasRatio) {
+                drawWidth = this.canvas.width;
+                drawHeight = drawWidth / imgRatio;
+                offsetY = (this.canvas.height - drawHeight) / 2;
+            } else {
+                drawHeight = this.canvas.height;
+                drawWidth = drawHeight * imgRatio;
+                offsetX = (this.canvas.width - drawWidth) / 2;
+            }
+            
+            this.ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+            this.updateSignatureData();
+        };
+        img.src = dataUrl;
+    }
 }

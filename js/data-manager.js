@@ -1,5 +1,5 @@
 // js/data-manager.js
-// Datenverwaltung und Import/Export
+// Datenverwaltung und Import/Export - Erweitert mit Unterschrift-Unterstützung
 
 function getAllFormData() {
     const formData = {};
@@ -27,6 +27,15 @@ function getAllFormData() {
             formData[select.name] = select.value;
         });
         
+        // Unterschrift-Felder separat behandeln (versteckte Inputs mit Base64-Daten)
+        form.querySelectorAll('input.signature-data').forEach(signatureInput => {
+            const fieldName = signatureInput.name || signatureInput.id;
+            if (fieldName && signatureInput.value) {
+                formData[fieldName] = signatureInput.value;
+                console.log(`Unterschrift-Feld ${fieldName} erfasst: ${signatureInput.value.substring(0, 50)}...`);
+            }
+        });
+        
         // Alle Input-Felder direkt auslesen (für den Fall, dass FormData nicht alles erfasst)
         form.querySelectorAll('input, textarea, select').forEach(input => {
             if (input.name || input.id) {
@@ -35,6 +44,11 @@ function getAllFormData() {
                     formData[fieldName] = input.checked ? input.value : '';
                 } else if (input.type === 'radio') {
                     if (input.checked) {
+                        formData[fieldName] = input.value;
+                    }
+                } else if (input.classList.contains('signature-data')) {
+                    // Unterschrift-Daten nur übernehmen wenn sie existieren
+                    if (input.value && input.value.startsWith('data:image/')) {
                         formData[fieldName] = input.value;
                     }
                 } else {
@@ -85,6 +99,10 @@ function restoreFormData(data) {
                 element.checked = data[key] === '1' || data[key] === 'true' || data[key] === true;
             } else if (element.type === 'radio') {
                 element.checked = element.value === data[key];
+            } else if (element.classList.contains('signature-data')) {
+                // Unterschrift-Daten wiederherstellen
+                element.value = data[key];
+                restoreSignatureDisplay(key, data[key]);
             } else {
                 element.value = data[key];
             }
@@ -98,6 +116,28 @@ function restoreFormData(data) {
             }
         }
     });
+}
+
+function restoreSignatureDisplay(fieldId, base64Data) {
+    if (!base64Data || !base64Data.startsWith('data:image/')) {
+        return;
+    }
+    
+    console.log(`Stelle Unterschrift für Feld ${fieldId} wieder her`);
+    
+    // Canvas wiederherstellen (falls im Zeichnen-Modus)
+    if (window.signatures && window.signatures.has(fieldId)) {
+        window.signatures.get(fieldId).setImageData(base64Data);
+    }
+    
+    // Upload-Preview wiederherstellen
+    const preview = document.getElementById(`signature-preview-${fieldId}`);
+    if (preview) {
+        preview.innerHTML = `<img src="${base64Data}" alt="Unterschrift">`;
+        preview.classList.add('has-signature');
+    }
+    
+    console.log(`✓ Unterschrift für ${fieldId} wiederhergestellt`);
 }
 
 function updateHiddenDataSection() {
@@ -126,10 +166,24 @@ function updateHiddenDataSection() {
         const value = window.hiddenData[key];
         const div = document.createElement('div');
         div.className = 'form-group';
-        div.innerHTML = `
-            <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
-            <input type="text" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
-        `;
+        
+        // Spezielle Behandlung für Unterschrift-Daten
+        if ((key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')) && 
+            value && value.startsWith('data:image/')) {
+            div.innerHTML = `
+                <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
+                <div class="signature-preview has-signature" style="max-width: 200px; height: 60px; margin: 5px 0;">
+                    <img src="${value}" alt="Unterschrift" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+                <input type="hidden" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
+            `;
+        } else {
+            div.innerHTML = `
+                <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
+                <input type="text" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
+            `;
+        }
+        
         hiddenDataFields.appendChild(div);
         count++;
     });
@@ -181,16 +235,19 @@ function saveData() {
     
     Object.keys(data).forEach(fieldName => {
         const regex = new RegExp(`\\[${fieldName}\\]`, 'g');
-        fileName = fileName.replace(regex, data[fieldName] || '');
+        // Unterschrift-Daten nicht in Dateinamen verwenden
+        if (!(fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature'))) {
+            fileName = fileName.replace(regex, data[fieldName] || '');
+        } else {
+            fileName = fileName.replace(regex, '');
+        }
     });
     
     fileName = fileName.replace(/[^a-zA-Z0-9äöüÄÖÜß\s,.-]/g, '_');
     fileName = fileName.replace(/\s+/g, ' ').trim();
     
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = fileName + '.json';
-    link.click();
+    // Verwende FileSaver.js
+    saveAs(dataBlob, fileName + '.json');
     
     showStatus('Daten erfolgreich gespeichert!');
 }
@@ -243,6 +300,10 @@ function loadData(event) {
                         element.checked = value === '1' || value === 'true' || value === true;
                     } else if (element.type === 'radio') {
                         element.checked = element.value === value;
+                    } else if (element.classList.contains('signature-data')) {
+                        // Unterschrift-Daten wiederherstellen
+                        element.value = value;
+                        restoreSignatureDisplay(key, value);
                     } else {
                         element.value = value;
                     }
@@ -283,6 +344,9 @@ function loadData(event) {
                 updateHiddenDataSection();
                 addCalculationEventListeners();
                 calculateAllFields();
+                
+                // Unterschrift-Felder neu initialisieren
+                initializeAllSignatureFields();
             }, 100);
             
             showStatus('Daten erfolgreich geladen!');

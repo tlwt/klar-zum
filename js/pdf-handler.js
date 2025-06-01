@@ -1,5 +1,5 @@
 // js/pdf-handler.js
-// PDF-Verarbeitung und -Verwaltung - Vereinfachte Setzlogik basierend auf Demo
+// PDF-Verarbeitung und -Verwaltung - Vereinfachte Setzlogik mit Unterschrift-Support
 
 function extractFieldOrderFromYaml(yamlText, pdfName) {
     // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
@@ -243,9 +243,19 @@ async function extractFieldsFromPDF(pdfDoc, pdfName) {
 }
 
 // VEREINFACHTE SETZLOGIK basierend auf dem Demo-Skript
-function setFieldValue(field, value, fieldName) {
+async function setFieldValue(field, value, fieldName, pdfDoc) {
     try {
         console.log(`Setze Feld ${fieldName} (${field.constructor.name}) auf Wert: "${value}"`);
+        
+        // Spezielle Behandlung für Unterschrift (Base64-Bilder)
+        if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
+            if (value && value.startsWith('data:image/')) {
+                return await embedSignatureInPDF(pdfDoc, fieldName, value);
+            } else {
+                console.log(`Unterschrift-Feld ${fieldName} hat keine gültigen Bilddaten`);
+                return false;
+            }
+        }
         
         if (field instanceof PDFLib.PDFTextField) {
             field.setText(String(value));
@@ -334,6 +344,93 @@ function setFieldValue(field, value, fieldName) {
     }
 }
 
+// Neue Funktion zum Einbetten von Unterschriften in PDFs
+async function embedSignatureInPDF(pdfDoc, fieldName, base64Data) {
+    try {
+        console.log(`Versuche Unterschrift für Feld ${fieldName} einzubetten...`);
+        
+        // Base64-Daten zu Bytes konvertieren
+        const base64String = base64Data.split(',')[1];
+        const imageBytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0));
+        
+        // Bild in PDF einbetten
+        let embeddedImage;
+        if (base64Data.includes('data:image/png')) {
+            embeddedImage = await pdfDoc.embedPng(imageBytes);
+        } else if (base64Data.includes('data:image/jpeg') || base64Data.includes('data:image/jpg')) {
+            embeddedImage = await pdfDoc.embedJpg(imageBytes);
+        } else {
+            console.warn(`Unbekanntes Bildformat für Unterschrift ${fieldName}`);
+            return false;
+        }
+        
+        // Versuche Unterschrift-Position zu finden
+        const pages = pdfDoc.getPages();
+        let positionFound = false;
+        
+        // Standardposition definieren (falls keine spezifische Position gefunden wird)
+        const defaultPosition = {
+            page: pages[pages.length - 1], // Letzte Seite
+            x: 50,
+            y: 100,
+            width: 200,
+            height: 60
+        };
+        
+        // Versuche Position über Feldname zu bestimmen
+        for (const page of pages) {
+            // Hier könnten wir in Zukunft spezifische Koordinaten aus Konfiguration laden
+            // Für jetzt verwenden wir eine intelligente Standardpositionierung
+            
+            if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
+                const { width: pageWidth, height: pageHeight } = page.getSize();
+                
+                // Position am unteren rechten Bereich der Seite
+                const signatureWidth = Math.min(200, pageWidth * 0.3);
+                const signatureHeight = signatureWidth * 0.3; // 3:1 Verhältnis
+                
+                const position = {
+                    page: page,
+                    x: pageWidth - signatureWidth - 50,
+                    y: 80,
+                    width: signatureWidth,
+                    height: signatureHeight
+                };
+                
+                // Bild auf der Seite platzieren
+                position.page.drawImage(embeddedImage, {
+                    x: position.x,
+                    y: position.y,
+                    width: position.width,
+                    height: position.height
+                });
+                
+                console.log(`✓ Unterschrift ${fieldName} erfolgreich platziert auf Seite ${pages.indexOf(page) + 1}`);
+                positionFound = true;
+                break;
+            }
+        }
+        
+        // Fallback: Standardposition verwenden
+        if (!positionFound) {
+            defaultPosition.page.drawImage(embeddedImage, {
+                x: defaultPosition.x,
+                y: defaultPosition.y,
+                width: defaultPosition.width,
+                height: defaultPosition.height
+            });
+            
+            console.log(`✓ Unterschrift ${fieldName} erfolgreich an Standardposition platziert`);
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error(`Fehler beim Einbetten der Unterschrift ${fieldName}:`, error);
+        return false;
+    }
+}
+
 async function fillAndDownloadPDF(pdf, data) {
     try {
         const pdfBytes = await pdf.document.save();
@@ -367,7 +464,7 @@ async function fillAndDownloadPDF(pdf, data) {
         console.log('=== ENDE FELDANALYSE ===\n');
         
         // Hauptlogik: Iteriere über alle PDF-Felder und versuche sie zu setzen
-        pdf.fields.forEach(fieldName => {
+        for (const fieldName of pdf.fields) {
             let value = null;
             
             // Prüfe direkte Übereinstimmung
@@ -388,22 +485,48 @@ async function fillAndDownloadPDF(pdf, data) {
                 try {
                     const field = form.getField(fieldName);
                     if (field) {
-                        // NEUE VEREINFACHTE SETZLOGIK aus dem Demo
-                        const success = setFieldValue(field, value, fieldName);
+                        // NEUE VEREINFACHTE SETZLOGIK aus dem Demo (mit pdfDoc Parameter)
+                        const success = await setFieldValue(field, value, fieldName, pdfDoc);
                         if (success) {
                             filledFields++;
                         }
                     } else {
                         console.warn(`Feld ${fieldName} nicht im PDF gefunden`);
+                        
+                        // Spezielle Behandlung für Unterschrift-Felder ohne Formularfeld
+                        if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
+                            if (value && value.startsWith('data:image/')) {
+                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value);
+                                if (success) {
+                                    filledFields++;
+                                    console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt`);
+                                }
+                            }
+                        }
                     }
                 } catch (error) {
                     console.warn(`Fehler beim Zugriff auf Feld ${fieldName}:`, error);
+                    
+                    // Spezielle Behandlung für Unterschrift-Felder bei Fehlern
+                    if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
+                        if (value && value.startsWith('data:image/')) {
+                            try {
+                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value);
+                                if (success) {
+                                    filledFields++;
+                                    console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt (Fallback)`);
+                                }
+                            } catch (signatureError) {
+                                console.warn(`Fehler beim Einbetten der Unterschrift ${fieldName}:`, signatureError);
+                            }
+                        }
+                    }
                 }
             }
-        });
+        }
         
         // Versuche auch direkte Feldsuche für bessere Abdeckung
-        allFields.forEach(field => {
+        for (const field of allFields) {
             const fieldName = field.getName();
             if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
                 const value = formData[fieldName];
@@ -412,11 +535,86 @@ async function fillAndDownloadPDF(pdf, data) {
                 
                 // Überspringe wenn bereits verarbeitet
                 if (!pdf.fields.includes(fieldName)) {
-                    const success = setFieldValue(field, value, fieldName);
+                    const success = await setFieldValue(field, value, fieldName, pdfDoc);
                     if (success) {
                         filledFields++;
                     }
                 }
+            }
+        }
+        
+        // Behandle auch Unterschrift-Felder die nicht als PDF-Formularfelder existieren
+        console.log('\n=== UNTERSCHRIFT-BEHANDLUNG ===');
+        for (const [fieldName, fieldValue] of Object.entries(formData)) {
+            if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
+                fieldValue && fieldValue.startsWith('data:image/')) {
+                
+                console.log(`Verarbeite Unterschrift-Feld: ${fieldName}`);
+                
+                // Prüfe ob bereits als Formularfeld verarbeitet
+                let alreadyProcessed = false;
+                try {
+                    const field = form.getField(fieldName);
+                    if (field) {
+                        alreadyProcessed = true;
+                        console.log(`Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
+                    }
+                } catch (e) {
+                    // Feld existiert nicht als Formularfeld - das ist ok
+                }
+                
+                if (!alreadyProcessed) {
+                    try {
+                        const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue);
+                        if (success) {
+                            filledFields++;
+                            console.log(`✓ Unterschrift ${fieldName} als separates Bild eingefügt`);
+                        }
+                    } catch (signatureError) {
+                        console.warn(`Fehler beim Einbetten der separaten Unterschrift ${fieldName}:`, signatureError);
+                    }
+                }
+            }
+        }
+        
+        // GENERISCHER FALLBACK aus dem Demo (für unerkannte Felder)
+        console.log('\n=== GENERISCHER FALLBACK (wie Demo) ===');
+        allFields.forEach(field => {
+            const fieldName = field.getName();
+            
+            // Überspringe bereits verarbeitete Felder
+            if (pdf.fields.includes(fieldName)) return;
+            if (formData[fieldName] && formData[fieldName].toString().trim() !== '') return;
+            
+            try {
+                if (field instanceof PDFLib.PDFTextField) {
+                    field.setText('Beispiel');
+                    console.log(`✓ Fallback TextField ${fieldName} auf "Beispiel" gesetzt`);
+                } else if (field instanceof PDFLib.PDFCheckBox) {
+                    field.check();
+                    console.log(`✓ Fallback CheckBox ${fieldName} aktiviert`);
+                } else if (field instanceof PDFLib.PDFRadioGroup) {
+                    const options = field.getOptions();
+                    if (options.length > 0) {
+                        field.select(options[0]);
+                        console.log(`✓ Fallback RadioGroup ${fieldName} auf ersten Wert gesetzt`);
+                    }
+                } else if (field instanceof PDFLib.PDFDropdown) {
+                    const options = field.getOptions();
+                    const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
+                    if (target) {
+                        field.select(target);
+                        console.log(`✓ Fallback Dropdown ${fieldName} auf "${target}" gesetzt`);
+                    }
+                } else if (field instanceof PDFLib.PDFOptionList) {
+                    const options = field.getOptions();
+                    if (options.length > 0) {
+                        field.select(options[0]);
+                        console.log(`✓ Fallback OptionList ${fieldName} auf ersten Wert gesetzt`);
+                    }
+                }
+            } catch (fallbackError) {
+                // Stille Ignorierung von Fallback-Fehlern
             }
         });
         
@@ -432,15 +630,10 @@ async function fillAndDownloadPDF(pdf, data) {
             useObjectStreams: false
         });
         
-        const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        
+        // Verwende FileSaver.js wie im Demo
         const customFileName = generateFileName(pdf.name, data);
-        link.download = customFileName;
-        link.click();
-        
-        URL.revokeObjectURL(link.href);
+        const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+        saveAs(blob, customFileName);
         
         console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name}`);
         
