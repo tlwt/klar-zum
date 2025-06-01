@@ -1,5 +1,5 @@
 // js/pdf-handler.js
-// PDF-Verarbeitung und -Verwaltung - Aktualisiert für config.yaml
+// PDF-Verarbeitung und -Verwaltung - Vereinfachte Setzlogik basierend auf Demo
 
 function extractFieldOrderFromYaml(yamlText, pdfName) {
     // Extrahiere die Feldreihenfolge aus dem ursprünglichen YAML-Text
@@ -242,27 +242,103 @@ async function extractFieldsFromPDF(pdfDoc, pdfName) {
     return [...new Set(extractedFields)];
 }
 
+// VEREINFACHTE SETZLOGIK basierend auf dem Demo-Skript
+function setFieldValue(field, value, fieldName) {
+    try {
+        console.log(`Setze Feld ${fieldName} (${field.constructor.name}) auf Wert: "${value}"`);
+        
+        if (field instanceof PDFLib.PDFTextField) {
+            field.setText(String(value));
+            console.log(`✓ TextField ${fieldName} gesetzt`);
+            return true;
+        } 
+        else if (field instanceof PDFLib.PDFCheckBox) {
+            const shouldCheck = value === '1' || value === 'true' || value === true || 
+                               value === 'on' || value === 'Ja' || value === 'ja' || 
+                               value === 'YES' || value === 'yes' || value === 'checked';
+            
+            if (shouldCheck) {
+                field.check();
+                console.log(`✓ CheckBox ${fieldName} aktiviert`);
+            } else {
+                field.uncheck();
+                console.log(`✓ CheckBox ${fieldName} deaktiviert`);
+            }
+            return true;
+        } 
+        else if (field instanceof PDFLib.PDFRadioGroup) {
+            const options = field.getOptions();
+            const valueStr = String(value);
+            
+            // Versuche zuerst exakte Übereinstimmung
+            if (options.includes(valueStr)) {
+                field.select(valueStr);
+                console.log(`✓ RadioGroup ${fieldName} auf "${valueStr}" gesetzt`);
+                return true;
+            }
+            
+            // Versuche fallback auf ersten Wert wenn verfügbar
+            if (options.length > 0) {
+                field.select(options[0]);
+                console.log(`✓ RadioGroup ${fieldName} auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
+                return true;
+            }
+            
+            console.warn(`RadioGroup ${fieldName}: Keine passenden Optionen gefunden`);
+            return false;
+        } 
+        else if (field instanceof PDFLib.PDFDropdown) {
+            const options = field.getOptions();
+            const valueStr = String(value);
+            
+            // Versuche zuerst exakte Übereinstimmung
+            if (options.includes(valueStr)) {
+                field.select(valueStr);
+                console.log(`✓ Dropdown ${fieldName} auf "${valueStr}" gesetzt`);
+                return true;
+            }
+            
+            // Spezielle Logik für Übung/Uebung aus dem Demo
+            const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
+            if (target) {
+                field.select(target);
+                console.log(`✓ Dropdown ${fieldName} auf "${target}" gesetzt (Fallback)`);
+                return true;
+            }
+            
+            console.warn(`Dropdown ${fieldName}: Keine passenden Optionen gefunden`);
+            return false;
+        } 
+        else if (field instanceof PDFLib.PDFOptionList) {
+            const options = field.getOptions();
+            if (options.length > 0) {
+                field.select(options[0]);
+                console.log(`✓ OptionList ${fieldName} auf ersten Wert gesetzt`);
+                return true;
+            }
+            return false;
+        } 
+        else {
+            console.warn(`Unbekannter Feldtyp für ${fieldName}: ${field.constructor.name}`);
+            // Fallback: Versuche setText wenn verfügbar
+            if (typeof field.setText === 'function') {
+                field.setText(String(value));
+                console.log(`✓ Unbekannter Typ ${fieldName} mit setText gesetzt`);
+                return true;
+            }
+            return false;
+        }
+    } catch (error) {
+        console.warn(`Fehler beim Setzen von Feld ${fieldName}:`, error);
+        return false;
+    }
+}
+
 async function fillAndDownloadPDF(pdf, data) {
     try {
         const pdfBytes = await pdf.document.save();
         const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
         const form = pdfDoc.getForm();
-        
-        const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-        
-        try {
-            const acroForm = pdfDoc.catalog.getOrCreateAcroForm();
-            acroForm.dict.set(
-                PDFLib.PDFName.of('DR'),
-                pdfDoc.context.obj({ 
-                    Font: pdfDoc.context.obj({ 
-                        Helv: helveticaFont.ref 
-                    }) 
-                })
-            );
-        } catch (error) {
-            console.warn('Fehler beim Setzen der Default Resources:', error);
-        }
         
         let filledFields = 0;
         const formData = getAllFormData();
@@ -290,6 +366,7 @@ async function fillAndDownloadPDF(pdf, data) {
         });
         console.log('=== ENDE FELDANALYSE ===\n');
         
+        // Hauptlogik: Iteriere über alle PDF-Felder und versuche sie zu setzen
         pdf.fields.forEach(fieldName => {
             let value = null;
             
@@ -305,193 +382,50 @@ async function fillAndDownloadPDF(pdf, data) {
             }
             
             if (value !== null && value !== undefined) {
-                const fieldConf = pdfConfig.fields?.[fieldName] || {};
                 console.log(`\n--- VERARBEITE FELD: ${fieldName} ---`);
                 console.log(`Wert: "${value}"`);
-                console.log(`PDF-Config für Feld:`, fieldConf);
                 
                 try {
                     const field = form.getField(fieldName);
                     if (field) {
-                        const fieldType = field.constructor.name;
-                        console.log(`Feld gefunden: ${fieldName} (${fieldType})`);
-                        
-                        // Unterscheide zwischen verschiedenen Feldtypen
-                        if (field.constructor.name === 'PDFCheckBox') {
-                            // Checkbox: erweiterte Behandlung
-                            const shouldCheck = value === '1' || value === 'true' || value === true || 
-                                              value === 'on' || value === 'Ja' || value === 'ja' || 
-                                              value === 'YES' || value === 'yes' || value === 'checked';
-                            
-                            if (shouldCheck) {
-                                try {
-                                    field.check();
-                                    console.log(`✓ Checkbox ${fieldName} aktiviert`);
-                                } catch (checkError) {
-                                    console.warn(`Standard check() fehlgeschlagen für ${fieldName}:`, checkError);
-                                }
-                                
-                                // Zusätzliche direkte Wert-Setzung für problematische PDFs
-                                try {
-                                    const acroField = field.acroField;
-                                    if (acroField && acroField.dict) {
-                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Yes'));
-                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Yes'));
-                                        console.log(`✓ Zusätzliche acroField-Werte für Checkbox ${fieldName} gesetzt`);
-                                    }
-                                } catch (acroError) {
-                                    console.warn(`Acro-Fallback für Checkbox ${fieldName} fehlgeschlagen:`, acroError);
-                                }
-                            } else {
-                                try {
-                                    field.uncheck();
-                                    console.log(`✓ Checkbox ${fieldName} deaktiviert`);
-                                } catch (uncheckError) {
-                                    console.warn(`Standard uncheck() fehlgeschlagen für ${fieldName}:`, uncheckError);
-                                }
-                                
-                                // Zusätzliche direkte Wert-Setzung für problematische PDFs
-                                try {
-                                    const acroField = field.acroField;
-                                    if (acroField && acroField.dict) {
-                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of('Off'));
-                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of('Off'));
-                                        console.log(`✓ Zusätzliche acroField-Werte für Checkbox ${fieldName} gesetzt (unchecked)`);
-                                    }
-                                } catch (acroError) {
-                                    console.warn(`Acro-Fallback für Checkbox ${fieldName} fehlgeschlagen:`, acroError);
-                                }
-                            }
-                        } else if (field.constructor.name === 'PDFRadioGroup') {
-                            // Radio Group: verwende erweiterte Behandlung
-                            try {
-                                field.select(String(value));
-                                console.log(`Radio Group ${fieldName} auf Wert '${value}' gesetzt`);
-                            } catch (radioError) {
-                                console.warn(`Radio Group ${fieldName} Wert '${value}' nicht gefunden:`, radioError);
-                                // Erweiterte Behandlung über AcroField
-                                try {
-                                    const acroField = field.acroField;
-                                    if (acroField) {
-                                        acroField.V = PDFLib.PDFName.of(String(value));
-                                        console.log(`Radio Group ${fieldName} acroField.V gesetzt`);
-                                        
-                                        if (acroField.dict) {
-                                            acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
-                                            console.log(`Radio Group ${fieldName} dict.V gesetzt`);
-                                        }
-                                    }
-                                } catch (acroError) {
-                                    console.warn(`AcroField Fallback für ${fieldName} fehlgeschlagen:`, acroError);
-                                }
-                            }
-                        } else {
-                            // Textfeld: setze Text
-                            field.setText(String(value));
+                        // NEUE VEREINFACHTE SETZLOGIK aus dem Demo
+                        const success = setFieldValue(field, value, fieldName);
+                        if (success) {
+                            filledFields++;
                         }
-                        
-                        try {
-                            const fieldDict = field.acroField.dict;
-                            fieldDict.set(PDFLib.PDFName.of('DA'), PDFLib.PDFString.of('/Helv 12 Tf 0 g'));
-                        } catch (daError) {
-                            console.warn(`Default Appearance für ${fieldName} konnte nicht gesetzt werden:`, daError);
-                        }
-                        
-                        filledFields++;
+                    } else {
+                        console.warn(`Feld ${fieldName} nicht im PDF gefunden`);
                     }
                 } catch (error) {
-                    // Generische Fallback-Behandlung für fehlende Felder
-                    console.log(`Feld ${fieldName} mit Standard-Methode nicht gefunden, verwende Fallback-Logik...`);
-                    
-                    let fieldFound = false;
-                    
-                    // Durchsuche ALLE Felder im PDF und wende die Methoden an
-                    const allFields = form.getFields();
-                    allFields.forEach(testField => {
-                        const testFieldName = testField.getName();
-                        
-                        // Prüfe ob dieser PDF-Feldname zu unserem gesuchten Feld passt
-                        if (testFieldName === fieldName || 
-                            testFieldName.toLowerCase() === fieldName.toLowerCase() ||
-                            testFieldName.includes(fieldName) ||
-                            fieldName.includes(testFieldName)) {
-                            
-                            console.log(`Mögliches Feld gefunden: "${testFieldName}" für gesuchtes Feld "${fieldName}"`);
-                            
-                            try {
-                                // Checkbox-Behandlung
-                                if (typeof testField.check === 'function' && typeof testField.uncheck === 'function') {
-                                    if (value === 'Ja' || value === 'ja' || value === '1' || value === 'true' || value === true) {
-                                        testField.check();
-                                        console.log(`✓ Checkbox ${testFieldName} aktiviert (${value})`);
-                                    } else {
-                                        testField.uncheck();
-                                        console.log(`✓ Checkbox ${testFieldName} deaktiviert (${value})`);
-                                    }
-                                    fieldFound = true;
-                                }
-                                
-                                // AcroField direkt setzen
-                                const acroField = testField.acroField;
-                                if (acroField) {
-                                    if (typeof testField.check === 'function') {
-                                        // Checkbox
-                                        const shouldCheck = value === 'Ja' || value === 'ja' || value === '1' || value === 'true' || value === true;
-                                        acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(shouldCheck ? 'Yes' : 'Off'));
-                                        acroField.dict.set(PDFLib.PDFName.of('AS'), PDFLib.PDFName.of(shouldCheck ? 'Yes' : 'Off'));
-                                        console.log(`✓ acroField für Checkbox ${testFieldName} gesetzt auf "${shouldCheck ? 'Yes' : 'Off'}"`);
-                                    } else {
-                                        // Anderes Feld
-                                        acroField.V = PDFLib.PDFName.of(String(value));
-                                        console.log(`✓ acroField.V für ${testFieldName} gesetzt auf "${value}"`);
-                                        
-                                        if (acroField.dict) {
-                                            acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFName.of(String(value)));
-                                            console.log(`✓ dict.V für ${testFieldName} gesetzt auf "${value}"`);
-                                        }
-                                    }
-                                    fieldFound = true;
-                                }
-                                
-                                // setText falls vorhanden
-                                if (typeof testField.setText === 'function') {
-                                    testField.setText(String(value));
-                                    console.log(`✓ setText() für ${testFieldName} ausgeführt mit "${value}"`);
-                                    fieldFound = true;
-                                }
-                                
-                            } catch (e) {
-                                console.warn(`❌ Fehler bei Fallback-Methode für ${testFieldName}:`, e.message);
-                            }
-                        }
-                    });
-                    
-                    if (fieldFound) {
-                        console.log(`✓ Feld ${fieldName} erfolgreich über Fallback-Logik gesetzt`);
+                    console.warn(`Fehler beim Zugriff auf Feld ${fieldName}:`, error);
+                }
+            }
+        });
+        
+        // Versuche auch direkte Feldsuche für bessere Abdeckung
+        allFields.forEach(field => {
+            const fieldName = field.getName();
+            if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
+                const value = formData[fieldName];
+                console.log(`\n--- DIREKTE FELDSUCHE: ${fieldName} ---`);
+                console.log(`Wert: "${value}"`);
+                
+                // Überspringe wenn bereits verarbeitet
+                if (!pdf.fields.includes(fieldName)) {
+                    const success = setFieldValue(field, value, fieldName);
+                    if (success) {
                         filledFields++;
-                    } else {
-                        console.warn(`❌ Feld ${fieldName} konnte auch mit Fallback-Logik nicht gesetzt werden`);
                     }
                 }
             }
         });
         
+        // Form-Updates
         try {
+            const helveticaFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             form.updateFieldAppearances(helveticaFont);
         } catch (error) {
             console.warn('Fehler beim Aktualisieren der Appearances:', error);
-            try {
-                form.flatten();
-            } catch (flattenError) {
-                console.warn('Fehler beim Flatten:', flattenError);
-            }
-        }
-        
-        try {
-            const acroForm = pdfDoc.catalog.getOrCreateAcroForm();
-            acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.False);
-        } catch (error) {
-            console.warn('Fehler beim Setzen von NeedAppearances:', error);
         }
         
         const finalPdfBytes = await pdfDoc.save({
