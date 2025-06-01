@@ -1,0 +1,120 @@
+groups:
+  Persönliche Daten:
+    title: 👤 Persönliche Angaben
+    description: Grundlegende persönliche Informationen
+  Einverständnis:
+    title: ✅ Einverständniserklärungen
+    description: Erforderliche Zustimmungen
+  Beschäftigung:
+    title: Beschäftigung
+    description: ''
+  Mandatsträger:
+    title: Mandatsträger
+    description: ''
+  Dienstverhältnis:
+    title: Dienstverhältnis
+    description: ''
+  Sonstige:
+    title: 📋 Sonstige Felder
+    description: Weitere Informationen
+fields:
+  Nachname:
+    group: Persönliche Daten
+  Vorname:
+    group: Persönliche Daten
+  Dienstgrad der Reserve:
+    group: Persönliche Daten
+  Personalnummer:
+    group: Persönliche Daten
+  Personenkennziffer:
+    group: Persönliche Daten
+  Straße Hausnummer:
+    group: Persönliche Daten
+  Datum:
+    group: Persönliche Daten
+  Telefon:
+    group: Persönliche Daten
+  Fax:
+    group: Persönliche Daten
+  EMail:
+    group: Persönliche Daten
+  Bitte wählen:
+    group: Einverständnis
+    type: select
+    options:
+      - einer Übung § 61 SG
+      - eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft (§ 63b SG)
+  vom Beginn der Dienstleitung:
+    group: Einverständnis
+    type: date
+  bis Ende der Dienstleitung:
+    group: Einverständnis
+    type: date
+  Anschrift Dienstleistungstruppenanteil:
+    group: Einverständnis
+  eine Dienstleistung bei Dienstleistungsdienststelle:
+    group: Einverständnis
+  in Ort Standort der Dienstleistungsstelle:
+    group: Einverständnis
+  "Ich bin mit einer kurzfristigen Heranziehung einverstanden Daher verzichte ich":
+    group: Einverständnis
+    type: checkbox
+  Ich verzichte ferner auf mein Recht gegen den Heranziehungsbescheid Widerspruch zu erheben:
+    group: Einverständnis
+    type: checkbox
+  Strafverfahren:
+    group: Einverständnis
+    type: radio
+    options:
+      - Ja
+      - Nein
+  Beschaeftigung_Beamter:
+    group: Beschäftigung
+    type: checkbox
+  Beschaeftigung_Arbeitsverhaeltnis:
+    group: Beschäftigung
+    type: checkbox
+  Beschaeftigung_KeinArbeitsverhaeltnis:
+    group: Beschäftigung
+    type: checkbox
+  Beschaeftigung_Selbstaendig:
+    group: Beschäftigung
+    type: checkbox
+  Selbststaendig:
+    group: Beschäftigung
+  Beschaeftigung_Pensionaer:
+    group: Beschäftigung
+    type: checkbox
+  Pensionaer:
+    group: Beschäftigung
+  Mandatstraeger:
+    group: Mandatsträger
+    type: radio
+    options:
+      - Ja
+      - Nein
+  Mandat:
+    group: Mandatsträger
+    type: text
+  Interesse:
+    group: Dienstverhältnis
+    type: radio
+    options:
+      - Ja
+      - Nein
+  Signature1:
+    group: Sonstige
+  Signature2:
+    group: Sonstige
+  Anreise:
+    group: Sonstige
+  Verpflichtungszeit:
+    group: Sonstige
+  Diszi:
+    group: Sonstige
+  Punkt_3:
+    group: Sonstige
+  Schutzbereich 3:
+    group: Sonstige
+  Schutzbereich 2:
+    group: Sonstige
