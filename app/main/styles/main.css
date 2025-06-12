@@ -922,9 +922,197 @@ body.live-preview-active #form-fields {
     border-color: #117a8b;
 }
 
+/* Configuration Editor Styles */
+.pdf-selector {
+    background: #f8f9ff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 4px solid #5a7c47;
+}
+
+.pdf-dropdown {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+}
+
+.pdf-dropdown:focus {
+    outline: none;
+    border-color: #5a7c47;
+}
+
+.config-editor {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 30px;
+    min-height: 600px;
+    margin-bottom: 30px;
+}
+
+.groups-panel, .fields-panel, .properties-panel {
+    background: #f8f9ff;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e1e5e9;
+}
+
+.panel-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-item, .field-item {
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-item:hover, .field-item:hover {
+    border-color: #5a7c47;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.group-item.active, .field-item.active {
+    border-color: #5a7c47;
+    background: #f0f8ff;
+}
+
+.group-item:active, .field-item:active {
+    cursor: grabbing;
+}
+
+.drag-handle {
+    color: #999;
+    cursor: grab;
+}
+
+.group-name, .field-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.group-count {
+    background: #5a7c47;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+.field-type {
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.add-group-btn {
+    width: 100%;
+    padding: 10px;
+    background: #5a7c47;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: background 0.3s;
+}
+
+.add-group-btn:hover {
+    background: #3d5a2e;
+}
+
+.properties-form {
+    display: none;
+}
+
+.properties-form.active {
+    display: block;
+}
+
+.coordinate-help {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.signature-position-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+}
+
+.unassigned-fields {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.unassigned-title {
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 10px;
+}
+
 @media (max-width: 768px) {
     .form-grid { grid-template-columns: 1fr; }
     .button-group { flex-direction: column; }
+    
+    .config-editor {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .signature-position-grid {
+        grid-template-columns: 1fr;
+    }
     
     .download-buttons {
         flex-direction: column;
