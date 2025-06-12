@@ -663,9 +663,14 @@ body.live-preview-active {
 
 body.live-preview-active .view-content {
     display: flex;
-    height: calc(100vh - 200px);
+    height: calc(100vh - 140px); /* Reduced height since view-actions is hidden */
     overflow: hidden;
     padding: 0;
+    width: 100%;
+}
+
+body.live-preview-active .view-actions {
+    display: none; /* Hide the view-actions area when live preview is active */
 }
 
 .form-container {
@@ -675,6 +680,7 @@ body.live-preview-active .view-content {
     padding: 20px;
     background: #f8f9fa;
     border-right: 1px solid #e1e5e9;
+    flex-shrink: 0;
 }
 
 .pdf-preview-container {
@@ -684,6 +690,7 @@ body.live-preview-active .view-content {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .preview-header {
