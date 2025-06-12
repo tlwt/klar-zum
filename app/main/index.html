@@ -8,6 +8,8 @@
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <!-- PDF.js for PDF preview rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <!-- Immer neu laden -->
@@ -61,26 +63,56 @@
                 </div>
                 
                 <div id="form-fields" class="tab-content">
-                    <div class="button-group" style="margin-bottom: 20px;">
-                        <label for="loadFile" class="file-label">📁 Daten laden</label>
-                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
-                        <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
-                    </div>
-                    
-                    <div id="hiddenDataSection" class="hidden-data-section" style="display: none;">
-                        <h4>🗃️ Versteckte Daten aus Datensatz</h4>
-                        <p>Folgende Daten aus dem geladenen Datensatz werden gespeichert, obwohl sie in keinem Formular verwendet werden:</p>
-                        <div class="hidden-data-toggle" onclick="toggleHiddenData()">
-                            <span id="hiddenDataToggleText">Anzeigen</span> (<span id="hiddenDataCount">0</span> Felder)
-                        </div>
-                        <div id="hiddenDataContent" class="hidden-data-content">
-                            <div class="form-grid" id="hiddenDataFields"></div>
+                    <div class="form-header">
+                        <div class="button-group" style="margin-bottom: 20px;">
+                            <label for="loadFile" class="file-label">📁 Daten laden</label>
+                            <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                            <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
+                            <button type="button" class="btn btn-info" onclick="toggleLivePreview()" id="livePreviewToggle">
+                                👁️ Live-Vorschau
+                            </button>
                         </div>
                     </div>
                     
-                    <form id="dataForm">
-                        <div id="formSections"></div>
-                    </form>
+                    <div class="form-container" id="formContainer">
+                        <div id="hiddenDataSection" class="hidden-data-section" style="display: none;">
+                            <h4>🗃️ Versteckte Daten aus Datensatz</h4>
+                            <p>Folgende Daten aus dem geladenen Datensatz werden gespeichert, obwohl sie in keinem Formular verwendet werden:</p>
+                            <div class="hidden-data-toggle" onclick="toggleHiddenData()">
+                                <span id="hiddenDataToggleText">Anzeigen</span> (<span id="hiddenDataCount">0</span> Felder)
+                            </div>
+                            <div id="hiddenDataContent" class="hidden-data-content">
+                                <div class="form-grid" id="hiddenDataFields"></div>
+                            </div>
+                        </div>
+                        
+                        <form id="dataForm">
+                            <div id="formSections"></div>
+                        </form>
+                    </div>
+                    
+                    <div class="pdf-preview-container" id="pdfPreviewContainer" style="display: none;">
+                        <div class="preview-header">
+                            <h4>📄 Live-Vorschau</h4>
+                            <div class="preview-controls-mini">
+                                <select id="livePreviewPDFSelector" onchange="switchLivePreviewPDF()">
+                                    <option value="">PDF auswählen...</option>
+                                </select>
+                                <div class="preview-nav-mini">
+                                    <button onclick="previousLivePreviewPage()" id="livePrevPageBtn" disabled>←</button>
+                                    <span id="livePreviewPageInfo">1/1</span>
+                                    <button onclick="nextLivePreviewPage()" id="liveNextPageBtn" disabled>→</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="preview-content">
+                            <div id="livePreviewLoading" class="preview-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Lade Vorschau...</p>
+                            </div>
+                            <canvas id="livePreviewCanvas"></canvas>
+                        </div>
+                    </div>
                     
                     <div class="button-group">
                         <div class="download-options">
@@ -149,6 +181,43 @@ Mit freundlichen Grüßen</textarea>
                 <div id="status" class="status"></div>
             </div>
             
+            <!-- PDF Preview Modal -->
+            <div id="pdfPreviewModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>👁️ PDF Vorschau</h3>
+                        <button class="modal-close" onclick="closePDFPreview()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="pdfPreviewControls" class="preview-controls">
+                            <select id="previewPDFSelector" onchange="switchPreviewPDF()">
+                                <option value="">PDF auswählen...</option>
+                            </select>
+                            <div class="preview-info">
+                                <span id="previewPageInfo">Seite 1 von 1</span>
+                                <div class="preview-nav">
+                                    <button onclick="previousPreviewPage()" id="prevPageBtn" disabled>←</button>
+                                    <button onclick="nextPreviewPage()" id="nextPageBtn" disabled>→</button>
+                                </div>
+                            </div>
+                            <div class="preview-zoom">
+                                <button onclick="zoomPreview(0.8)">-</button>
+                                <span id="zoomLevel">100%</span>
+                                <button onclick="zoomPreview(1.2)">+</button>
+                            </div>
+                        </div>
+                        <div id="pdfPreviewContainer" class="preview-container">
+                            <div id="pdfPreviewLoading" class="preview-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Lade PDF Vorschau...</p>
+                            </div>
+                            <canvas id="pdfPreviewCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            
             <div id="errorMessage" class="error-message" style="display: none;">
                 <h4>❌ Fehler beim Laden</h4>
                 <p>Die PDF-Formulare konnten nicht geladen werden. Stellen Sie sicher, dass:</p>
@@ -167,6 +236,7 @@ Mit freundlichen Grüßen</textarea>
     <script src="js/calculation-engine.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/pdf-handler.js"></script>
+    <script src="js/pdf-preview.js"></script>
     <script src="js/form-generator.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/app.js"></script>
