@@ -90,6 +90,12 @@ function goToFormFields() {
     
     console.log('Wechsle zu form-fields view...');
     showView('form-fields');
+    
+    // Automatically enable live preview and select first PDF
+    setTimeout(() => {
+        enableLivePreviewAutomatically();
+    }, 500);
+    
     console.log('View-Wechsel abgeschlossen');
 }
 
@@ -436,5 +442,44 @@ document.addEventListener('DOMContentLoaded', function() {
         typeSelect.addEventListener('change', handleFieldTypeChange);
     }
 });
+
+// Automatically enable live preview and select first PDF
+function enableLivePreviewAutomatically() {
+    console.log('🔄 Aktiviere Live-Vorschau automatisch...');
+    
+    // Enable live preview if not already active
+    if (!window.livePreview || !window.livePreview.isActive) {
+        if (typeof toggleLivePreview === 'function') {
+            toggleLivePreview();
+            console.log('✅ Live-Vorschau aktiviert');
+        }
+    }
+    
+    // Auto-select first PDF for preview
+    if (window.selectedPDFs && window.selectedPDFs.size > 0) {
+        const firstPDF = Array.from(window.selectedPDFs)[0];
+        const pdfSelector = document.getElementById('livePreviewPDFSelector');
+        
+        if (pdfSelector && firstPDF) {
+            // Find and select the first PDF option
+            const options = pdfSelector.querySelectorAll('option');
+            for (let option of options) {
+                if (option.value === firstPDF) {
+                    pdfSelector.value = firstPDF;
+                    
+                    // Trigger the change event to update the preview
+                    if (typeof switchLivePreviewPDF === 'function') {
+                        switchLivePreviewPDF();
+                    }
+                    
+                    console.log(`✅ Erstes PDF automatisch ausgewählt: ${firstPDF}`);
+                    break;
+                }
+            }
+        }
+    }
+    
+    showStatus('Live-Vorschau automatisch aktiviert', 'success');
+}
 
 console.log('✅ UI Manager (Email-Client Style) loaded');

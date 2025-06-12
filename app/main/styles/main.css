@@ -178,6 +178,16 @@ body {
     flex-wrap: wrap;
 }
 
+.download-options-mini {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e1e5e9;
+}
+
 .view-content {
     flex: 1;
     padding: 30px;

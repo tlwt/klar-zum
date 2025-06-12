@@ -104,9 +104,18 @@
                         <label for="loadFile" class="file-label">📁 Daten laden</label>
                         <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
                         <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
-                        <button type="button" class="btn btn-info" onclick="toggleLivePreview()" id="livePreviewToggle">
-                            👁️ Live-Vorschau
-                        </button>
+                        
+                        <!-- PDF Generation Buttons -->
+                        <div class="download-options-mini">
+                            <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
+                                🔒 Flach (nicht bearbeitbar)
+                            </button>
+                            <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
+                                ✏️ Bearbeitbar
+                            </button>
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
                     </div>
                 </div>
                 
@@ -153,24 +162,13 @@
                 </div>
                 
                 <div class="view-actions">
-                    <div class="download-options">
-                        <h4>📄 PDFs generieren</h4>
-                        <div class="download-buttons">
-                            <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
-                                🔒 Flach (nicht bearbeitbar)
-                            </button>
-                            <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
-                                ✏️ Bearbeitbar
-                            </button>
-                        </div>
-                        <div class="download-help">
-                            <small>
-                                <strong>Flach:</strong> Formulare sind ausgefüllt und können nicht mehr bearbeitet werden (empfohlen)<br>
-                                <strong>Bearbeitbar:</strong> Formulare können weiterhin bearbeitet werden
-                            </small>
-                        </div>
+                    <div class="download-help">
+                        <small>
+                            <strong>💡 Tipp:</strong> 
+                            <strong>Flach:</strong> Formulare sind ausgefüllt und können nicht mehr bearbeitet werden (empfohlen) | 
+                            <strong>Bearbeitbar:</strong> Formulare können weiterhin bearbeitet werden
+                        </small>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
                 </div>
             </div>
             
