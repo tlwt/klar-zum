@@ -7,14 +7,16 @@ window.addEventListener('load', async function() {
 
 async function initializeApp() {
     try {
+        console.log('🚀 App-Initialisierung gestartet...');
+        
         await loadPDFsFromDirectory();
         generatePDFSelection();
         handleUrlParams();
         
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
+        console.log('✅ App erfolgreich initialisiert');
+        showMainApp();
     } catch (error) {
-        console.error('Fehler beim Initialisieren:', error);
+        console.error('❌ Fehler beim Initialisieren:', error);
         showError();
     }
 }

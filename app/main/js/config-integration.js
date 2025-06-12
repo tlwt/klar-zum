@@ -1,39 +1,24 @@
 // js/config-integration.js
-// Integration layer for config editor functionality in main interface
+// Vereinfachte Config-Integration für unified interface
 
-// Global variables for config integration
-window.configIntegration = {
-    initialized: false,
-    selectedPDFForConfig: null
+// Global config state
+window.configState = {
+    selectedPDF: null,
+    currentConfig: null,
+    selectedGroup: null,
+    selectedField: null
 };
 
-// Initialize config integration when configuration tab is first accessed
-function initializeConfigIntegration() {
-    if (window.configIntegration.initialized) {
-        return;
-    }
+// Initialize config when tab is activated
+function initializeConfigTab() {
+    console.log('🔧 Initializing config tab...');
     
-    console.log('🔧 Initializing config integration...');
-    
-    // Populate PDF selector with available PDFs
-    populateConfigPDFSelector();
-    
-    // Check if we have direct save capability
-    checkDirectSaveCapability();
-    
-    window.configIntegration.initialized = true;
-    console.log('✓ Config integration initialized');
-}
-
-// Populate the config PDF selector with available PDFs
-function populateConfigPDFSelector() {
+    // Populate PDF selector
     const selector = document.getElementById('configPdfSelector');
     if (!selector) return;
     
-    // Clear existing options except the first one
-    while (selector.children.length > 1) {
-        selector.removeChild(selector.lastChild);
-    }
+    // Clear existing options
+    selector.innerHTML = '<option value="">-- PDF auswählen --</option>';
     
     // Add available PDFs
     if (window.availablePDFs && window.availablePDFs.length > 0) {
@@ -44,123 +29,66 @@ function populateConfigPDFSelector() {
             selector.appendChild(option);
         });
     }
+    
+    // Check direct save capability
+    checkDirectSaveCapability();
 }
 
-// Check if direct save is available
-function checkDirectSaveCapability() {
-    fetch('/app/config.yaml')
-        .then(response => response.text())
-        .then(data => {
-            const config = jsyaml.load(data);
-            const saveDirectBtn = document.getElementById('saveDirectBtn');
-            if (config && config.allowConfigWrite === true && saveDirectBtn) {
-                saveDirectBtn.style.display = 'inline-flex';
-            }
-        })
-        .catch(error => {
-            console.log('Direct save not available:', error);
-        });
-}
-
-// Load PDF config when PDF is selected in config tab
-async function loadPDFConfig() {
+// Load config for selected PDF
+async function loadConfigForPDF() {
     const selector = document.getElementById('configPdfSelector');
     const selectedPDF = selector.value;
     
     if (!selectedPDF) {
-        hideConfigEditor();
+        hideConfigWorkspace();
         return;
     }
     
-    window.configIntegration.selectedPDFForConfig = selectedPDF;
+    window.configState.selectedPDF = selectedPDF;
     
     try {
         console.log(`📄 Loading config for: ${selectedPDF}`);
         
-        // Find the PDF info
+        // Find PDF info
         const pdfInfo = window.availablePDFs.find(pdf => pdf.name === selectedPDF);
         if (!pdfInfo) {
             throw new Error('PDF nicht gefunden');
         }
         
-        // Update the global currentPDF for config editor
-        window.currentPDF = pdfInfo;
-        
-        // Load or create config
-        await loadConfigForPDF(selectedPDF);
-        
-        // Show the config editor
-        showConfigEditor();
-        
-        // Show the button group
-        const buttonGroup = document.getElementById('configButtonGroup');
-        if (buttonGroup) {
-            buttonGroup.style.display = 'flex';
-        }
-        
-    } catch (error) {
-        console.error('Fehler beim Laden der PDF-Konfiguration:', error);
-        showStatus('Fehler beim Laden der PDF-Konfiguration: ' + error.message, 'error');
-    }
-}
-
-// Show config editor
-function showConfigEditor() {
-    const editor = document.getElementById('configEditor');
-    if (editor) {
-        editor.style.display = 'block';
-    }
-}
-
-// Hide config editor
-function hideConfigEditor() {
-    const editor = document.getElementById('configEditor');
-    if (editor) {
-        editor.style.display = 'none';
-    }
-    
-    const buttonGroup = document.getElementById('configButtonGroup');
-    if (buttonGroup) {
-        buttonGroup.style.display = 'none';
-    }
-}
-
-// Load or create config for a specific PDF
-async function loadConfigForPDF(pdfName) {
-    try {
         // Try to load existing YAML config
-        const yamlPath = `formulare/${pdfName.replace('.pdf', '.yaml')}`;
-        const response = await fetch(yamlPath);
+        const yamlPath = `formulare/${selectedPDF.replace('.pdf', '.yaml')}`;
+        let config;
         
-        if (response.ok) {
-            const yamlText = await response.text();
-            const config = jsyaml.load(yamlText);
-            
-            // Load the config into the editor
-            window.currentConfig = config;
-            await loadConfigIntoEditor(config);
-            
-            console.log(`✓ Loaded existing config for ${pdfName}`);
-            showStatus(`Konfiguration für ${pdfName} geladen`);
-        } else {
-            // Create new config from PDF fields
-            console.log(`📝 Creating new config for ${pdfName}`);
-            await createNewConfigFromPDF();
-            showStatus(`Neue Konfiguration für ${pdfName} erstellt`);
+        try {
+            const response = await fetch(yamlPath);
+            if (response.ok) {
+                const yamlText = await response.text();
+                config = jsyaml.load(yamlText);
+                console.log('✓ Existing config loaded');
+            } else {
+                throw new Error('No existing config');
+            }
+        } catch (error) {
+            // Create new config
+            config = createNewConfig(pdfInfo);
+            console.log('📝 New config created');
         }
+        
+        window.configState.currentConfig = config;
+        loadConfigIntoUI(config, pdfInfo);
+        showConfigWorkspace();
+        
+        showStatus(`Konfiguration für ${selectedPDF} geladen`);
+        
     } catch (error) {
         console.error('Fehler beim Laden der Konfiguration:', error);
-        // Create new config as fallback
-        await createNewConfigFromPDF();
-        showStatus(`Neue Konfiguration für ${pdfName} erstellt (Fallback)`);
+        showStatus('Fehler beim Laden der Konfiguration: ' + error.message, 'error');
     }
 }
 
 // Create new config from PDF fields
-async function createNewConfigFromPDF() {
-    if (!window.currentPDF) return;
-    
-    const newConfig = {
+function createNewConfig(pdfInfo) {
+    const config = {
         groups: {
             'Allgemein': {
                 title: '📝 Allgemeine Felder',
@@ -170,43 +98,193 @@ async function createNewConfigFromPDF() {
         fields: {}
     };
     
-    // Add all PDF fields to the general group
-    window.currentPDF.fields.forEach(fieldName => {
-        newConfig.fields[fieldName] = {
+    // Add all PDF fields to general group
+    pdfInfo.fields.forEach(fieldName => {
+        config.fields[fieldName] = {
             group: 'Allgemein'
         };
     });
     
-    window.currentConfig = newConfig;
-    await loadConfigIntoEditor(newConfig);
+    return config;
 }
 
-// Load config into the editor UI (reuse from config-core.js)
-async function loadConfigIntoEditor(config) {
-    if (typeof window.loadGroupsIntoUI === 'function') {
-        window.loadGroupsIntoUI(config.groups || {});
+// Load config into UI
+function loadConfigIntoUI(config, pdfInfo) {
+    loadGroupsIntoUI(config.groups || {});
+    loadFieldsIntoUI(config.fields || {}, pdfInfo.fields);
+}
+
+// Load groups into UI
+function loadGroupsIntoUI(groups) {
+    const container = document.getElementById('configGroupsList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    Object.entries(groups).forEach(([groupKey, groupData]) => {
+        const groupItem = document.createElement('div');
+        groupItem.className = 'config-item';
+        groupItem.textContent = `${groupData.title || groupKey}`;
+        groupItem.onclick = () => selectConfigGroup(groupKey);
+        container.appendChild(groupItem);
+    });
+}
+
+// Load fields into UI
+function loadFieldsIntoUI(fields, pdfFields) {
+    const container = document.getElementById('configFieldsList');
+    const unassignedContainer = document.getElementById('configUnassignedFieldsList');
+    if (!container || !unassignedContainer) return;
+    
+    container.innerHTML = '';
+    unassignedContainer.innerHTML = '';
+    
+    const assignedFields = new Set();
+    
+    // Show fields for selected group
+    if (window.configState.selectedGroup) {
+        Object.entries(fields).forEach(([fieldName, fieldData]) => {
+            if (fieldData.group === window.configState.selectedGroup) {
+                const fieldItem = document.createElement('div');
+                fieldItem.className = 'config-item';
+                fieldItem.textContent = fieldData.title || fieldName;
+                fieldItem.onclick = () => selectConfigField(fieldName);
+                container.appendChild(fieldItem);
+                assignedFields.add(fieldName);
+            }
+        });
     }
     
-    if (typeof window.loadFieldsIntoUI === 'function') {
-        window.loadFieldsIntoUI(config.fields || {});
+    // Show unassigned fields
+    const unassignedFields = pdfFields.filter(field => !assignedFields.has(field));
+    if (unassignedFields.length > 0) {
+        document.getElementById('configUnassignedFields').style.display = 'block';
+        unassignedFields.forEach(fieldName => {
+            const fieldItem = document.createElement('div');
+            fieldItem.className = 'config-item';
+            fieldItem.textContent = fieldName;
+            fieldItem.onclick = () => selectConfigField(fieldName);
+            unassignedContainer.appendChild(fieldItem);
+        });
+    } else {
+        document.getElementById('configUnassignedFields').style.display = 'none';
     }
 }
 
-// Save and download config (integrated version)
+// Select group
+function selectConfigGroup(groupKey) {
+    window.configState.selectedGroup = groupKey;
+    window.configState.selectedField = null;
+    
+    // Update UI
+    document.querySelectorAll('#configGroupsList .config-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    document.getElementById('configSelectedGroupName').textContent = `(${window.configState.currentConfig.groups[groupKey].title})`;
+    
+    // Reload fields for this group
+    const pdfInfo = window.availablePDFs.find(pdf => pdf.name === window.configState.selectedPDF);
+    loadFieldsIntoUI(window.configState.currentConfig.fields, pdfInfo.fields);
+    
+    // Show group properties
+    showGroupProperties(groupKey);
+}
+
+// Select field
+function selectConfigField(fieldName) {
+    window.configState.selectedField = fieldName;
+    
+    // Update UI
+    document.querySelectorAll('#configFieldsList .config-item, #configUnassignedFieldsList .config-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Show field properties
+    showFieldProperties(fieldName);
+}
+
+// Show group properties
+function showGroupProperties(groupKey) {
+    const groupData = window.configState.currentConfig.groups[groupKey];
+    
+    document.getElementById('configGroupTitle').value = groupData.title || '';
+    document.getElementById('configGroupDescription').value = groupData.description || '';
+    
+    // Show group properties panel
+    document.getElementById('configGroupProperties').classList.add('active');
+    document.getElementById('configFieldProperties').classList.remove('active');
+}
+
+// Show field properties
+function showFieldProperties(fieldName) {
+    const fieldData = window.configState.currentConfig.fields[fieldName] || {};
+    
+    document.getElementById('configFieldTitle').value = fieldData.title || '';
+    document.getElementById('configFieldDescription').value = fieldData.description || '';
+    document.getElementById('configFieldType').value = fieldData.type || 'text';
+    document.getElementById('configFieldMapping').value = fieldData.mapping || '';
+    document.getElementById('configFieldCalculation').value = fieldData.calculation || '';
+    document.getElementById('configFieldHidden').checked = fieldData.hidden || false;
+    
+    // Handle signature fields
+    if (fieldData.type === 'signature') {
+        document.getElementById('configSignatureFields').style.display = 'block';
+        document.getElementById('configSignatureWidth').value = fieldData.signature_width || '';
+        document.getElementById('configSignatureHeight').value = fieldData.signature_height || '';
+        document.getElementById('configSignatureX').value = fieldData.signature_x || '';
+        document.getElementById('configSignatureY').value = fieldData.signature_y || '';
+        document.getElementById('configSignaturePage').value = fieldData.signature_page || '';
+    } else {
+        document.getElementById('configSignatureFields').style.display = 'none';
+    }
+    
+    // Show field properties panel
+    document.getElementById('configFieldProperties').classList.add('active');
+    document.getElementById('configGroupProperties').classList.remove('active');
+}
+
+// Add new group
+function addNewConfigGroup() {
+    const groupName = prompt('Name der neuen Gruppe:');
+    if (!groupName) return;
+    
+    const groupKey = groupName.replace(/\s+/g, '_');
+    window.configState.currentConfig.groups[groupKey] = {
+        title: groupName,
+        description: ''
+    };
+    
+    loadGroupsIntoUI(window.configState.currentConfig.groups);
+}
+
+// Delete group
+function deleteConfigGroup() {
+    if (!window.configState.selectedGroup) return;
+    
+    if (confirm('Gruppe wirklich löschen?')) {
+        delete window.configState.currentConfig.groups[window.configState.selectedGroup];
+        window.configState.selectedGroup = null;
+        loadGroupsIntoUI(window.configState.currentConfig.groups);
+        document.getElementById('configGroupProperties').classList.remove('active');
+    }
+}
+
+// Save and download config
 function saveAndDownloadConfig() {
-    if (!window.configIntegration.selectedPDFForConfig) {
+    if (!window.configState.selectedPDF) {
         showStatus('Bitte wählen Sie zuerst ein PDF aus', 'error');
         return;
     }
     
     try {
-        const config = generateConfigFromEditor();
-        const yamlString = jsyaml.dump(config, { indent: 2 });
+        updateConfigFromUI();
+        const yamlString = jsyaml.dump(window.configState.currentConfig, { indent: 2 });
+        const filename = window.configState.selectedPDF.replace('.pdf', '.yaml');
         
-        // Create filename
-        const filename = window.configIntegration.selectedPDFForConfig.replace('.pdf', '.yaml');
-        
-        // Download the file
+        // Download
         const blob = new Blob([yamlString], { type: 'application/x-yaml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -220,22 +298,22 @@ function saveAndDownloadConfig() {
         showStatus(`Konfiguration ${filename} erfolgreich heruntergeladen`);
         
     } catch (error) {
-        console.error('Fehler beim Speichern der Konfiguration:', error);
-        showStatus('Fehler beim Speichern der Konfiguration: ' + error.message, 'error');
+        console.error('Fehler beim Speichern:', error);
+        showStatus('Fehler beim Speichern: ' + error.message, 'error');
     }
 }
 
-// Direct save config (integrated version)
+// Direct save config
 async function saveConfigDirect() {
-    if (!window.configIntegration.selectedPDFForConfig) {
+    if (!window.configState.selectedPDF) {
         showStatus('Bitte wählen Sie zuerst ein PDF aus', 'error');
         return;
     }
     
     try {
-        const config = generateConfigFromEditor();
-        const yamlString = jsyaml.dump(config, { indent: 2 });
-        const filename = window.configIntegration.selectedPDFForConfig.replace('.pdf', '.yaml');
+        updateConfigFromUI();
+        const yamlString = jsyaml.dump(window.configState.currentConfig, { indent: 2 });
+        const filename = window.configState.selectedPDF.replace('.pdf', '.yaml');
         
         const response = await fetch(`/app/backend/save-config.php?filename=${encodeURIComponent(filename)}`, {
             method: 'PUT',
@@ -247,8 +325,7 @@ async function saveConfigDirect() {
         
         if (response.ok) {
             showStatus(`✅ Konfiguration ${filename} erfolgreich gespeichert`);
-            
-            // Refresh PDF configs to include the new/updated one
+            // Refresh PDFs
             if (typeof window.loadPDFsFromDirectory === 'function') {
                 await window.loadPDFsFromDirectory();
             }
@@ -263,38 +340,54 @@ async function saveConfigDirect() {
     }
 }
 
-// Generate config from current editor state
-function generateConfigFromEditor() {
-    const config = {
-        groups: {},
-        fields: {}
-    };
-    
-    // Collect groups
-    if (typeof window.collectGroupsFromUI === 'function') {
-        config.groups = window.collectGroupsFromUI();
+// Update config from UI
+function updateConfigFromUI() {
+    // Update current group if selected
+    if (window.configState.selectedGroup) {
+        const groupData = window.configState.currentConfig.groups[window.configState.selectedGroup];
+        groupData.title = document.getElementById('configGroupTitle').value;
+        groupData.description = document.getElementById('configGroupDescription').value;
     }
     
-    // Collect fields
-    if (typeof window.collectFieldsFromUI === 'function') {
-        config.fields = window.collectFieldsFromUI();
+    // Update current field if selected
+    if (window.configState.selectedField) {
+        const fieldData = window.configState.currentConfig.fields[window.configState.selectedField] || {};
+        
+        fieldData.title = document.getElementById('configFieldTitle').value;
+        fieldData.description = document.getElementById('configFieldDescription').value;
+        fieldData.type = document.getElementById('configFieldType').value;
+        fieldData.mapping = document.getElementById('configFieldMapping').value;
+        fieldData.calculation = document.getElementById('configFieldCalculation').value;
+        fieldData.hidden = document.getElementById('configFieldHidden').checked;
+        
+        if (fieldData.type === 'signature') {
+            fieldData.signature_width = parseInt(document.getElementById('configSignatureWidth').value) || undefined;
+            fieldData.signature_height = parseInt(document.getElementById('configSignatureHeight').value) || undefined;
+            fieldData.signature_x = parseInt(document.getElementById('configSignatureX').value) || undefined;
+            fieldData.signature_y = parseInt(document.getElementById('configSignatureY').value) || undefined;
+            fieldData.signature_page = parseInt(document.getElementById('configSignaturePage').value) || undefined;
+        }
+        
+        window.configState.currentConfig.fields[window.configState.selectedField] = fieldData;
     }
-    
-    return config;
 }
 
 // Preview config
 function previewConfig() {
+    if (!window.configState.selectedPDF) {
+        showStatus('Bitte wählen Sie zuerst ein PDF aus', 'error');
+        return;
+    }
+    
     try {
-        const config = generateConfigFromEditor();
-        const yamlString = jsyaml.dump(config, { indent: 2 });
+        updateConfigFromUI();
+        const yamlString = jsyaml.dump(window.configState.currentConfig, { indent: 2 });
         
-        // Open preview in new window
         const previewWindow = window.open('', '_blank', 'width=800,height=600');
         previewWindow.document.write(`
             <html>
                 <head>
-                    <title>Konfiguration Vorschau - ${window.configIntegration.selectedPDFForConfig}</title>
+                    <title>Konfiguration Vorschau - ${window.configState.selectedPDF}</title>
                     <style>
                         body { font-family: monospace; margin: 20px; background: #f5f5f5; }
                         pre { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -302,7 +395,7 @@ function previewConfig() {
                     </style>
                 </head>
                 <body>
-                    <h1>Konfiguration: ${window.configIntegration.selectedPDFForConfig}</h1>
+                    <h1>Konfiguration: ${window.configState.selectedPDF}</h1>
                     <pre>${yamlString}</pre>
                 </body>
             </html>
@@ -314,21 +407,40 @@ function previewConfig() {
     }
 }
 
-// Open signature position tool
-function openSignaturePositionTool() {
-    window.open('../config/signature-position.html', '_blank');
+// Show/hide workspace
+function showConfigWorkspace() {
+    document.getElementById('configWorkspace').style.display = 'block';
 }
 
-// Extend the switchTab function to initialize config when needed
+function hideConfigWorkspace() {
+    document.getElementById('configWorkspace').style.display = 'none';
+}
+
+// Check direct save capability
+function checkDirectSaveCapability() {
+    fetch('/app/config.yaml')
+        .then(response => response.text())
+        .then(data => {
+            const config = jsyaml.load(data);
+            if (config && config.allowConfigWrite === true) {
+                document.getElementById('configSaveDirectBtn').style.display = 'inline-flex';
+            }
+        })
+        .catch(error => {
+            console.log('Direct save not available:', error);
+        });
+}
+
+// Extend switchTab function to initialize config
 const originalSwitchTab = window.switchTab;
 window.switchTab = function(tabName) {
-    // Call original function
     if (originalSwitchTab) {
         originalSwitchTab(tabName);
     }
     
-    // Initialize config integration if switching to configuration tab
     if (tabName === 'configuration') {
-        initializeConfigIntegration();
+        setTimeout(initializeConfigTab, 100);
     }
 };
+
+console.log('✅ Config integration loaded');

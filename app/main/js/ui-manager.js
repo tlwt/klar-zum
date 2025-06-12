@@ -1,33 +1,72 @@
 // js/ui-manager.js
-// UI-Verwaltung und Navigation
+// UI-Management für Email-Client-Layout
 
-function switchTab(tabName) {
-    // Formularwerte temporär speichern
-    const currentFormData = getAllFormData();
+// Email-Client Navigation System
+function showView(viewName) {
+    console.log(`🔄 Switching to view: ${viewName}`);
     
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    // Remove active from all menu items
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
     
-    document.querySelector(`#${tabName}`).classList.add('active');
+    // Add active to selected menu item
+    const menuItem = document.querySelector(`[data-view="${viewName}"]`);
+    if (menuItem) {
+        menuItem.classList.add('active');
+    }
     
-    if (tabName === 'pdf-selection') {
-        document.querySelector('.tab:first-child').classList.add('active');
-    } else if (tabName === 'form-fields') {
-        document.querySelector('.tab:nth-child(2)').classList.add('active');
-        if (window.selectedPDFs.size > 0) {
-            generateFormForSelectedPDFs();
-            // Formularwerte wiederherstellen
-            setTimeout(() => {
-                restoreFormData(currentFormData);
-                calculateAllFields();
-            }, 100);
-        }
-    } else if (tabName === 'settings') {
-        document.querySelector('.tab:nth-child(3)').classList.add('active');
-        loadSettingsToForm();
+    // Hide all content views
+    document.querySelectorAll('.content-view').forEach(view => {
+        view.classList.remove('active');
+    });
+    
+    // Show selected view
+    const targetView = document.getElementById(`${viewName}-view`);
+    if (targetView) {
+        targetView.classList.add('active');
+    }
+    
+    // Initialize view-specific functionality
+    initializeView(viewName);
+}
+
+// Initialize view-specific functionality
+function initializeView(viewName) {
+    switch (viewName) {
+        case 'configuration':
+            if (typeof initializeConfigTab === 'function') {
+                setTimeout(initializeConfigTab, 100);
+            }
+            break;
+        case 'form-fields':
+            // Update live preview if active
+            if (window.livePreview && window.livePreview.isActive) {
+                setTimeout(() => {
+                    if (typeof updateLivePreview === 'function') {
+                        updateLivePreview();
+                    }
+                }, 100);
+            }
+            break;
     }
 }
 
+// Legacy function compatibility
+function switchTab(tabName) {
+    // Map old tab names to new view names
+    const viewMap = {
+        'pdf-selection': 'pdf-selection',
+        'form-fields': 'form-fields',
+        'configuration': 'configuration',
+        'settings': 'settings'
+    };
+    
+    const viewName = viewMap[tabName] || tabName;
+    showView(viewName);
+}
+
+// Go to form fields view (called from PDF selection)
 function goToFormFields() {
     console.log('=== goToFormFields() aufgerufen ===');
     console.log('Ausgewählte PDFs:', Array.from(window.selectedPDFs));
@@ -35,17 +74,23 @@ function goToFormFields() {
     
     if (window.selectedPDFs.size === 0) {
         console.error('FEHLER: Keine PDFs ausgewählt beim Wechsel zu Formularfeldern');
-        alert('Bitte wählen Sie zuerst ein PDF aus!');
+        showStatus('Bitte wählen Sie zuerst ein PDF aus!', 'error');
         return;
+    }
+    
+    // Enable the form fields menu item
+    const formFieldsMenuItem = document.getElementById('formFieldsMenuItem');
+    if (formFieldsMenuItem) {
+        formFieldsMenuItem.classList.remove('disabled');
     }
     
     console.log('Rufe generateFormForSelectedPDFs() auf...');
     generateFormForSelectedPDFs();
     console.log('generateFormForSelectedPDFs() beendet');
     
-    console.log('Wechsle zu Tab form-fields...');
-    switchTab('form-fields');
-    console.log('Tab-Wechsel abgeschlossen');
+    console.log('Wechsle zu form-fields view...');
+    showView('form-fields');
+    console.log('View-Wechsel abgeschlossen');
 }
 
 function generatePDFSelection() {
@@ -140,58 +185,177 @@ function updateSelectionSummary() {
 
 function updateNextButton() {
     const nextButton = document.getElementById('nextButton');
-    const formFieldsTab = document.getElementById('formFieldsTab');
+    const formFieldsMenuItem = document.getElementById('formFieldsMenuItem');
     
     if (window.selectedPDFs.size > 0) {
         nextButton.disabled = false;
-        formFieldsTab.disabled = false;
+        if (formFieldsMenuItem) {
+            formFieldsMenuItem.classList.remove('disabled');
+        }
     } else {
         nextButton.disabled = true;
-        formFieldsTab.disabled = true;
+        if (formFieldsMenuItem) {
+            formFieldsMenuItem.classList.add('disabled');
+        }
     }
 }
 
+// Show status message in status bar
+function showStatus(message, type = 'info') {
+    const statusBar = document.getElementById('status');
+    if (!statusBar) return;
+    
+    // Clear existing content
+    statusBar.textContent = '';
+    statusBar.className = 'status-bar';
+    
+    // Add type-specific styling
+    if (type === 'error') {
+        statusBar.style.background = '#e74c3c';
+    } else if (type === 'success') {
+        statusBar.style.background = '#27ae60';
+    } else if (type === 'warning') {
+        statusBar.style.background = '#f39c12';
+    } else {
+        statusBar.style.background = '#34495e';
+    }
+    
+    // Set message
+    statusBar.textContent = message;
+    
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'error') {
+        setTimeout(() => {
+            statusBar.textContent = '';
+            statusBar.style.background = '#34495e';
+        }, 5000);
+    }
+}
+
+// Show error screen
 function showError() {
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'flex';
 }
 
-function showStatus(message, type = 'success') {
-    const status = document.getElementById('status');
-    status.textContent = message;
-    status.className = `status ${type}`;
-    status.style.display = 'block';
+// Hide loading and show main app
+function showMainApp() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
     
-    setTimeout(() => {
-        status.style.display = 'none';
-    }, 5000);
+    // Initialize default view
+    showView('pdf-selection');
 }
 
+// Toggle hidden data section
+function toggleHiddenData() {
+    const content = document.getElementById('hiddenDataContent');
+    const toggleText = document.getElementById('hiddenDataToggleText');
+    
+    if (content && toggleText) {
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            toggleText.textContent = 'Verstecken';
+        } else {
+            content.style.display = 'none';
+            toggleText.textContent = 'Anzeigen';
+        }
+    }
+}
+
+// Handle PDF field type changes in config
+function handleFieldTypeChange() {
+    const typeSelect = document.getElementById('configFieldType');
+    const signatureSettings = document.getElementById('configSignatureSettings');
+    
+    if (typeSelect && signatureSettings) {
+        if (typeSelect.value === 'signature') {
+            signatureSettings.style.display = 'block';
+        } else {
+            signatureSettings.style.display = 'none';
+        }
+    }
+}
+
+// Save settings
 function saveSettings() {
-    window.appSettings.fileNamePattern = document.getElementById('fileNamePattern').value;
-    window.appSettings.emailAddress = document.getElementById('emailAddress').value;
-    window.appSettings.emailSubject = document.getElementById('emailSubject').value;
-    window.appSettings.emailBody = document.getElementById('emailBody').value;
-    
-    showStatus('Einstellungen gespeichert!');
-}
-
-function loadSettingsToForm() {
-    document.getElementById('fileNamePattern').value = window.appSettings.fileNamePattern;
-    document.getElementById('emailAddress').value = window.appSettings.emailAddress;
-    document.getElementById('emailSubject').value = window.appSettings.emailSubject;
-    document.getElementById('emailBody').value = window.appSettings.emailBody;
-}
-
-function resetSettings() {
-    window.appSettings = {
-        fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
-        emailAddress: '',
-        emailSubject: 'Formularunterlagen - [Nachname], [Vorname]',
-        emailBody: 'Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen'
+    const settings = {
+        fileNamePattern: document.getElementById('fileNamePattern')?.value || '',
+        emailAddress: document.getElementById('emailAddress')?.value || '',
+        emailSubject: document.getElementById('emailSubject')?.value || '',
+        emailBody: document.getElementById('emailBody')?.value || ''
     };
-    loadSettingsToForm();
-    showStatus('Einstellungen zurückgesetzt!');
+    
+    try {
+        localStorage.setItem('pdf-form-settings', JSON.stringify(settings));
+        showStatus('✅ Einstellungen erfolgreich gespeichert', 'success');
+        
+        // Update global settings
+        window.appSettings = settings;
+    } catch (error) {
+        console.error('Fehler beim Speichern der Einstellungen:', error);
+        showStatus('❌ Fehler beim Speichern der Einstellungen', 'error');
+    }
+}
+
+// Reset settings
+function resetSettings() {
+    if (confirm('Möchten Sie wirklich alle Einstellungen zurücksetzen?')) {
+        const defaultSettings = {
+            fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
+            emailAddress: '',
+            emailSubject: 'Formularunterlagen - [Nachname], [Vorname]',
+            emailBody: 'Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen'
+        };
+        
+        document.getElementById('fileNamePattern').value = defaultSettings.fileNamePattern;
+        document.getElementById('emailAddress').value = defaultSettings.emailAddress;
+        document.getElementById('emailSubject').value = defaultSettings.emailSubject;
+        document.getElementById('emailBody').value = defaultSettings.emailBody;
+        
+        window.appSettings = defaultSettings;
+        
+        showStatus('✅ Einstellungen zurückgesetzt', 'success');
+    }
+}
+
+// Load settings on page load
+function loadSettings() {
+    try {
+        const saved = localStorage.getItem('pdf-form-settings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+            window.appSettings = settings;
+            
+            if (settings.fileNamePattern) {
+                const elem = document.getElementById('fileNamePattern');
+                if (elem) elem.value = settings.fileNamePattern;
+            }
+            if (settings.emailAddress) {
+                const elem = document.getElementById('emailAddress');
+                if (elem) elem.value = settings.emailAddress;
+            }
+            if (settings.emailSubject) {
+                const elem = document.getElementById('emailSubject');
+                if (elem) elem.value = settings.emailSubject;
+            }
+            if (settings.emailBody) {
+                const elem = document.getElementById('emailBody');
+                if (elem) elem.value = settings.emailBody;
+            }
+        } else {
+            // Set defaults
+            window.appSettings = {
+                fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',
+                emailAddress: '',
+                emailSubject: 'Formularunterlagen - [Nachname], [Vorname]',
+                emailBody: 'Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen'
+            };
+        }
+    } catch (error) {
+        console.error('Fehler beim Laden der Einstellungen:', error);
+    }
 }
 
 function openEmailDraft() {
@@ -211,3 +375,15 @@ function openEmailDraft() {
     const mailtoLink = `mailto:${window.appSettings.emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
 }
+
+// Add event listener for field type changes
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    
+    const typeSelect = document.getElementById('configFieldType');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', handleFieldTypeChange);
+    }
+});
+
+console.log('✅ UI Manager (Email-Client Style) loaded');

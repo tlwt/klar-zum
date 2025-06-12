@@ -647,10 +647,15 @@ async function loadPDFConfigForFile(pdfName) {
 
 async function loadPDFsFromDirectory() {
     try {
+        console.log('🔍 Versuche config.yaml zu laden von:', '../config.yaml');
+        console.log('🌐 Aktuelle URL:', window.location.href);
+        
         // Lade config.yaml für PDF-Liste
         const configResponse = await fetch('../config.yaml');
+        console.log('📄 Config response status:', configResponse.status);
+        
         if (!configResponse.ok) {
-            throw new Error('config.yaml nicht gefunden im Hauptverzeichnis');
+            throw new Error(`config.yaml nicht gefunden (Status: ${configResponse.status}). URL: ${window.location.href}`);
         }
         
         const configText = await configResponse.text();
