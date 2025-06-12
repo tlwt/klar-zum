@@ -168,6 +168,13 @@ function onPDFSelectionChange() {
         window.selectedPDFs = new Set();
     }
     
+    // Debug: Check DOM structure
+    const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+    console.log('🔍 Alle Checkboxen gefunden:', allCheckboxes.length);
+    allCheckboxes.forEach((cb, index) => {
+        console.log(`  Checkbox ${index}:`, cb.id, cb.value, 'closest(.pdf-checkbox):', !!cb.closest('.pdf-checkbox'));
+    });
+    
     window.selectedPDFs.clear();
     const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
     console.log('Gefundene aktivierte Checkboxen:', checkedBoxes.length);
@@ -175,11 +182,22 @@ function onPDFSelectionChange() {
     checkedBoxes.forEach(checkbox => {
         console.log('Aktivierte Checkbox:', checkbox.value);
         window.selectedPDFs.add(checkbox.value);
-        checkbox.closest('.pdf-checkbox').classList.add('selected');
+        
+        const pdfCheckboxElement = checkbox.closest('.pdf-checkbox');
+        if (pdfCheckboxElement) {
+            pdfCheckboxElement.classList.add('selected');
+        } else {
+            console.warn('⚠️ PDF checkbox parent element not found for:', checkbox);
+        }
     });
     
     document.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(checkbox => {
-        checkbox.closest('.pdf-checkbox').classList.remove('selected');
+        const pdfCheckboxElement = checkbox.closest('.pdf-checkbox');
+        if (pdfCheckboxElement) {
+            pdfCheckboxElement.classList.remove('selected');
+        } else {
+            console.warn('⚠️ PDF checkbox parent element not found for unchecked:', checkbox);
+        }
     });
     
     console.log('Neue Auswahl - selectedPDFs:', Array.from(window.selectedPDFs));
