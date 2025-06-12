@@ -120,23 +120,40 @@ async function initializeLivePreview() {
 }
 
 async function switchLivePreviewPDF() {
-    const selector = document.getElementById('livePreviewPDFSelector');
-    const selectedPDF = selector.value;
+    console.log('🔄 switchLivePreviewPDF() aufgerufen');
     
-    if (!selectedPDF) return;
+    const selector = document.getElementById('livePreviewPDFSelector');
+    if (!selector) {
+        console.error('❌ livePreviewPDFSelector nicht gefunden!');
+        return;
+    }
+    
+    const selectedPDF = selector.value;
+    console.log('📄 Ausgewähltes PDF:', selectedPDF);
+    
+    if (!selectedPDF) {
+        console.log('⚠️ Kein PDF ausgewählt, beende Funktion');
+        return;
+    }
 
     showLivePreviewLoading(true);
     
     try {
         // PDF-Objekt finden
+        console.log('🔍 Suche PDF-Info für:', selectedPDF);
         const pdfInfo = window.availablePDFs.find(pdf => pdf.name === selectedPDF);
         if (!pdfInfo) {
+            console.error('❌ PDF nicht in availablePDFs gefunden:', selectedPDF);
+            console.log('Available PDFs:', window.availablePDFs.map(p => p.name));
             throw new Error('PDF nicht gefunden');
         }
+        
+        console.log('✅ PDF-Info gefunden:', pdfInfo.name);
 
         window.livePreview.currentPDF = selectedPDF;
         window.livePreview.currentPage = 1;
         
+        console.log('🔄 Rufe updateLivePreview() auf...');
         // Sofort erste Aktualisierung
         await updateLivePreview();
         
