@@ -27,14 +27,18 @@ function toggleLivePreview() {
     }
 
     const pdfPreviewContainer = document.getElementById('pdfPreviewContainer');
-    const toggleBtn = document.getElementById('livePreviewToggle');
+    const toggleBtn = document.getElementById('livePreviewToggle'); // May be null if button was removed
 
     if (window.livePreview.isActive) {
         // Deaktivieren
         window.livePreview.isActive = false;
         document.body.classList.remove('live-preview-active');
         pdfPreviewContainer.style.display = 'none';
-        toggleBtn.textContent = '👁️ Live-Vorschau';
+        
+        // Only update button text if button exists
+        if (toggleBtn) {
+            toggleBtn.textContent = '👁️ Live-Vorschau';
+        }
         
         // Timer stoppen
         if (window.livePreview.updateTimer) {
@@ -61,7 +65,11 @@ function toggleLivePreview() {
         window.livePreview.isActive = true;
         document.body.classList.add('live-preview-active');
         pdfPreviewContainer.style.display = 'flex';
-        toggleBtn.textContent = '❌ Vorschau schließen';
+        
+        // Only update button text if button exists
+        if (toggleBtn) {
+            toggleBtn.textContent = '❌ Vorschau schließen';
+        }
         
         initializeLivePreview();
     }
