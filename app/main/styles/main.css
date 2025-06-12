@@ -663,7 +663,7 @@ body.live-preview-active {
 
 body.live-preview-active .view-content {
     display: flex;
-    height: calc(100vh - 140px); /* Reduced height since view-actions is hidden */
+    height: calc(100vh - 110px); /* Optimized height: view-actions and status-bar are hidden */
     overflow: hidden;
     padding: 0;
     width: 100%;
@@ -671,6 +671,10 @@ body.live-preview-active .view-content {
 
 body.live-preview-active .view-actions {
     display: none; /* Hide the view-actions area when live preview is active */
+}
+
+body.live-preview-active .status-bar {
+    display: none; /* Hide the status bar when live preview is active for cleaner layout */
 }
 
 .form-container {
