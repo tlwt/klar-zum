@@ -68,16 +68,32 @@ function toggleLivePreview() {
 }
 
 async function initializeLivePreview() {
+    console.log('🎬 initializeLivePreview() gestartet');
     const selector = document.getElementById('livePreviewPDFSelector');
+    
+    if (!selector) {
+        console.error('❌ livePreviewPDFSelector nicht gefunden!');
+        return;
+    }
+    
+    console.log('📋 window.selectedPDFs:', Array.from(window.selectedPDFs || []));
     
     // PDF-Auswahl aktualisieren
     selector.innerHTML = '<option value="">PDF auswählen...</option>';
-    window.selectedPDFs.forEach(pdfName => {
-        const option = document.createElement('option');
-        option.value = pdfName;
-        option.textContent = pdfName;
-        selector.appendChild(option);
-    });
+    
+    if (window.selectedPDFs && window.selectedPDFs.size > 0) {
+        window.selectedPDFs.forEach(pdfName => {
+            const option = document.createElement('option');
+            option.value = pdfName;
+            option.textContent = pdfName;
+            selector.appendChild(option);
+            console.log(`➕ Option hinzugefügt: ${pdfName}`);
+        });
+        
+        console.log(`✅ ${selector.children.length - 1} PDF-Optionen hinzugefügt`);
+    } else {
+        console.warn('⚠️ Keine selectedPDFs gefunden!');
+    }
 
     // Erstes PDF automatisch auswählen (immer, auch bei mehreren PDFs)
     if (window.selectedPDFs.size >= 1) {

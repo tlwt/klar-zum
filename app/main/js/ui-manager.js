@@ -452,34 +452,41 @@ function enableLivePreviewAutomatically() {
         if (typeof toggleLivePreview === 'function') {
             toggleLivePreview();
             console.log('✅ Live-Vorschau aktiviert');
+            
+            // The toggleLivePreview function will call initializeLivePreview()
+            // which already handles auto-selection of the first PDF, so we don't need to do it here
+            showStatus('Live-Vorschau automatisch aktiviert', 'success');
         }
-    }
-    
-    // Auto-select first PDF for preview
-    if (window.selectedPDFs && window.selectedPDFs.size > 0) {
-        const firstPDF = Array.from(window.selectedPDFs)[0];
-        const pdfSelector = document.getElementById('livePreviewPDFSelector');
+    } else {
+        console.log('Live-Vorschau bereits aktiv');
         
-        if (pdfSelector && firstPDF) {
-            // Find and select the first PDF option
-            const options = pdfSelector.querySelectorAll('option');
-            for (let option of options) {
-                if (option.value === firstPDF) {
-                    pdfSelector.value = firstPDF;
-                    
-                    // Trigger the change event to update the preview
-                    if (typeof switchLivePreviewPDF === 'function') {
-                        switchLivePreviewPDF();
-                    }
-                    
-                    console.log(`✅ Erstes PDF automatisch ausgewählt: ${firstPDF}`);
-                    break;
+        // If already active, just make sure the dropdown is populated
+        const pdfSelector = document.getElementById('livePreviewPDFSelector');
+        if (pdfSelector && window.selectedPDFs && window.selectedPDFs.size > 0) {
+            // Check if dropdown is empty and repopulate if needed
+            if (pdfSelector.children.length <= 1) {
+                console.log('🔄 Dropdown ist leer, fülle es neu...');
+                
+                pdfSelector.innerHTML = '<option value="">PDF auswählen...</option>';
+                window.selectedPDFs.forEach(pdfName => {
+                    const option = document.createElement('option');
+                    option.value = pdfName;
+                    option.textContent = pdfName;
+                    pdfSelector.appendChild(option);
+                });
+                
+                // Auto-select first PDF
+                const firstPDF = Array.from(window.selectedPDFs)[0];
+                pdfSelector.value = firstPDF;
+                
+                if (typeof switchLivePreviewPDF === 'function') {
+                    switchLivePreviewPDF();
                 }
+                
+                console.log(`✅ Dropdown neu gefüllt und erstes PDF ausgewählt: ${firstPDF}`);
             }
         }
     }
-    
-    showStatus('Live-Vorschau automatisch aktiviert', 'success');
 }
 
 console.log('✅ UI Manager (Email-Client Style) loaded');
