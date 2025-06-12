@@ -15,6 +15,14 @@ async function initializeConfigApp() {
         
         document.getElementById('loading').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+        
+        // Prüfe Direct Save Permission nach DOM-Update
+        setTimeout(() => {
+            if (window.globalConfig) {
+                checkDirectSavePermission(window.globalConfig);
+            }
+        }, 100);
+        
     } catch (error) {
         console.error('Fehler beim Initialisieren:', error);
         showConfigStatus('Fehler beim Laden der PDF-Formulare: ' + error.message, 'error');
@@ -36,9 +44,6 @@ async function loadPDFsFromConfig() {
         
         // Speichere globale Konfiguration für spätere Verwendung
         window.globalConfig = config;
-        
-        // Prüfe ob direktes Speichern erlaubt ist
-        checkDirectSavePermission(config);
         
         if (!config.pdfs || !Array.isArray(config.pdfs)) {
             throw new Error('Keine PDFs in config.yaml definiert');
@@ -288,14 +293,20 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
 
 // Neue Funktionen für direktes Speichern
 function checkDirectSavePermission(config) {
+    console.log('🔍 Prüfe Direct Save Permission:', config);
     const allowConfigWrite = config.allowConfigWrite === true;
     const saveDirectBtn = document.getElementById('saveDirectBtn');
     
+    console.log('allowConfigWrite:', allowConfigWrite);
+    console.log('saveDirectBtn gefunden:', !!saveDirectBtn);
+    
     if (allowConfigWrite && saveDirectBtn) {
         saveDirectBtn.style.display = 'inline-block';
-        console.log('✅ Direktes Speichern der Konfiguration ist aktiviert');
+        console.log('✅ Direktes Speichern der Konfiguration ist aktiviert - Button wird angezeigt');
     } else {
         console.log('ℹ️ Direktes Speichern der Konfiguration ist deaktiviert');
+        if (!allowConfigWrite) console.log('  - allowConfigWrite ist false/undefined');
+        if (!saveDirectBtn) console.log('  - saveDirectBtn Element nicht gefunden');
     }
 }
 
