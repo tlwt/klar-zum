@@ -1042,14 +1042,7 @@ body.live-preview-active .view-actions {
 .mt-1 { margin-top: 10px; }
 .mt-2 { margin-top: 20px; }
 
-/* Selection Summary */
-.selection-summary {
-    background: #d1ecf1;
-    border: 1px solid #bee5eb;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
+/* Selection Summary - removed, using notifications instead */
 
 .url-params {
     background: #e8f4f8;

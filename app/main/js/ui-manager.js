@@ -216,15 +216,28 @@ function onPDFSelectionChange() {
 }
 
 function updateSelectionSummary() {
+    // Hide the old summary div (we'll use notifications instead)
     const summaryDiv = document.getElementById('selectionSummary');
-    const listDiv = document.getElementById('selectedPDFsList');
-    
-    if (window.selectedPDFs.size === 0) {
+    if (summaryDiv) {
         summaryDiv.style.display = 'none';
+    }
+    
+    // Show notification with selected PDFs
+    if (window.selectedPDFs.size === 0) {
+        // No notification when nothing is selected
+        return;
     } else {
-        const pdfList = Array.from(window.selectedPDFs).map(pdfName => `<li>${pdfName}</li>`).join('');
-        listDiv.innerHTML = `<ul>${pdfList}</ul>`;
-        summaryDiv.style.display = 'block';
+        const pdfCount = window.selectedPDFs.size;
+        const pdfList = Array.from(window.selectedPDFs).join(', ');
+        
+        let message;
+        if (pdfCount === 1) {
+            message = `📄 ${pdfCount} PDF ausgewählt: ${pdfList}`;
+        } else {
+            message = `📄 ${pdfCount} PDFs ausgewählt: ${pdfList}`;
+        }
+        
+        showNotification(message, 'success', 3000); // Short duration for selection updates
     }
 }
 
