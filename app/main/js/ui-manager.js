@@ -94,8 +94,23 @@ function goToFormFields() {
 }
 
 function generatePDFSelection() {
+    console.log('📋 generatePDFSelection() called');
+    console.log('📋 availablePDFs:', window.availablePDFs?.length || 'undefined');
+    
     const container = document.getElementById('pdfSelection');
+    if (!container) {
+        console.error('❌ pdfSelection container not found!');
+        return;
+    }
+    
     container.innerHTML = '';
+    
+    if (!window.availablePDFs || window.availablePDFs.length === 0) {
+        container.innerHTML = '<div class="pdf-checkbox"><div class="pdf-info"><h4>⚠️ Keine PDFs gefunden</h4><p>Die PDF-Formulare konnten nicht geladen werden.</p></div></div>';
+        return;
+    }
+    
+    console.log(`📋 Generiere ${window.availablePDFs.length} PDF-Optionen`);
     
     window.availablePDFs.forEach((pdf, index) => {
         const fieldsPreview = generateFieldsPreview(pdf.fields);
@@ -146,6 +161,12 @@ function toggleFields(element) {
 
 function onPDFSelectionChange() {
     console.log('=== onPDFSelectionChange() aufgerufen ===');
+    console.log('window.selectedPDFs before clear:', window.selectedPDFs);
+    
+    if (!window.selectedPDFs) {
+        console.error('❌ window.selectedPDFs ist nicht initialisiert!');
+        window.selectedPDFs = new Set();
+    }
     
     window.selectedPDFs.clear();
     const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
@@ -187,15 +208,27 @@ function updateNextButton() {
     const nextButton = document.getElementById('nextButton');
     const formFieldsMenuItem = document.getElementById('formFieldsMenuItem');
     
-    if (window.selectedPDFs.size > 0) {
-        nextButton.disabled = false;
+    console.log('🔄 updateNextButton() - selectedPDFs.size:', window.selectedPDFs?.size || 'undefined');
+    console.log('🔄 nextButton found:', !!nextButton);
+    console.log('🔄 formFieldsMenuItem found:', !!formFieldsMenuItem);
+    
+    if (window.selectedPDFs && window.selectedPDFs.size > 0) {
+        if (nextButton) {
+            nextButton.disabled = false;
+            console.log('✅ Next button enabled');
+        }
         if (formFieldsMenuItem) {
             formFieldsMenuItem.classList.remove('disabled');
+            console.log('✅ Form fields menu item enabled');
         }
     } else {
-        nextButton.disabled = true;
+        if (nextButton) {
+            nextButton.disabled = true;
+            console.log('❌ Next button disabled');
+        }
         if (formFieldsMenuItem) {
             formFieldsMenuItem.classList.add('disabled');
+            console.log('❌ Form fields menu item disabled');
         }
     }
 }
