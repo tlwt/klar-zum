@@ -7,6 +7,7 @@ PDF-Formular-Ausfüller für deutsche Reservisten-Dokumente.
 ### Mit Docker Compose (empfohlen)
 
 ```bash
+cd docker
 docker-compose up -d
 ```
 
@@ -16,7 +17,7 @@ Die Anwendung ist dann unter http://localhost:8080 erreichbar.
 
 ```bash
 # Build
-docker build -t reservist-digital .
+docker build -f docker/Dockerfile -t reservist-digital .
 
 # Run
 docker run -d -p 8080:80 --name reservist-digital reservist-digital

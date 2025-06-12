@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   reservist-digital:
-    build: .
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - "8080:80"
     restart: unless-stopped
