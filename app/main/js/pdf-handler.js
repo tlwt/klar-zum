@@ -37,9 +37,32 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data) {
         
         const { width: pageWidth, height: pageHeight } = targetPage.getSize();
         
-        // Bestimme Position und Größe
-        const signatureWidth = signatureConfig.width || 200;
-        const signatureHeight = signatureConfig.height || 100;
+        // Bestimme maximale Größe aus Konfiguration
+        const maxSignatureWidth = signatureConfig.width || 200;
+        const maxSignatureHeight = signatureConfig.height || 100;
+        
+        // Berechne das ursprüngliche Seitenverhältnis der Unterschrift
+        const imageWidth = embeddedImage.width;
+        const imageHeight = embeddedImage.height;
+        const aspectRatio = imageWidth / imageHeight;
+        
+        // Berechne die tatsächliche Größe unter Beibehaltung des Seitenverhältnisses
+        let signatureWidth, signatureHeight;
+        
+        if (maxSignatureWidth / aspectRatio <= maxSignatureHeight) {
+            // Breite ist der limitierende Faktor
+            signatureWidth = maxSignatureWidth;
+            signatureHeight = maxSignatureWidth / aspectRatio;
+        } else {
+            // Höhe ist der limitierende Faktor
+            signatureHeight = maxSignatureHeight;
+            signatureWidth = maxSignatureHeight * aspectRatio;
+        }
+        
+        console.log(`🔍 Unterschrift-Größenberechnung für ${fieldName}:`);
+        console.log(`  Original Bildgröße: ${imageWidth} x ${imageHeight} (Verhältnis: ${aspectRatio.toFixed(2)})`);
+        console.log(`  Max konfiguriert: ${maxSignatureWidth} x ${maxSignatureHeight}`);
+        console.log(`  Finale Größe: ${signatureWidth.toFixed(1)} x ${signatureHeight.toFixed(1)}`);
         
         let x, y;
         
@@ -52,7 +75,6 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data) {
             console.log(`🔍 PDF-Koordinaten Debug für ${fieldName}:`);
             console.log(`  Seitengröße: ${pageWidth} x ${pageHeight} Punkte`);
             console.log(`  Konfiguriert: X=${x}, Y=${y}`);
-            console.log(`  Unterschriftgröße: ${signatureWidth} x ${signatureHeight}`);
             console.log(`  PDF-Koordinatensystem: Ursprung unten links, Y-Achse nach oben`);
         } else {
             // Intelligente Standardpositionierung basierend auf Feldname
@@ -66,7 +88,7 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data) {
         x = Math.max(0, Math.min(x, pageWidth - signatureWidth));
         y = Math.max(0, Math.min(y, pageHeight - signatureHeight));
         
-        // Bild auf der Seite platzieren
+        // Bild auf der Seite platzieren mit korrektem Seitenverhältnis
         targetPage.drawImage(embeddedImage, {
             x: x,
             y: y,
