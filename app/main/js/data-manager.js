@@ -399,3 +399,37 @@ function handleUrlParams() {
         calculateAllFields();
     }, 500);
 }
+
+// Load settings data into form fields (called when loading saved data)
+function loadSettingsToForm() {
+    try {
+        console.log('🔄 Lade Einstellungen in Formularfelder...');
+        
+        if (window.appSettings) {
+            // Update settings form fields if they exist
+            const fileNamePattern = document.getElementById('fileNamePattern');
+            if (fileNamePattern && window.appSettings.fileNamePattern) {
+                fileNamePattern.value = window.appSettings.fileNamePattern;
+            }
+            
+            const emailAddress = document.getElementById('emailAddress');
+            if (emailAddress && window.appSettings.emailAddress) {
+                emailAddress.value = window.appSettings.emailAddress;
+            }
+            
+            const emailSubject = document.getElementById('emailSubject');
+            if (emailSubject && window.appSettings.emailSubject) {
+                emailSubject.value = window.appSettings.emailSubject;
+            }
+            
+            const emailBody = document.getElementById('emailBody');
+            if (emailBody && window.appSettings.emailBody) {
+                emailBody.value = window.appSettings.emailBody;
+            }
+            
+            console.log('✅ Einstellungen in Formular geladen');
+        }
+    } catch (error) {
+        console.error('Fehler beim Laden der Einstellungen in Formular:', error);
+    }
+}
