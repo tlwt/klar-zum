@@ -153,8 +153,9 @@ async function switchLivePreviewPDF() {
         window.livePreview.currentPDF = selectedPDF;
         window.livePreview.currentPage = 1;
         
-        console.log('🔄 Rufe updateLivePreview() auf...');
-        // Sofort erste Aktualisierung
+        console.log('🔄 Erzwinge PDF-Wechsel...');
+        // Force update by resetting last form data and calling update
+        window.livePreview.lastFormData = null; // Reset to force update
         await updateLivePreview();
         
         // Sicherstellen dass erste Seite korrekt angezeigt wird
@@ -175,7 +176,14 @@ async function switchLivePreviewPDF() {
 
 // Live-Update-Funktion die bei Formular-Änderungen aufgerufen wird
 async function updateLivePreview() {
-    if (!window.livePreview.isActive || !window.livePreview.currentPDF) return;
+    console.log('📄 updateLivePreview() gestartet');
+    console.log('  isActive:', window.livePreview.isActive);
+    console.log('  currentPDF:', window.livePreview.currentPDF);
+    
+    if (!window.livePreview.isActive || !window.livePreview.currentPDF) {
+        console.log('❌ Abbruch: Live-Vorschau inaktiv oder kein PDF ausgewählt');
+        return;
+    }
 
     try {
         // Aktuelle Formular-Daten abrufen
@@ -183,7 +191,10 @@ async function updateLivePreview() {
         
         // Prüfe ob sich die Daten geändert haben
         const formDataString = JSON.stringify(formData);
+        console.log('🔍 Formdata-Check:', formDataString === window.livePreview.lastFormData ? 'GLEICH' : 'UNTERSCHIEDLICH');
+        
         if (formDataString === window.livePreview.lastFormData) {
+            console.log('⏭️ Keine Änderung der Formulardaten, überspringe Update');
             return; // Keine Änderung
         }
         window.livePreview.lastFormData = formDataString;
