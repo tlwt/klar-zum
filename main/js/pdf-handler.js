@@ -571,7 +571,7 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
 async function loadPDFConfigForFile(pdfName) {
     try {
         const configName = pdfName.replace('.pdf', '.yaml');
-        const response = await fetch(`./formulare/${encodeURIComponent(configName)}`);
+        const response = await fetch(`../formulare/${encodeURIComponent(configName)}`);
         if (response.ok) {
             const yamlText = await response.text();
             const config = jsyaml.load(yamlText);
@@ -593,7 +593,7 @@ async function loadPDFConfigForFile(pdfName) {
 async function loadPDFsFromDirectory() {
     try {
         // Lade config.yaml für PDF-Liste
-        const configResponse = await fetch('./config.yaml');
+        const configResponse = await fetch('../config.yaml');
         if (!configResponse.ok) {
             throw new Error('config.yaml nicht gefunden im Hauptverzeichnis');
         }
@@ -611,7 +611,7 @@ async function loadPDFsFromDirectory() {
             const pdfName = pdfInfo.name;
             
             try {
-                const response = await fetch(`./formulare/${encodeURIComponent(pdfName)}`);
+                const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
                 if (response.ok) {
                     const arrayBuffer = await response.arrayBuffer();
                     const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
@@ -622,7 +622,7 @@ async function loadPDFsFromDirectory() {
                     
                     window.availablePDFs.push({
                         name: pdfName,
-                        path: `./formulare/${pdfName}`,
+                        path: `../formulare/${pdfName}`,
                         document: pdfDoc,
                         fields: fields,
                         hasConfig: hasConfig,

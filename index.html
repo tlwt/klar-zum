@@ -3,156 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Formular Ausfüller</title>
-    <!-- AKTUALISIERTE BIBLIOTHEKEN wie im Demo -->
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <!-- Immer neu laden -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma"       content="no-cache">
-    <meta http-equiv="Expires"      content="0">
-    
+    <title>Reservist Digital</title>
+    <link rel="icon" type="image/x-icon" href="main/favicon.ico">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .app-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .app-card:hover {
+            border-color: #5a7c47;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(90, 124, 71, 0.1);
+        }
+        .app-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .app-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .app-description {
+            color: #666;
+            font-size: 0.95em;
+        }
+        @media (max-width: 600px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>PDF Formular Ausfüller</h1>
-            <p>Automatisches Ausfüllen von PDF-Formularen mit individueller YAML-Konfiguration</p>
-        </div>
-        
-        <div class="content">
-            <div id="loading" class="loading">
-                <div class="loading-spinner"></div>
-                <p>Lade PDF-Formulare und Konfigurationen...</p>
-            </div>
-            
-            <div id="mainContent" style="display: none;">
-                <div id="urlParams" class="url-params" style="display: none;">
-                    <h4>🔗 URL-Parameter erkannt:</h4>
-                    <div id="urlParamsContent"></div>
-                </div>
-                
-                <div class="tabs">
-                    <button class="tab active" onclick="switchTab('pdf-selection')">📄 PDF-Auswahl</button>
-                    <button class="tab" onclick="switchTab('form-fields')" id="formFieldsTab" disabled>📝 Formularfelder</button>
-                    <button class="tab" onclick="switchTab('settings')">⚙️ Einstellungen</button>
-                </div>
-                
-                <div id="pdf-selection" class="tab-content active">
-                    <div class="form-section">
-                        <h3>📄 PDF-Formulare auswählen</h3>
-                        <p class="description">Wählen Sie die PDF-Formulare aus, die Sie ausfüllen möchten.</p>
-                        <div id="pdfSelection" class="pdf-selection"></div>
-                        
-                        <div id="selectionSummary" class="selection-summary" style="display: none;">
-                            <h4>✅ Ausgewählte Formulare:</h4>
-                            <div id="selectedPDFsList"></div>
-                        </div>
-                        
-                        <div class="button-group">
-                            <button type="button" class="btn btn-primary" id="nextButton" onclick="goToFormFields()" disabled>
-                                ➡️ Weiter zu Formularfeldern
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="form-fields" class="tab-content">
-                    <div class="button-group" style="margin-bottom: 20px;">
-                        <label for="loadFile" class="file-label">📁 Daten laden</label>
-                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
-                        <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
-                    </div>
-                    
-                    <div id="hiddenDataSection" class="hidden-data-section" style="display: none;">
-                        <h4>🗃️ Versteckte Daten aus Datensatz</h4>
-                        <p>Folgende Daten aus dem geladenen Datensatz werden gespeichert, obwohl sie in keinem Formular verwendet werden:</p>
-                        <div class="hidden-data-toggle" onclick="toggleHiddenData()">
-                            <span id="hiddenDataToggleText">Anzeigen</span> (<span id="hiddenDataCount">0</span> Felder)
-                        </div>
-                        <div id="hiddenDataContent" class="hidden-data-content">
-                            <div class="form-grid" id="hiddenDataFields"></div>
-                        </div>
-                    </div>
-                    
-                    <form id="dataForm">
-                        <div id="formSections"></div>
-                    </form>
-                    
-                    <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="generatePDFs()">📄 PDFs generieren</button>
-                        <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
-                        <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">⬅️ Zurück zur PDF-Auswahl</button>
-                    </div>
-                </div>
-                
-                <div id="settings" class="tab-content">
-                    <div class="form-section">
-                        <h3>⚙️ Einstellungen</h3>
-                        <p class="description">Konfigurieren Sie Dateinamen und E-Mail-Einstellungen.</p>
-                        
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="fileNamePattern">📝 Dateinamen-Muster</label>
-                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [PDF], [Datum]</div>
-                                <input type="text" id="fileNamePattern" name="fileNamePattern" value="[Nachname], [Vorname] - [PDF] - [Datum]">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="emailAddress">📧 E-Mail-Adresse</label>
-                                <input type="email" id="emailAddress" name="emailAddress" placeholder="empfaenger@example.com">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="emailSubject">📋 E-Mail-Betreff</label>
-                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [Datum]</div>
-                                <input type="text" id="emailSubject" name="emailSubject" value="Formularunterlagen - [Nachname], [Vorname]">
-                            </div>
-                            
-                            <div class="form-group" style="grid-column: 1 / -1;">
-                                <label for="emailBody">📄 E-Mail-Text</label>
-                                <div class="field-description">Standard-Text für die E-Mail</div>
-                                <textarea id="emailBody" name="emailBody" rows="6" style="resize: vertical; width: 100%; font-family: inherit;">Sehr geehrte Damen und Herren,
-
-anbei übersende ich Ihnen die ausgefüllten Formularunterlagen.
-
-Mit freundlichen Grüßen</textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="button-group">
-                            <button type="button" class="btn btn-primary" onclick="saveSettings()">💾 Einstellungen speichern</button>
-                            <button type="button" class="btn btn-secondary" onclick="resetSettings()">🔄 Zurücksetzen</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="status" class="status"></div>
-            </div>
-            
-            <div id="errorMessage" class="error-message" style="display: none;">
-                <h4>❌ Fehler beim Laden</h4>
-                <p>Die PDF-Formulare konnten nicht geladen werden. Stellen Sie sicher, dass:</p>
-                <ul>
-                    <li>Das Verzeichnis <code>./formulare/</code> existiert</li>
-                    <li>PDF-Dateien im Verzeichnis vorhanden sind</li>
-                    <li>Die Datei über einen lokalen Server geladen wird</li>
-                    <li>Die Datei <code>config.yaml</code> existiert und gültige PDF-Liste enthält</li>
-                </ul>
-            </div>
-        </div>
+    <div class="header">
+        <h1>🪖 Reservist Digital</h1>
+        <p>PDF-Formular-Ausfüller für deutsche Reservisten-Dokumente</p>
     </div>
 
-    <!-- JavaScript Dateien in der richtigen Reihenfolge laden -->
-    <script src="js/config.js"></script>
-    <script src="js/calculation-engine.js"></script>
-    <script src="js/data-manager.js"></script>
-    <script src="js/pdf-handler.js"></script>
-    <script src="js/form-generator.js"></script>
-    <script src="js/ui-manager.js"></script>
-    <script src="js/app.js"></script>
+    <div class="app-grid">
+        <a href="main/" class="app-card">
+            <span class="app-icon">📄</span>
+            <div class="app-title">PDF Formular Ausfüller</div>
+            <div class="app-description">
+                Automatisches Ausfüllen von PDF-Formularen mit gespeicherten Daten und digitalen Unterschriften
+            </div>
+        </a>
+
+        <a href="config/" class="app-card">
+            <span class="app-icon">⚙️</span>
+            <div class="app-title">Konfigurations-Editor</div>
+            <div class="app-description">
+                Erstellen und bearbeiten von YAML-Konfigurationen für PDF-Felder und Formulare
+            </div>
+        </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
+        <p>Für die beste Funktionalität sollte diese Anwendung über einen lokalen Webserver ausgeführt werden.</p>
+    </div>
 </body>
 </html>

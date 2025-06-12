@@ -7,9 +7,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../main/styles/main.css">
     <link rel="stylesheet" href="styles/config.css">
-    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/x-icon" href="../main/favicon.ico">
     <!-- Immer neu laden -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma"       content="no-cache">
@@ -181,7 +181,7 @@
                 <div class="button-group">
                     <button class="btn btn-primary" onclick="saveAndDownloadConfig()">💾 Konfiguration speichern & herunterladen</button>
                     <button class="btn btn-secondary" onclick="previewConfig()">👁️ Vorschau</button>
-                    <button class="btn btn-secondary" onclick="window.location.href='../index.html'">⬅️ Zurück zur Hauptanwendung</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='../main/'">⬅️ Zurück zur Hauptanwendung</button>
                 </div>
                 
                 <div id="status" class="status"></div>
@@ -201,8 +201,8 @@
     </div>
 
     <!-- Geteilte Komponenten aus der Hauptanwendung -->
-    <script src="../js/config.js"></script>
-    <script src="../js/pdf-handler.js"></script>
+    <script src="../main/js/config.js"></script>
+    <script src="../main/js/pdf-handler.js"></script>
     
     <!-- Config-spezifische Module -->
     <script src="js/config-core.js"></script>

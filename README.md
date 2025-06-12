@@ -2,6 +2,14 @@
 
 PDF-Formular-Ausfüller für deutsche Reservisten-Dokumente.
 
+## Anwendung
+
+Nach dem Start sind folgende Anwendungen verfügbar:
+
+- **Startseite**: http://localhost:8080/
+- **PDF Formular Ausfüller**: http://localhost:8080/main/
+- **Konfigurations-Editor**: http://localhost:8080/config/
+
 ## Docker Setup
 
 ### Mit Docker Compose (empfohlen)
