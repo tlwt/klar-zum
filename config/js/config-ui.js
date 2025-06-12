@@ -1,5 +1,5 @@
 // config/js/config-ui.js
-// UI Management für Config Editor - Erweitert mit Dropdown-Support
+// Erweiterte UI Management für Config Editor mit Unterschrift-Positionierung und Feldverschiebung
 
 function populatePDFSelector() {
     const selector = document.getElementById('pdfSelector');
@@ -20,23 +20,34 @@ async function loadPDFConfig() {
         return;
     }
     
-    window.currentPDF = window.availablePDFs.find(pdf => pdf.name === selectedPDF);
-    if (!window.currentPDF) return;
+    console.log('Lade PDF Konfiguration für:', selectedPDF);
     
-    // Versuche existierende Konfiguration zu laden
+    window.currentPDF = window.availablePDFs.find(pdf => pdf.name === selectedPDF);
+    if (!window.currentPDF) {
+        console.error('PDF nicht gefunden:', selectedPDF);
+        return;
+    }
+    
     await loadExistingConfig(selectedPDF);
     
-    // Editor anzeigen und initialisieren
     document.getElementById('configEditor').style.display = 'grid';
+    
+    document.getElementById('groupProperties').classList.remove('active');
+    document.getElementById('fieldProperties').classList.remove('active');
+    
     initializeEditor();
 }
 
 function initializeEditor() {
+    console.log('Initialisiere Editor...');
+    
     buildGroupsOrder();
     buildFieldsOrder();
     renderGroups();
     renderFields();
     initializeSortable();
+    
+    console.log('Editor erfolgreich initialisiert');
 }
 
 function renderGroups() {
@@ -45,6 +56,7 @@ function renderGroups() {
     
     window.groupsOrder.forEach(groupName => {
         const fieldCount = window.fieldsOrder[groupName] ? window.fieldsOrder[groupName].length : 0;
+        
         const div = document.createElement('div');
         div.className = 'group-item';
         div.dataset.groupName = groupName;
@@ -76,13 +88,18 @@ function renderFields() {
     
     fields.forEach(fieldName => {
         const fieldConfig = window.currentConfig.fields[fieldName] || {};
+        
         const div = document.createElement('div');
         div.className = 'field-item';
         div.dataset.fieldName = fieldName;
         
         let badges = '';
         if (fieldConfig.type && fieldConfig.type !== 'text') {
-            badges += `<span class="field-type">${fieldConfig.type}</span>`;
+            let typeDisplay = fieldConfig.type;
+            if (fieldConfig.type === 'signature') {
+                typeDisplay = '✍️ Unterschrift';
+            }
+            badges += `<span class="field-type field-type-${fieldConfig.type}">${typeDisplay}</span>`;
         }
         if (fieldConfig.mapping) {
             badges += `<span class="field-mapped">→ ${fieldConfig.mapping}</span>`;
@@ -90,33 +107,65 @@ function renderFields() {
         if (fieldConfig.hidden_for_pdfs && fieldConfig.hidden_for_pdfs.length > 0) {
             badges += `<span class="field-hidden">versteckt</span>`;
         }
+        if (fieldConfig.virtual_field) {
+            badges += `<span class="field-virtual">virtuell</span>`;
+        }
+        
+        // Kontextmenü für Feldoperationen
+        const contextMenu = `
+            <div class="field-actions">
+                <button onclick="selectField('${fieldName}')" class="action-btn action-edit" title="Bearbeiten">✏️</button>
+                <button onclick="showMoveFieldDialog('${fieldName}')" class="action-btn action-move" title="Verschieben">📋</button>
+                ${fieldConfig.virtual_field ? 
+                    `<button onclick="removeVirtualField('${fieldName}')" class="action-btn action-delete" title="Löschen">🗑️</button>` : 
+                    `<button onclick="removeFieldFromGroup('${fieldName}')" class="action-btn action-remove" title="Aus Gruppe entfernen">➖</button>`
+                }
+            </div>
+        `;
         
         div.innerHTML = `
             <span class="drag-handle">⋮⋮</span>
             <span class="field-name">${fieldName}</span>
             ${badges}
+            ${contextMenu}
         `;
-        div.onclick = () => selectField(fieldName);
+        
+        div.onclick = (e) => {
+            if (!e.target.closest('.field-actions')) {
+                selectField(fieldName);
+            }
+        };
         container.appendChild(div);
     });
+    
+    // Add Virtual Field Button
+    const addVirtualDiv = document.createElement('div');
+    addVirtualDiv.className = 'add-virtual-field';
+    addVirtualDiv.innerHTML = `
+        <button onclick="addVirtualField('${window.currentGroup}')" class="add-virtual-btn">
+            ➕ Virtuelles Feld hinzufügen
+        </button>
+    `;
+    container.appendChild(addVirtualDiv);
     
     // Nicht zugewiesene Felder (nur anzeigen wenn nicht in 'Sonstige' Gruppe)
     if (window.currentGroup !== 'Sonstige') {
         const unassignedFields = window.currentPDF.fields.filter(fieldName => {
             const fieldConfig = window.currentConfig.fields[fieldName] || {};
-            return !fieldConfig.group || fieldConfig.group === 'Sonstige';
+            const isUnassigned = !fieldConfig.group || fieldConfig.group === 'Sonstige';
+            return isUnassigned;
         });
         
         if (unassignedFields.length > 0) {
             unassignedFields.forEach(fieldName => {
                 const div = document.createElement('div');
-                div.className = 'field-item';
+                div.className = 'field-item unassigned-field';
                 div.dataset.fieldName = fieldName;
                 div.innerHTML = `
                     <span class="field-name">${fieldName}</span>
                     <button onclick="assignFieldToGroup('${fieldName}', '${window.currentGroup}')" 
-                            style="padding: 2px 6px; font-size: 0.8em; background: #28a745; color: white; border: none; border-radius: 3px;">
-                        ➕ Hinzufügen
+                            class="action-btn action-add" title="Zur Gruppe hinzufügen">
+                        ➕
                     </button>
                 `;
                 unassignedContainer.appendChild(div);
@@ -140,13 +189,9 @@ function selectGroup(groupName) {
     });
     document.querySelector(`[data-group-name="${groupName}"]`).classList.add('active');
     
-    // Felder für diese Gruppe anzeigen
     renderFields();
-    
-    // Properties Panel aktualisieren
     showGroupProperties(groupName);
     
-    // Gruppenname im Felder-Panel anzeigen
     document.getElementById('selectedGroupName').textContent = `(${groupName})`;
 }
 
@@ -159,7 +204,6 @@ function selectField(fieldName) {
     });
     document.querySelector(`[data-field-name="${fieldName}"]`).classList.add('active');
     
-    // Properties Panel aktualisieren
     showFieldProperties(fieldName);
 }
 
@@ -184,9 +228,23 @@ function showFieldProperties(fieldName) {
     document.getElementById('fieldCalculation').value = fieldConfig.berechnung || '';
     document.getElementById('fieldHidden').checked = (fieldConfig.hidden_for_pdfs && fieldConfig.hidden_for_pdfs.length > 0) || false;
     
+    // Unterschrift-spezifische Felder
+    const signatureWidth = document.getElementById('signatureWidth');
+    const signatureHeight = document.getElementById('signatureHeight');
+    const signatureX = document.getElementById('signatureX');
+    const signatureY = document.getElementById('signatureY');
+    const signaturePage = document.getElementById('signaturePage');
+    
+    if (signatureWidth) signatureWidth.value = fieldConfig.signature_width || '200';
+    if (signatureHeight) signatureHeight.value = fieldConfig.signature_height || '100';
+    if (signatureX) signatureX.value = fieldConfig.signature_x || '50';
+    if (signatureY) signatureY.value = fieldConfig.signature_y || '100';
+    if (signaturePage) signaturePage.value = fieldConfig.signature_page || '1';
+    
     // Optionen anzeigen/verstecken und Hilfetexte aktualisieren
     const fieldType = fieldConfig.type || 'text';
     toggleOptionsField(fieldType);
+    toggleSignatureFields(fieldType);
     
     if ((fieldType === 'radio' || fieldType === 'select') && fieldConfig.options) {
         document.getElementById('fieldOptions').value = fieldConfig.options.join('\n');
@@ -204,7 +262,6 @@ function toggleOptionsField(fieldType) {
         optionsField.style.display = 'block';
         optionsHelp.style.display = 'block';
         
-        // Label und Hilfetext je nach Typ anpassen
         if (fieldType === 'radio') {
             optionsLabel.textContent = 'Radio Button Optionen:';
             optionsHelp.textContent = 'Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.';
@@ -219,6 +276,118 @@ function toggleOptionsField(fieldType) {
     }
 }
 
+function toggleSignatureFields(fieldType) {
+    const signatureFields = document.getElementById('signatureFields');
+    if (signatureFields) {
+        if (fieldType === 'signature') {
+            signatureFields.style.display = 'block';
+        } else {
+            signatureFields.style.display = 'none';
+        }
+    }
+}
+
+// NEUE FUNKTION: Dialog zum Verschieben von Feldern
+function showMoveFieldDialog(fieldName) {
+    const availableGroups = window.groupsOrder.filter(group => group !== window.currentGroup);
+    
+    if (availableGroups.length === 0) {
+        showConfigStatus('Keine anderen Gruppen verfügbar', 'error');
+        return;
+    }
+    
+    const groupOptions = availableGroups.map(group => 
+        `<option value="${group}">${group}</option>`
+    ).join('');
+    
+    const dialog = document.createElement('div');
+    dialog.className = 'move-field-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-overlay" onclick="closeMoveFieldDialog()">
+            <div class="dialog-content" onclick="event.stopPropagation()">
+                <h3>Feld verschieben</h3>
+                <p>Feld "<strong>${fieldName}</strong>" verschieben von "<strong>${window.currentGroup}</strong>" zu:</p>
+                <select id="targetGroupSelect" class="dialog-select">
+                    ${groupOptions}
+                </select>
+                <div class="dialog-buttons">
+                    <button onclick="executeMoveField('${fieldName}')" class="btn btn-primary">Verschieben</button>
+                    <button onclick="closeMoveFieldDialog()" class="btn btn-secondary">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+}
+
+function executeMoveField(fieldName) {
+    const targetGroup = document.getElementById('targetGroupSelect').value;
+    if (targetGroup) {
+        moveFieldToGroup(fieldName, targetGroup);
+        closeMoveFieldDialog();
+        
+        // Zur Zielgruppe wechseln
+        selectGroup(targetGroup);
+        selectField(fieldName);
+    }
+}
+
+function closeMoveFieldDialog() {
+    const dialog = document.querySelector('.move-field-dialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+function addVirtualField(groupName) {
+    const fieldName = prompt('Name des virtuellen Feldes:');
+    if (!fieldName || fieldName.trim() === '') return;
+    
+    const trimmedName = fieldName.trim();
+    
+    if (window.currentConfig.fields[trimmedName]) {
+        alert('Ein Feld mit diesem Namen existiert bereits!');
+        return;
+    }
+    
+    window.currentConfig.fields[trimmedName] = {
+        group: groupName,
+        virtual_field: true,
+        type: 'text',
+        title: trimmedName
+    };
+    
+    if (!window.fieldsOrder[groupName]) {
+        window.fieldsOrder[groupName] = [];
+    }
+    window.fieldsOrder[groupName].push(trimmedName);
+    
+    renderGroups();
+    renderFields();
+    selectField(trimmedName);
+    showConfigStatus('Virtuelles Feld erstellt: ' + trimmedName, 'success');
+}
+
+function removeVirtualField(fieldName) {
+    if (!confirm(`Virtuelles Feld "${fieldName}" wirklich löschen?`)) {
+        return;
+    }
+    
+    delete window.currentConfig.fields[fieldName];
+    
+    Object.keys(window.fieldsOrder).forEach(groupName => {
+        window.fieldsOrder[groupName] = window.fieldsOrder[groupName].filter(name => name !== fieldName);
+    });
+    
+    window.currentField = null;
+    renderGroups();
+    renderFields();
+    document.getElementById('fieldProperties').classList.remove('active');
+    
+    showConfigStatus('Virtuelles Feld gelöscht: ' + fieldName, 'success');
+}
+
 function initializeSortable() {
     // Sortable für Gruppen
     new Sortable(document.getElementById('groupsList'), {
@@ -226,7 +395,9 @@ function initializeSortable() {
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         onEnd: function(evt) {
-            const newOrder = Array.from(evt.to.children).map(el => el.dataset.groupName);
+            const newOrder = Array.from(evt.to.children)
+                .map(el => el.dataset.groupName)
+                .filter(name => name && name !== 'undefined');
             window.groupsOrder = newOrder;
             saveCurrentProperties();
         }
@@ -237,9 +408,12 @@ function initializeSortable() {
         animation: 150,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
+        filter: '.add-virtual-field',
         onEnd: function(evt) {
             if (window.currentGroup) {
-                const newOrder = Array.from(evt.to.children).map(el => el.dataset.fieldName);
+                const newOrder = Array.from(evt.to.children)
+                    .map(el => el.dataset.fieldName)
+                    .filter(name => name && name !== 'undefined');
                 window.fieldsOrder[window.currentGroup] = newOrder;
                 saveCurrentProperties();
             }
@@ -257,7 +431,6 @@ function addNewGroup() {
         return;
     }
     
-    // Neue Gruppe hinzufügen
     window.currentConfig.groups[trimmedName] = {
         title: trimmedName,
         description: ''
@@ -282,7 +455,6 @@ function deleteGroup() {
         return;
     }
     
-    // Felder zur 'Sonstige' Gruppe verschieben
     const fieldsToMove = window.fieldsOrder[window.currentGroup] || [];
     fieldsToMove.forEach(fieldName => {
         if (window.currentConfig.fields[fieldName]) {
@@ -293,7 +465,6 @@ function deleteGroup() {
     if (!window.fieldsOrder['Sonstige']) window.fieldsOrder['Sonstige'] = [];
     window.fieldsOrder['Sonstige'].push(...fieldsToMove);
     
-    // Gruppe löschen
     delete window.currentConfig.groups[window.currentGroup];
     delete window.fieldsOrder[window.currentGroup];
     window.groupsOrder = window.groupsOrder.filter(name => name !== window.currentGroup);
@@ -323,16 +494,13 @@ function saveAndDownloadConfig() {
         sortKeys: false
     });
     
-    // YAML-Datei herunterladen
     const blob = new Blob([yamlString], { type: 'text/yaml' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = window.currentPDF.name.replace('.pdf', '.yaml');
     link.click();
     
-    // Auch in Konsole ausgeben für Debugging
     console.log('Generierte Konfiguration:', config);
-    console.log('YAML:', yamlString);
     
     showConfigStatus('YAML-Konfiguration wurde heruntergeladen!', 'success');
 }
@@ -403,10 +571,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fieldDescription) fieldDescription.addEventListener('input', saveCurrentProperties);
     if (fieldType) fieldType.addEventListener('change', function() {
         toggleOptionsField(this.value);
+        toggleSignatureFields(this.value);
         saveCurrentProperties();
     });
     if (fieldMapping) fieldMapping.addEventListener('input', saveCurrentProperties);
     if (fieldCalculation) fieldCalculation.addEventListener('input', saveCurrentProperties);
     if (fieldOptions) fieldOptions.addEventListener('input', saveCurrentProperties);
     if (fieldHidden) fieldHidden.addEventListener('change', saveCurrentProperties);
+    
+    // Unterschrift-spezifische Event-Listener
+    const signatureWidth = document.getElementById('signatureWidth');
+    const signatureHeight = document.getElementById('signatureHeight');
+    const signatureX = document.getElementById('signatureX');
+    const signatureY = document.getElementById('signatureY');
+    const signaturePage = document.getElementById('signaturePage');
+    
+    if (signatureWidth) signatureWidth.addEventListener('input', saveCurrentProperties);
+    if (signatureHeight) signatureHeight.addEventListener('input', saveCurrentProperties);
+    if (signatureX) signatureX.addEventListener('input', saveCurrentProperties);
+    if (signatureY) signatureY.addEventListener('input', saveCurrentProperties);
+    if (signaturePage) signaturePage.addEventListener('input', saveCurrentProperties);
 });

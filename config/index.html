@@ -14,13 +14,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma"       content="no-cache">
     <meta http-equiv="Expires"      content="0">
-
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>PDF Konfiguration Editor</h1>
-            <p>Erstellen und bearbeiten Sie YAML-Konfigurationen für PDF-Formulare</p>
+            <p>Erstellen und bearbeiten Sie YAML-Konfigurationen für PDF-Formulare mit erweiterten Unterschrift-Positionierungsoptionen</p>
         </div>
         
         <div class="content">
@@ -106,6 +105,7 @@
                                     <option value="checkbox">Checkbox</option>
                                     <option value="radio">Radio Button</option>
                                     <option value="select">Dropdown</option>
+                                    <option value="signature">✍️ Unterschrift</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -119,6 +119,51 @@
                                     Jede Option in einer neuen Zeile. Die erste Option wird als Standard ausgewählt.
                                 </div>
                             </div>
+                            
+                            <!-- Erweiterte Unterschrift-Einstellungen -->
+                            <div id="signatureFields" class="form-group" style="display: none;">
+                                <label>Unterschrift-Einstellungen:</label>
+                                
+                                <!-- Größe -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                    <div>
+                                        <label for="signatureWidth" style="font-size: 0.9em;">Breite (px):</label>
+                                        <input type="number" id="signatureWidth" placeholder="200" min="100" max="500">
+                                    </div>
+                                    <div>
+                                        <label for="signatureHeight" style="font-size: 0.9em;">Höhe (px):</label>
+                                        <input type="number" id="signatureHeight" placeholder="100" min="50" max="300">
+                                    </div>
+                                </div>
+                                
+                                <!-- Position -->
+                                <div class="signature-position-grid">
+                                    <div class="form-group">
+                                        <label for="signatureX">X-Position:</label>
+                                        <input type="number" id="signatureX" placeholder="50" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="signatureY">Y-Position:</label>
+                                        <input type="number" id="signatureY" placeholder="100" min="0">
+                                    </div>
+                                </div>
+                                
+                                <!-- Seite -->
+                                <div class="form-group">
+                                    <label for="signaturePage">Seite:</label>
+                                    <input type="number" id="signaturePage" placeholder="1" min="1">
+                                </div>
+                                
+                                <!-- Hilfetext für Koordinaten -->
+                                <div class="coordinate-help">
+                                    <strong>Koordinaten-System:</strong><br>
+                                    • <strong>X:</strong> Horizontaler Abstand vom linken Rand (in Punkten)<br>
+                                    • <strong>Y:</strong> Vertikaler Abstand vom unteren Rand (in Punkten)<br>
+                                    • <strong>Standard:</strong> 1 Punkt = ~0.35mm, 72 Punkte = 1 Zoll<br>
+                                    • <strong>Beispiel:</strong> X=50, Y=100 = ca. 18mm vom linken Rand, 35mm vom unteren Rand
+                                </div>
+                            </div>
+                            
                             <div class="form-group">
                                 <label for="fieldCalculation">Berechnung:</label>
                                 <input type="text" id="fieldCalculation" placeholder='z.B. CONCAT({Vorname}, " ", {Nachname})'>

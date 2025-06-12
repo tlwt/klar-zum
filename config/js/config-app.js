@@ -1,5 +1,7 @@
 // config/js/config-app.js
-// Config App Initialisierung - Aktualisiert für config.yaml und Dropdown-Support
+// Config App Initialisierung - Erweitert mit verbesserter Felderkennung
+
+window.availablePDFs = [];
 
 window.addEventListener('load', async function() {
     await initializeConfigApp();
@@ -92,7 +94,30 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
             
             extractedFields.push(fieldName);
             
-            // Erweiterte Radio Button/Checkbox Erkennung für automatische Konfiguration
+            // Automatische Typerkennung initialisieren falls nicht vorhanden
+            if (!window.currentConfig) window.currentConfig = { fields: {}, groups: {} };
+            if (!window.currentConfig.fields) window.currentConfig.fields = {};
+            
+            if (!window.currentConfig.fields[fieldName]) {
+                window.currentConfig.fields[fieldName] = {};
+            }
+            
+            // Automatische Unterschrift-Erkennung
+            const signaturePatterns = [
+                /unterschrift/i,
+                /signature/i,
+                /sign/i,
+                /datum.*ort/i,
+                /ort.*datum/i
+            ];
+            
+            if (signaturePatterns.some(pattern => pattern.test(fieldName))) {
+                window.currentConfig.fields[fieldName].type = 'signature';
+                window.currentConfig.fields[fieldName].group = 'Unterschriften';
+                console.log(`${fieldName} automatisch als Unterschrift erkannt`);
+            }
+            
+            // Radio Button/Checkbox Erkennung erweitert
             try {
                 const acroField = field.acroField;
                 if (acroField && acroField.dict) {
@@ -111,12 +136,11 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
                             // Versuche Optionen zu extrahieren
                             const options = [];
                             try {
-                                // Methode 1: Über PDFRadioGroup API
                                 if (field.constructor.name === 'PDFRadioGroup') {
                                     options.push(...field.getOptions());
                                 }
                             } catch (e) {
-                                console.log('PDFRadioGroup.getOptions() fehlgeschlagen, versuche manuelle Extraktion');
+                                console.log('PDFRadioGroup.getOptions() fehlgeschlagen, versuche Fallback-Optionen');
                             }
                             
                             // Fallback: Bekannte Optionen für häufige Felder
@@ -129,20 +153,17 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
                                     options.push('Ja', 'Nein');
                                 } else if (fieldName.toLowerCase().includes('wiederverwendung')) {
                                     options.push('Ja', 'Nein');
+                                } else {
+                                    // Standard Ja/Nein für unbekannte Radio Buttons
+                                    options.push('Ja', 'Nein');
                                 }
                             }
                             
                             if (options.length > 0) {
-                                console.log(`Radio Button ${fieldName} Optionen gefunden:`, options);
-                                
-                                // Speichere in temporärer Konfiguration für automatische Erkennung
-                                if (!window.currentConfig.fields) window.currentConfig.fields = {};
-                                if (!window.currentConfig.fields[fieldName]) {
-                                    window.currentConfig.fields[fieldName] = {};
-                                }
+                                console.log(`Radio Button ${fieldName} Optionen:`, options);
                                 window.currentConfig.fields[fieldName].type = 'radio';
                                 window.currentConfig.fields[fieldName].options = options;
-                                window.currentConfig.fields[fieldName].group = window.currentConfig.fields[fieldName].group || 'Sonstige';
+                                window.currentConfig.fields[fieldName].group = window.currentConfig.fields[fieldName].group || 'Einverständnis';
                             }
                         }
                     }
@@ -153,12 +174,14 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
         }
         
     } catch (error) {
-        console.log(`Keine Formularfelder in ${pdfName} gefunden`);
+        console.log(`Keine Formularfelder in ${pdfName} gefunden oder Fehler beim Parsen:`, error);
     }
     
     // Fallback für bekannte PDFs ohne erkennbare Felder
     if (extractedFields.length === 0) {
-        if (pdfName.includes('5120') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
+        console.log(`Verwende Fallback-Felder für ${pdfName}`);
+        
+        if (pdfName.includes('5120') || pdfName.includes('Einverständnis') || pdfName.includes('EV')) {
             const fallbackFields = [
                 'Nachname', 'Vorname', 'DienstgradDerReserve', 'Personalnummer', 'Personenkennziffer',
                 'StrasseHausnummerPostleitzahlOrt', 'Datum', 'Telefon', 'Fax', 'EMail',
@@ -171,39 +194,83 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
                 'OrganisationInteressenvertreter', 'UebungZusammenhangBundeswehrauftrag'
             ];
             
-            // Radio Button Gruppen mit Standardoptionen hinzufügen
-            const radioGroups = {
-                'Ueberschrift': ['einer Übung nach § 61 SG', 'eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft nach § 63b SG'],
-                'EinverstaendnisZurAbleistung': ['einer Übung nach § 61 SG', 'eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft nach § 63b SG'],
-                'Strafverfahren': ['Ja', 'Nein'],
-                'WiederverwendungBerufssoldatin': ['Ja', 'Nein'],
-                'AnreiseGutscheine': ['Ja', 'Nein']
-            };
-            
-            // Zusätzliche Dropdown-Beispiele für Demonstration
-            const dropdownGroups = {
-                'Dienstgrad': ['Leutnant d.R.', 'Oberleutnant d.R.', 'Hauptmann d.R.', 'Major d.R.', 'Oberstleutnant d.R.', 'Oberst d.R.'],
-                'Standort': ['Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt']
-            };
-            
-            Object.keys(radioGroups).forEach(groupName => {
-                fallbackFields.push(groupName);
-                if (!window.currentConfig.fields) window.currentConfig.fields = {};
-                window.currentConfig.fields[groupName] = {
+            // Automatische Konfiguration für bekannte Feldtypen
+            const fieldConfigurations = {
+                // Radio Button Gruppen
+                'Ueberschrift': {
                     type: 'radio',
-                    options: radioGroups[groupName],
+                    options: ['einer Übung nach § 61 SG', 'eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft nach § 63b SG'],
                     group: 'Einverständnis'
-                };
-            });
-            
-            Object.keys(dropdownGroups).forEach(groupName => {
-                fallbackFields.push(groupName);
-                if (!window.currentConfig.fields) window.currentConfig.fields = {};
-                window.currentConfig.fields[groupName] = {
+                },
+                'EinverstaendnisZurAbleistung': {
+                    type: 'radio',
+                    options: ['einer Übung nach § 61 SG', 'eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft nach § 63b SG'],
+                    group: 'Einverständnis'
+                },
+                'Strafverfahren': {
+                    type: 'radio',
+                    options: ['Ja', 'Nein'],
+                    group: 'Einverständnis'
+                },
+                'WiederverwendungBerufssoldatin': {
+                    type: 'radio',
+                    options: ['Ja', 'Nein'],
+                    group: 'Dienstleistung'
+                },
+                'AnreiseGutscheine': {
+                    type: 'radio',
+                    options: ['Ja', 'Nein'],
+                    group: 'Dienstleistung'
+                },
+                
+                // Dropdown Gruppen
+                'DienstgradDerReserve': {
                     type: 'select',
-                    options: dropdownGroups[groupName],
+                    options: ['Leutnant d.R.', 'Oberleutnant d.R.', 'Hauptmann d.R.', 'Major d.R.', 'Oberstleutnant d.R.', 'Oberst d.R.'],
                     group: 'Persönliche Daten'
-                };
+                },
+                
+                // Unterschriftenfelder
+                'UnterschriftReservist': {
+                    type: 'signature',
+                    group: 'Unterschriften',
+                    signature_width: 200,
+                    signature_height: 100
+                },
+                'DatumOrtUnterschrift': {
+                    type: 'signature',
+                    group: 'Unterschriften',
+                    signature_width: 200,
+                    signature_height: 100
+                },
+                
+                // E-Mail Feld
+                'EMail': {
+                    type: 'email',
+                    group: 'Kontaktdaten'
+                },
+                
+                // Telefon Feld
+                'Telefon': {
+                    type: 'tel',
+                    group: 'Kontaktdaten'
+                },
+                
+                // Datum Felder
+                'Datum': {
+                    type: 'date',
+                    group: 'Persönliche Daten'
+                }
+            };
+            
+            // Konfigurationen anwenden
+            Object.keys(fieldConfigurations).forEach(fieldName => {
+                if (!window.currentConfig.fields) window.currentConfig.fields = {};
+                window.currentConfig.fields[fieldName] = fieldConfigurations[fieldName];
+                
+                if (!fallbackFields.includes(fieldName)) {
+                    fallbackFields.push(fieldName);
+                }
             });
             
             extractedFields.push(...fallbackFields);
