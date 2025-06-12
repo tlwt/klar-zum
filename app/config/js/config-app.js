@@ -16,12 +16,17 @@ async function initializeConfigApp() {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         
-        // Prüfe Direct Save Permission nach DOM-Update
-        setTimeout(() => {
-            if (window.globalConfig) {
-                checkDirectSavePermission(window.globalConfig);
-            }
-        }, 100);
+        // Direkter Ansatz: Button sofort anzeigen wenn allowConfigWrite true ist
+        const saveDirectBtn = document.getElementById('saveDirectBtn');
+        console.log('🔧 DIREKT: saveDirectBtn gefunden:', !!saveDirectBtn);
+        console.log('🔧 DIREKT: allowConfigWrite:', window.globalConfig?.allowConfigWrite);
+        
+        if (saveDirectBtn && window.globalConfig?.allowConfigWrite === true) {
+            saveDirectBtn.style.display = 'inline-block';
+            console.log('🔧 DIREKT: Button angezeigt!');
+        } else {
+            console.log('🔧 DIREKT: Button NICHT angezeigt');
+        }
         
     } catch (error) {
         console.error('Fehler beim Initialisieren:', error);
@@ -293,20 +298,31 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
 
 // Neue Funktionen für direktes Speichern
 function checkDirectSavePermission(config) {
-    console.log('🔍 Prüfe Direct Save Permission:', config);
-    const allowConfigWrite = config.allowConfigWrite === true;
-    const saveDirectBtn = document.getElementById('saveDirectBtn');
+    console.log('🔍 DEBUG: Prüfe Direct Save Permission');
+    console.log('🔍 DEBUG: Config object:', config);
+    console.log('🔍 DEBUG: allowConfigWrite value:', config?.allowConfigWrite);
+    console.log('🔍 DEBUG: allowConfigWrite type:', typeof config?.allowConfigWrite);
     
-    console.log('allowConfigWrite:', allowConfigWrite);
-    console.log('saveDirectBtn gefunden:', !!saveDirectBtn);
+    const allowConfigWrite = config?.allowConfigWrite === true;
+    console.log('🔍 DEBUG: allowConfigWrite boolean:', allowConfigWrite);
+    
+    const saveDirectBtn = document.getElementById('saveDirectBtn');
+    console.log('🔍 DEBUG: saveDirectBtn element:', saveDirectBtn);
+    console.log('🔍 DEBUG: saveDirectBtn exists:', !!saveDirectBtn);
+    
+    if (saveDirectBtn) {
+        console.log('🔍 DEBUG: Button current style.display:', saveDirectBtn.style.display);
+        console.log('🔍 DEBUG: Button current visibility:', window.getComputedStyle(saveDirectBtn).display);
+    }
     
     if (allowConfigWrite && saveDirectBtn) {
         saveDirectBtn.style.display = 'inline-block';
-        console.log('✅ Direktes Speichern der Konfiguration ist aktiviert - Button wird angezeigt');
+        console.log('✅ ERFOLG: Button wird angezeigt');
+        console.log('🔍 DEBUG: Button style nach Änderung:', saveDirectBtn.style.display);
     } else {
-        console.log('ℹ️ Direktes Speichern der Konfiguration ist deaktiviert');
-        if (!allowConfigWrite) console.log('  - allowConfigWrite ist false/undefined');
-        if (!saveDirectBtn) console.log('  - saveDirectBtn Element nicht gefunden');
+        console.log('❌ FEHLER: Button wird NICHT angezeigt');
+        if (!allowConfigWrite) console.log('  - Grund: allowConfigWrite ist', allowConfigWrite);
+        if (!saveDirectBtn) console.log('  - Grund: saveDirectBtn Element nicht gefunden');
     }
 }
 

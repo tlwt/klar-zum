@@ -8,3 +8,10 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    volumes:
+      # Mount das komplette App-Verzeichnis für Live-Updates während der Entwicklung
+      - ../app:/usr/share/nginx/html/app
+      # Mount die Root-Dateien (index.html, etc.)
+      - ../index.html:/usr/share/nginx/html/index.html
+      - ../README.md:/usr/share/nginx/html/README.md
+      - ../CLAUDE.md:/usr/share/nginx/html/CLAUDE.md
