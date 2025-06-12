@@ -205,15 +205,79 @@ body {
     flex-wrap: wrap;
 }
 
-/* Status Bar */
-.status-bar {
-    height: 30px;
-    background: #34495e;
-    color: white;
+/* Notification System */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.notification {
+    background: white;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #3498db;
+    max-width: 400px;
+    pointer-events: auto;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification.notification-success {
+    border-left-color: #27ae60;
+    background: #f8fff9;
+}
+
+.notification.notification-error {
+    border-left-color: #e74c3c;
+    background: #fff8f8;
+}
+
+.notification.notification-warning {
+    border-left-color: #f39c12;
+    background: #fffcf8;
+}
+
+.notification.notification-info {
+    border-left-color: #3498db;
+    background: #f8fcff;
+}
+
+.notification-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #7f8c8d;
+    line-height: 1;
+    padding: 0;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    font-size: 0.85rem;
+    justify-content: center;
+}
+
+.notification-close:hover {
+    color: #2c3e50;
 }
 
 /* Buttons */
@@ -663,7 +727,7 @@ body.live-preview-active {
 
 body.live-preview-active .view-content {
     display: flex;
-    height: calc(100vh - 110px); /* Optimized height: view-actions and status-bar are hidden */
+    height: calc(100vh - 80px); /* Full height without status bar */
     overflow: hidden;
     padding: 0;
     width: 100%;
@@ -671,10 +735,6 @@ body.live-preview-active .view-content {
 
 body.live-preview-active .view-actions {
     display: none; /* Hide the view-actions area when live preview is active */
-}
-
-body.live-preview-active .status-bar {
-    display: none; /* Hide the status bar when live preview is active for cleaner layout */
 }
 
 .form-container {

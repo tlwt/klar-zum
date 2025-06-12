@@ -257,36 +257,64 @@ function updateNextButton() {
     }
 }
 
-// Show status message in status bar
+// Show notification message (replaces old status bar)
 function showStatus(message, type = 'info') {
-    const statusBar = document.getElementById('status');
-    if (!statusBar) return;
+    showNotification(message, type);
+}
+
+// Modern notification system
+function showNotification(message, type = 'info', duration = 5000) {
+    const container = document.getElementById('notificationContainer');
+    if (!container) {
+        console.warn('Notification container not found');
+        return;
+    }
     
-    // Clear existing content
-    statusBar.textContent = '';
-    statusBar.className = 'status-bar';
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
     
-    // Add type-specific styling
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'notification-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.onclick = () => removeNotification(notification);
+    
+    // Set content
+    notification.innerHTML = `${message}`;
+    notification.appendChild(closeBtn);
+    
+    // Add to container
+    container.appendChild(notification);
+    
+    // Trigger show animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Auto-remove after duration (except for errors which stay longer)
     if (type === 'error') {
-        statusBar.style.background = '#e74c3c';
-    } else if (type === 'success') {
-        statusBar.style.background = '#27ae60';
-    } else if (type === 'warning') {
-        statusBar.style.background = '#f39c12';
-    } else {
-        statusBar.style.background = '#34495e';
+        duration = 10000; // Errors stay 10 seconds
     }
     
-    // Set message
-    statusBar.textContent = message;
+    setTimeout(() => {
+        removeNotification(notification);
+    }, duration);
     
-    // Auto-hide after 5 seconds for non-error messages
-    if (type !== 'error') {
-        setTimeout(() => {
-            statusBar.textContent = '';
-            statusBar.style.background = '#34495e';
-        }, 5000);
-    }
+    return notification;
+}
+
+// Remove notification with animation
+function removeNotification(notification) {
+    if (!notification || !notification.parentElement) return;
+    
+    notification.classList.remove('show');
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.parentElement.removeChild(notification);
+        }
+    }, 300);
 }
 
 // Show error screen
