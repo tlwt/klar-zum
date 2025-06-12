@@ -1,1 +1,39 @@
 # reservist-digital
+
+PDF-Formular-Ausfüller für deutsche Reservisten-Dokumente.
+
+## Docker Setup
+
+### Mit Docker Compose (empfohlen)
+
+```bash
+docker-compose up -d
+```
+
+Die Anwendung ist dann unter http://localhost:8080 erreichbar.
+
+### Mit Docker direkt
+
+```bash
+# Build
+docker build -t reservist-digital .
+
+# Run
+docker run -d -p 8080:80 --name reservist-digital reservist-digital
+```
+
+### Entwicklung
+
+Für die Entwicklung kann ein lokaler Webserver verwendet werden:
+
+```bash
+# Python 3
+python -m http.server 8000
+
+# Node.js
+npx http-server
+```
+
+## Konfiguration
+
+Die Anwendung verwendet YAML-Konfigurationsdateien im `formulare/` Verzeichnis zur Konfiguration der PDF-Felder. Ein Konfigurationseditor ist unter `/config/` verfügbar.
