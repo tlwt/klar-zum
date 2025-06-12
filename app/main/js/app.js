@@ -19,7 +19,7 @@ async function initializeApp() {
     }
 }
 
-async function generatePDFs() {
+async function generatePDFs(flatten = true) {
     const data = getAllFormData();
     const selectedPDFList = [];
     
@@ -36,12 +36,15 @@ async function generatePDFs() {
     }
     
     try {
+        const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
+        showStatus(`Generiere ${selectedPDFList.length} PDF(s) als ${modeText}...`, 'info');
+        
         for (const pdf of selectedPDFList) {
-            await fillAndDownloadPDF(pdf, data);
+            await fillAndDownloadPDF(pdf, data, flatten);
         }
         
         saveData();
-        showStatus(`${selectedPDFList.length} PDF(s) erfolgreich generiert und Daten gespeichert!`);
+        showStatus(`${selectedPDFList.length} PDF(s) erfolgreich als ${modeText} generiert und Daten gespeichert!`);
         
     } catch (error) {
         showStatus('Fehler bei der PDF-Generierung: ' + error.message, 'error');

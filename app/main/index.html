@@ -83,7 +83,23 @@
                     </form>
                     
                     <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="generatePDFs()">📄 PDFs generieren</button>
+                        <div class="download-options">
+                            <h4>📄 PDFs generieren</h4>
+                            <div class="download-buttons">
+                                <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
+                                    🔒 Flach (nicht bearbeitbar)
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
+                                    ✏️ Bearbeitbar
+                                </button>
+                            </div>
+                            <div class="download-help">
+                                <small>
+                                    <strong>Flach:</strong> Formulare sind ausgefüllt und können nicht mehr bearbeitet werden (empfohlen)<br>
+                                    <strong>Bearbeitbar:</strong> Formulare können weiterhin bearbeitet werden
+                                </small>
+                            </div>
+                        </div>
                         <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
                         <button type="button" class="btn btn-secondary" onclick="switchTab('pdf-selection')">⬅️ Zurück zur PDF-Auswahl</button>
                     </div>

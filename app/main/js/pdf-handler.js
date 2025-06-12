@@ -311,7 +311,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc) {
 }
 
 // Erweiterte fillAndDownloadPDF Funktion mit verbesserter Unterschrift-Behandlung
-async function fillAndDownloadPDF(pdf, data) {
+async function fillAndDownloadPDF(pdf, data, flatten = true) {
     try {
         const pdfBytes = await pdf.document.save();
         const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
@@ -487,16 +487,27 @@ async function fillAndDownloadPDF(pdf, data) {
             console.warn('Fehler beim Aktualisieren der Appearances:', error);
         }
         
+        // Flatten PDF if requested
+        if (flatten) {
+            try {
+                form.flatten();
+                console.log('✓ PDF-Formular wurde geflacht (flatten)');
+            } catch (error) {
+                console.warn('Fehler beim Flatten des PDFs:', error);
+            }
+        }
+        
         const finalPdfBytes = await pdfDoc.save({
             useObjectStreams: false
         });
         
         // Verwende FileSaver.js
-        const customFileName = generateFileName(pdf.name, data);
+        const customFileName = generateFileName(pdf.name, data, flatten);
         const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
         saveAs(blob, customFileName);
         
-        console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name}`);
+        const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
+        console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} (${modeText})`);
         
     } catch (error) {
         console.error('Fehler beim Ausfüllen des PDFs:', error);
@@ -740,7 +751,7 @@ async function extractFieldsFromPDF(pdfDoc, pdfName) {
     return [...new Set(extractedFields)];
 }
 
-function generateFileName(pdfName, data) {
+function generateFileName(pdfName, data, flatten = true) {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
     
@@ -757,5 +768,8 @@ function generateFileName(pdfName, data) {
     fileName = fileName.replace(/[^a-zA-Z0-9äöüÄÖÜß\s,.-]/g, '_');
     fileName = fileName.replace(/\s+/g, ' ').trim();
     
-    return fileName + '.pdf';
+    // Add suffix for mode
+    const suffix = flatten ? '_flach' : '_bearbeitbar';
+    
+    return fileName + suffix + '.pdf';
 }

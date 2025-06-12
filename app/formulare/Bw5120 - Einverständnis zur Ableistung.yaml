@@ -73,15 +73,23 @@ fields:
   Beschaeftigung_Beamter:
     group: Dienstleistung
     type: checkbox
+    title: Beamter
+    description: Ich bin Beamter
   Beschaeftigung_Arbeitsverhaeltnis:
     group: Dienstleistung
     type: checkbox
+    description: Ich habe keine Arbeit
+    title: Arbeitslos
   Beschaeftigung_Selbstaendig:
     group: Dienstleistung
     type: checkbox
+    title: Sebstständig
+    description: Ich bin selbstständig
   Beschaeftigung_Pensionaer:
     group: Dienstleistung
     type: checkbox
+    title: Pensionär, Schüler o.ä.
+    description: Ich bin Pensionär, Schüler o.ä.
   Beschaeftigung_KeinArbeitsverhaeltnis:
     group: Dienstleistung
     type: checkbox
