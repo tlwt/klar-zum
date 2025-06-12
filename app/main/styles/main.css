@@ -453,6 +453,12 @@ body {
     border: 1px solid #f5c6cb;
 }
 
+.status.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
 .url-params {
     background: #e8f4f8;
     padding: 15px;

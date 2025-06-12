@@ -34,6 +34,12 @@ async function loadPDFsFromConfig() {
         const configText = await configResponse.text();
         const config = jsyaml.load(configText);
         
+        // Speichere globale Konfiguration für spätere Verwendung
+        window.globalConfig = config;
+        
+        // Prüfe ob direktes Speichern erlaubt ist
+        checkDirectSavePermission(config);
+        
         if (!config.pdfs || !Array.isArray(config.pdfs)) {
             throw new Error('Keine PDFs in config.yaml definiert');
         }
@@ -278,4 +284,78 @@ async function extractFieldsFromPDFConfig(pdfDoc, pdfName) {
     }
     
     return [...new Set(extractedFields)];
+}
+
+// Neue Funktionen für direktes Speichern
+function checkDirectSavePermission(config) {
+    const allowConfigWrite = config.allowConfigWrite === true;
+    const saveDirectBtn = document.getElementById('saveDirectBtn');
+    
+    if (allowConfigWrite && saveDirectBtn) {
+        saveDirectBtn.style.display = 'inline-block';
+        console.log('✅ Direktes Speichern der Konfiguration ist aktiviert');
+    } else {
+        console.log('ℹ️ Direktes Speichern der Konfiguration ist deaktiviert');
+    }
+}
+
+async function saveConfigDirect() {
+    if (!window.currentConfig || !window.currentSelectedPDF) {
+        showConfigStatus('Keine Konfiguration zum Speichern ausgewählt', 'error');
+        return;
+    }
+    
+    // Prüfe nochmals die Berechtigung
+    if (!window.globalConfig?.allowConfigWrite) {
+        showConfigStatus('Direktes Speichern ist nicht erlaubt (allowConfigWrite: false)', 'error');
+        return;
+    }
+    
+    try {
+        const yamlContent = generateYAMLConfig();
+        const configName = window.currentSelectedPDF.replace('.pdf', '.yaml');
+        
+        // Erstelle FormData für den Upload
+        const formData = new FormData();
+        const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        formData.append('file', blob, configName);
+        
+        // Versuche die Datei zu speichern
+        // Option 1: Verwende PHP-Endpoint (falls verfügbar)
+        let response;
+        try {
+            response = await fetch(`../save-config.php/${encodeURIComponent(configName)}`, {
+                method: 'PUT',
+                body: yamlContent,
+                headers: {
+                    'Content-Type': 'text/yaml',
+                },
+            });
+        } catch (phpError) {
+            // Option 2: Direkter PUT auf formulare/ (funktioniert nur mit entsprechendem Server)
+            response = await fetch(`../formulare/${encodeURIComponent(configName)}`, {
+                method: 'PUT',
+                body: yamlContent,
+                headers: {
+                    'Content-Type': 'text/yaml',
+                },
+            });
+        }
+        
+        if (response.ok) {
+            showConfigStatus(`✅ Konfiguration ${configName} erfolgreich gespeichert!`, 'success');
+        } else {
+            // Fallback: Download anbieten
+            throw new Error(`Server-Antwort: ${response.status} ${response.statusText}`);
+        }
+        
+    } catch (error) {
+        console.warn('Direktes Speichern fehlgeschlagen:', error);
+        showConfigStatus(`⚠️ Direktes Speichern nicht möglich: ${error.message}. Verwenden Sie den Download-Button.`, 'warning');
+        
+        // Fallback auf Download
+        setTimeout(() => {
+            saveAndDownloadConfig();
+        }, 2000);
+    }
 }

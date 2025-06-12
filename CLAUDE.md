@@ -53,15 +53,17 @@ sections:
 - **Multi-PDF Generation**: Fill multiple PDFs at once
 
 ### Configuration Editor
-Separate application at `config/index.html` for creating/editing YAML configurations. Access at `http://localhost:8000/config/`
+Separate application at `app/config/index.html` for creating/editing YAML configurations. Access at `http://localhost:8000/app/config/`
+
+**Direct Save Feature**: If `allowConfigWrite: true` is set in `config.yaml`, the configuration editor shows an additional "🚀 Konfiguration direkt speichern" button that attempts to save configurations directly to the server (requires PUT endpoint support).
 
 ## Common Tasks
 
 ### Adding a New PDF Form
-1. Add PDF to `formulare/` directory
-2. Create corresponding YAML config file
-3. Use config editor to map fields
-4. Test with main application
+1. Add PDF to `app/formulare/` directory
+2. Add PDF entry to `app/config.yaml`
+3. Use config editor (`app/config/`) to map fields
+4. Test with main application (`app/main/`)
 
 ### Debugging PDF Issues
 - Check browser console for pdf-lib errors

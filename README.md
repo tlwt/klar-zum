@@ -45,4 +45,21 @@ npx http-server
 
 ## Konfiguration
 
-Die Anwendung verwendet YAML-Konfigurationsdateien im `formulare/` Verzeichnis zur Konfiguration der PDF-Felder. Ein Konfigurationseditor ist unter `/config/` verfügbar.
+Die Anwendung verwendet YAML-Konfigurationsdateien im `app/formulare/` Verzeichnis zur Konfiguration der PDF-Felder. Ein Konfigurationseditor ist unter `/app/config/` verfügbar.
+
+### Direktes Speichern von Konfigurationen
+
+Setzen Sie `allowConfigWrite: true` in der `app/config.yaml` um das direkte Speichern von Konfigurationen im Editor zu aktivieren:
+
+```yaml
+# Entwicklungs-Features
+allowConfigWrite: true  # Ermöglicht direktes Speichern von Konfigurationen
+
+pdfs:
+  - name: "beispiel.pdf"
+    description: "Beispiel-Formular"
+```
+
+**Für PHP-Server**: Platzieren Sie `app/save-config.php` für erweiterte Speicherfunktionalität.
+
+**Sicherheitshinweis**: Diese Funktion ist nur für die Entwicklung gedacht!

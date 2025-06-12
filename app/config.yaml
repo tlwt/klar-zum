@@ -1,3 +1,6 @@
+# Entwicklungs-Features
+allowConfigWrite: true  # Ermöglicht direktes Speichern von Konfigurationen
+
 pdfs:
   - name: "Bw5120 - Einverständnis zur Ableistung.pdf"
     description: "Einverständniserklärung zur Ableistung von Reservistendienstleistungen"
