@@ -21,6 +21,12 @@ docker-compose up -d
 
 Die Anwendung ist dann unter http://localhost:8080 erreichbar.
 
+**Container-Features:**
+- **Alpine Linux** + **nginx** + **PHP-FPM** (nur 130MB)
+- **Direktes Speichern** von Konfigurationen (wenn `allowConfigWrite: true`)
+- **Live-Updates** durch Volume-Mounts während der Entwicklung
+- **Caching deaktiviert** für sofortige Änderungen
+
 ### Mit Docker direkt
 
 ```bash

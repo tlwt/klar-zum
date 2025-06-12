@@ -71,12 +71,22 @@ fields:
       - Nein
   Beschaeftigung_Beamter:
     group: Dienstleistung
+    type: checkbox
+  Beschaeftigung_Arbeitsverhaeltnis:
+    group: Dienstleistung
+    type: checkbox
   Beschaeftigung_Selbstaendig:
     group: Dienstleistung
+    type: checkbox
   Beschaeftigung_Pensionaer:
     group: Dienstleistung
+    type: checkbox
+  Beschaeftigung_KeinArbeitsverhaeltnis:
+    group: Dienstleistung
+    type: checkbox
   Selbststaendig:
     group: Dienstleistung
+    type: text
   Pensionaer:
     group: Dienstleistung
   Signature1:
@@ -104,10 +114,6 @@ fields:
       - Ja
       - Nein
   Mandatstraeger:
-    group: Einverständnis
-  Beschaeftigung_Arbeitsverhaeltnis:
-    group: Einverständnis
-  Beschaeftigung_KeinArbeitsverhaeltnis:
     group: Einverständnis
   Interesse:
     group: Sonstige

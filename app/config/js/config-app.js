@@ -327,8 +327,8 @@ function checkDirectSavePermission(config) {
 }
 
 async function saveConfigDirect() {
-    if (!window.currentConfig || !window.currentSelectedPDF) {
-        showConfigStatus('Keine Konfiguration zum Speichern ausgewählt', 'error');
+    if (!window.currentConfig || !window.currentPDF) {
+        showConfigStatus('Keine Konfiguration zum Speichern ausgewählt. Bitte wählen Sie zuerst ein PDF aus.', 'error');
         return;
     }
     
@@ -339,8 +339,14 @@ async function saveConfigDirect() {
     }
     
     try {
-        const yamlContent = generateYAMLConfig();
-        const configName = window.currentSelectedPDF.replace('.pdf', '.yaml');
+        const config = buildFinalConfig();
+        const yamlContent = jsyaml.dump(config, {
+            indent: 2,
+            lineWidth: -1,
+            noRefs: true,
+            sortKeys: false
+        });
+        const configName = window.currentPDF.name.replace('.pdf', '.yaml');
         
         // Erstelle FormData für den Upload
         const formData = new FormData();
