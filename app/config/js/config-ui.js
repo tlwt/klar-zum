@@ -235,11 +235,35 @@ function showFieldProperties(fieldName) {
     const signatureY = document.getElementById('signatureY');
     const signaturePage = document.getElementById('signaturePage');
     
-    if (signatureWidth) signatureWidth.value = fieldConfig.signature_width || '200';
-    if (signatureHeight) signatureHeight.value = fieldConfig.signature_height || '100';
-    if (signatureX) signatureX.value = fieldConfig.signature_x || '50';
-    if (signatureY) signatureY.value = fieldConfig.signature_y || '100';
-    if (signaturePage) signaturePage.value = fieldConfig.signature_page || '1';
+    console.log('🔍 DEBUG: Loading signature properties for field:', fieldName);
+    console.log('🔍 DEBUG: Field config signature values:', {
+        signature_width: fieldConfig.signature_width,
+        signature_height: fieldConfig.signature_height,
+        signature_x: fieldConfig.signature_x,
+        signature_y: fieldConfig.signature_y,
+        signature_page: fieldConfig.signature_page
+    });
+    
+    if (signatureWidth) {
+        signatureWidth.value = fieldConfig.signature_width || '200';
+        console.log('🔍 DEBUG: Set signatureWidth to:', signatureWidth.value);
+    }
+    if (signatureHeight) {
+        signatureHeight.value = fieldConfig.signature_height || '100';
+        console.log('🔍 DEBUG: Set signatureHeight to:', signatureHeight.value);
+    }
+    if (signatureX) {
+        signatureX.value = fieldConfig.signature_x || '50';
+        console.log('🔍 DEBUG: Set signatureX to:', signatureX.value);
+    }
+    if (signatureY) {
+        signatureY.value = fieldConfig.signature_y || '100';
+        console.log('🔍 DEBUG: Set signatureY to:', signatureY.value);
+    }
+    if (signaturePage) {
+        signaturePage.value = fieldConfig.signature_page || '1';
+        console.log('🔍 DEBUG: Set signaturePage to:', signaturePage.value);
+    }
     
     // Optionen anzeigen/verstecken und Hilfetexte aktualisieren
     const fieldType = fieldConfig.type || 'text';

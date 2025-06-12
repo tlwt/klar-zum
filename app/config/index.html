@@ -156,11 +156,13 @@
                                 
                                 <!-- Hilfetext für Koordinaten -->
                                 <div class="coordinate-help">
-                                    <strong>Koordinaten-System:</strong><br>
-                                    • <strong>X:</strong> Horizontaler Abstand vom linken Rand (in Punkten)<br>
-                                    • <strong>Y:</strong> Vertikaler Abstand vom unteren Rand (in Punkten)<br>
-                                    • <strong>Standard:</strong> 1 Punkt = ~0.35mm, 72 Punkte = 1 Zoll<br>
-                                    • <strong>Beispiel:</strong> X=50, Y=100 = ca. 18mm vom linken Rand, 35mm vom unteren Rand
+                                    <strong>⚠️ PDF-Koordinaten-System:</strong><br>
+                                    • <strong>Ursprung:</strong> Unten links (0,0) - NICHT oben links!<br>
+                                    • <strong>X:</strong> Horizontaler Abstand vom linken Rand<br>
+                                    • <strong>Y:</strong> Vertikaler Abstand vom unteren Rand (nach oben!)<br>
+                                    • <strong>Einheit:</strong> Punkte (1 Punkt = ~0.35mm, 72 Punkte = 1 Zoll)<br>
+                                    • <strong>Beispiel:</strong> X=50, Y=100 = 18mm von links, 35mm von unten<br>
+                                    • <strong>Tipp:</strong> Browser DevTools zeigen andere Koordinaten!
                                 </div>
                             </div>
                             
@@ -184,6 +186,7 @@
                     </button>
                     <button class="btn btn-primary" onclick="saveAndDownloadConfig()">💾 Konfiguration speichern & herunterladen</button>
                     <button class="btn btn-secondary" onclick="previewConfig()">👁️ Vorschau</button>
+                    <button class="btn btn-secondary" onclick="window.open('signature-position.html', '_blank')">🎯 Unterschrift positionieren</button>
                     <button class="btn btn-secondary" onclick="window.location.href='../main/'">⬅️ Zurück zur Hauptanwendung</button>
                 </div>
                 

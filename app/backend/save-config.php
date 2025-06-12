@@ -26,12 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     exit;
 }
 
-// Get the filename from the URL path and decode it
-$path = $_SERVER['REQUEST_URI'];
-$filename = urldecode(basename($path));
+// Get the filename from query parameter
+$filename = $_GET['filename'] ?? '';
+if (empty($filename)) {
+    // Fallback: try to get from path info
+    $path = $_SERVER['REQUEST_URI'];
+    $filename = urldecode(basename($path));
+}
 
 // Debug logging
-error_log("DEBUG: Original path: " . $path);
 error_log("DEBUG: Decoded filename: " . $filename);
 
 // Validate filename (only allow .yaml files and be more permissive)
@@ -61,19 +64,26 @@ if (empty($content)) {
     exit;
 }
 
-// Ensure formulare directory exists
-$formulareDir = __DIR__ . '/formulare';
+// Ensure formulare directory exists (one level up from backend)
+$formulareDir = dirname(__DIR__) . '/formulare';
 if (!is_dir($formulareDir)) {
     mkdir($formulareDir, 0755, true);
 }
 
 // Write the file
 $filepath = $formulareDir . '/' . $filename;
+
+// Debug file path
+error_log("DEBUG: Writing to path: " . $filepath);
+error_log("DEBUG: Directory exists: " . (is_dir($formulareDir) ? 'yes' : 'no'));
+error_log("DEBUG: Directory writable: " . (is_writable($formulareDir) ? 'yes' : 'no'));
+
 $result = file_put_contents($filepath, $content);
 
 if ($result === false) {
+    error_log("ERROR: Failed to write file to: " . $filepath);
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to save file']);
+    echo json_encode(['error' => 'Failed to save file to: ' . $filepath]);
     exit;
 }
 

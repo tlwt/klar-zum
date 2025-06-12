@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unterschrift-Positionierung</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="../main/styles/main.css">
+    <style>
+        .signature-positioning {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        .pdf-viewer {
+            border: 2px solid #ddd;
+            background: #f5f5f5;
+            overflow: auto;
+            position: relative;
+            border-radius: 8px;
+        }
+        
+        .pdf-canvas {
+            cursor: crosshair;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .signature-preview {
+            position: absolute;
+            border: 2px dashed #5a7c47;
+            background: rgba(90, 124, 71, 0.1);
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .signature-preview::after {
+            content: "✍️ Unterschrift";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: #5a7c47;
+            font-weight: bold;
+        }
+        
+        .controls-panel {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e1e5e9;
+        }
+        
+        .coordinate-display {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+        }
+        
+        .coordinate-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .size-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .help-text {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Unterschrift-Positionierung</h1>
+            <p>Klicken Sie auf das PDF, um die Unterschrift zu positionieren</p>
+        </div>
+        
+        <div class="signature-positioning">
+            <div class="pdf-viewer" id="pdfViewer">
+                <div class="signature-preview" id="signaturePreview"></div>
+                <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+            </div>
+            
+            <div class="controls-panel">
+                <h3>📋 Einstellungen</h3>
+                
+                <div class="form-group">
+                    <label for="pdfSelect">PDF auswählen:</label>
+                    <select id="pdfSelect" onchange="loadSelectedPDF()">
+                        <option value="">-- PDF wählen --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pageSelect">Seite:</label>
+                    <select id="pageSelect" onchange="renderPage()">
+                        <option value="1">Seite 1</option>
+                    </select>
+                </div>
+                
+                <div class="coordinate-display">
+                    <h4>📍 Position</h4>
+                    <div class="coordinate-row">
+                        <span>X (von links):</span>
+                        <strong id="coordX">-</strong>
+                    </div>
+                    <div class="coordinate-row">
+                        <span>Y (von unten):</span>
+                        <strong id="coordY">-</strong>
+                    </div>
+                    <div class="coordinate-row">
+                        <span>Seite:</span>
+                        <strong id="coordPage">-</strong>
+                    </div>
+                </div>
+                
+                <div class="size-controls">
+                    <div class="form-group">
+                        <label for="signatureWidth">Breite:</label>
+                        <input type="number" id="signatureWidth" value="200" min="50" max="500" onchange="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label for="signatureHeight">Höhe:</label>
+                        <input type="number" id="signatureHeight" value="100" min="25" max="300" onchange="updatePreview()">
+                    </div>
+                </div>
+                
+                <div class="help-text">
+                    <strong>💡 Anleitung:</strong><br>
+                    1. PDF und Seite auswählen<br>
+                    2. Gewünschte Position anklicken<br>
+                    3. Größe anpassen<br>
+                    4. Koordinaten kopieren
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="copyCoordinates()">📋 Koordinaten kopieren</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='index.html'">⬅️ Zurück</button>
+                </div>
+                
+                <div id="status" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PDF.js Worker (für CDNJS)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        window.pdfPositioning = {
+            currentPdf: null,
+            currentPage: null,
+            pdfScale: 1,
+            coordinates: { x: 0, y: 0, page: 1 }
+        };
+        
+        // Initialize
+        window.addEventListener('load', async function() {
+            console.log('🚀 Seite geladen, starte PDF-Laden...');
+            
+            // Test ob jsyaml verfügbar ist
+            console.log('jsyaml verfügbar:', typeof jsyaml !== 'undefined');
+            
+            // Test config.yaml direkt
+            try {
+                const testResponse = await fetch('../config.yaml');
+                console.log('config.yaml Response Status:', testResponse.status);
+                console.log('config.yaml Response OK:', testResponse.ok);
+                
+                if (testResponse.ok) {
+                    const testText = await testResponse.text();
+                    console.log('config.yaml Content Length:', testText.length);
+                    console.log('config.yaml ersten 200 Zeichen:', testText.substring(0, 200));
+                }
+            } catch (testError) {
+                console.error('Direkter config.yaml Test fehlgeschlagen:', testError);
+            }
+            
+            await loadAvailablePDFs();
+        });
+        
+        async function loadAvailablePDFs() {
+            try {
+                console.log('Lade verfügbare PDFs...');
+                const response = await fetch('../config.yaml');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const configText = await response.text();
+                console.log('Config Text geladen:', configText.substring(0, 100) + '...');
+                
+                if (typeof jsyaml === 'undefined') {
+                    throw new Error('js-yaml Bibliothek nicht geladen');
+                }
+                
+                const config = jsyaml.load(configText);
+                console.log('Config geparst:', config);
+                
+                if (!config.pdfs || !Array.isArray(config.pdfs)) {
+                    throw new Error('Keine PDFs in config.yaml gefunden');
+                }
+                
+                const pdfSelect = document.getElementById('pdfSelect');
+                config.pdfs.forEach(pdf => {
+                    const option = document.createElement('option');
+                    option.value = pdf.name;
+                    option.textContent = pdf.name;
+                    pdfSelect.appendChild(option);
+                });
+                
+                console.log(`${config.pdfs.length} PDFs geladen`);
+                showStatus(`${config.pdfs.length} PDFs verfügbar`, 'success');
+                
+            } catch (error) {
+                console.error('Fehler beim Laden der PDFs:', error);
+                showStatus(`Fehler: ${error.message}`, 'error');
+                
+                // Fallback: Hardcoded PDFs als Test
+                console.log('Verwende Fallback PDFs...');
+                const pdfSelect = document.getElementById('pdfSelect');
+                const fallbackPdfs = [
+                    'Bw5120 - Einverständnis zur Ableistung.pdf',
+                    'Bw5120 - Anlage zum Einverständnis.pdf'
+                ];
+                
+                fallbackPdfs.forEach(pdfName => {
+                    const option = document.createElement('option');
+                    option.value = pdfName;
+                    option.textContent = pdfName + ' (Fallback)';
+                    pdfSelect.appendChild(option);
+                });
+                
+                showStatus('Fallback PDFs geladen', 'warning');
+            }
+        }
+        
+        window.loadSelectedPDF = async function() {
+            const pdfSelect = document.getElementById('pdfSelect');
+            const pdfName = pdfSelect.value;
+            
+            if (!pdfName) return;
+            
+            try {
+                const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
+                const arrayBuffer = await response.arrayBuffer();
+                
+                const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+                window.pdfPositioning.currentPdf = await loadingTask.promise;
+                
+                // Update page selector
+                const pageSelect = document.getElementById('pageSelect');
+                pageSelect.innerHTML = '';
+                for (let i = 1; i <= window.pdfPositioning.currentPdf.numPages; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Seite ${i}`;
+                    pageSelect.appendChild(option);
+                }
+                
+                await renderPage();
+                
+            } catch (error) {
+                console.error('Fehler beim Laden des PDFs:', error);
+                showStatus('Fehler beim Laden des PDFs', 'error');
+            }
+        };
+        
+        window.renderPage = async function() {
+            if (!window.pdfPositioning.currentPdf) return;
+            
+            const pageNum = parseInt(document.getElementById('pageSelect').value) || 1;
+            const page = await window.pdfPositioning.currentPdf.getPage(pageNum);
+            
+            window.pdfPositioning.currentPage = page;
+            window.pdfPositioning.coordinates.page = pageNum;
+            
+            const canvas = document.getElementById('pdfCanvas');
+            const context = canvas.getContext('2d');
+            
+            // Calculate scale to fit viewer
+            const viewer = document.getElementById('pdfViewer');
+            const maxWidth = viewer.clientWidth - 40;
+            const viewport = page.getViewport({ scale: 1 });
+            const scale = Math.min(maxWidth / viewport.width, 1.5);
+            
+            window.pdfPositioning.pdfScale = scale;
+            const scaledViewport = page.getViewport({ scale });
+            
+            canvas.width = scaledViewport.width;
+            canvas.height = scaledViewport.height;
+            
+            await page.render({
+                canvasContext: context,
+                viewport: scaledViewport
+            }).promise;
+            
+            // Add click handler
+            canvas.onclick = handleCanvasClick;
+            
+            updateCoordinateDisplay();
+        };
+        
+        function handleCanvasClick(event) {
+            const canvas = event.target;
+            const rect = canvas.getBoundingClientRect();
+            
+            // Get click position relative to canvas
+            const canvasX = event.clientX - rect.left;
+            const canvasY = event.clientY - rect.top;
+            
+            // Convert to PDF coordinates
+            const viewport = window.pdfPositioning.currentPage.getViewport({ scale: window.pdfPositioning.pdfScale });
+            
+            // PDF coordinates: bottom-left origin
+            const pdfX = canvasX * (viewport.width / canvas.clientWidth);
+            const pdfY = viewport.height - (canvasY * (viewport.height / canvas.clientHeight));
+            
+            // Convert to actual PDF points (unscaled)
+            const actualX = pdfX / window.pdfPositioning.pdfScale;
+            const actualY = pdfY / window.pdfPositioning.pdfScale;
+            
+            window.pdfPositioning.coordinates.x = Math.round(actualX);
+            window.pdfPositioning.coordinates.y = Math.round(actualY);
+            
+            updateCoordinateDisplay();
+            updatePreview();
+        }
+        
+        window.updatePreview = function() {
+            if (!window.pdfPositioning.currentPage) return;
+            
+            const preview = document.getElementById('signaturePreview');
+            const canvas = document.getElementById('pdfCanvas');
+            const rect = canvas.getBoundingClientRect();
+            
+            const width = parseInt(document.getElementById('signatureWidth').value);
+            const height = parseInt(document.getElementById('signatureHeight').value);
+            
+            // Convert PDF coordinates back to canvas position for preview
+            const viewport = window.pdfPositioning.currentPage.getViewport({ scale: window.pdfPositioning.pdfScale });
+            
+            const canvasX = (window.pdfPositioning.coordinates.x * window.pdfPositioning.pdfScale);
+            const canvasY = viewport.height - (window.pdfPositioning.coordinates.y * window.pdfPositioning.pdfScale);
+            
+            const previewWidth = width * window.pdfPositioning.pdfScale;
+            const previewHeight = height * window.pdfPositioning.pdfScale;
+            
+            preview.style.display = 'block';
+            preview.style.left = (canvas.offsetLeft + canvasX) + 'px';
+            preview.style.top = (canvas.offsetTop + canvasY - previewHeight) + 'px';
+            preview.style.width = previewWidth + 'px';
+            preview.style.height = previewHeight + 'px';
+        };
+        
+        function updateCoordinateDisplay() {
+            document.getElementById('coordX').textContent = window.pdfPositioning.coordinates.x;
+            document.getElementById('coordY').textContent = window.pdfPositioning.coordinates.y;
+            document.getElementById('coordPage').textContent = window.pdfPositioning.coordinates.page;
+        }
+        
+        window.copyCoordinates = function() {
+            const coords = window.pdfPositioning.coordinates;
+            const width = document.getElementById('signatureWidth').value;
+            const height = document.getElementById('signatureHeight').value;
+            
+            const yamlText = `# Unterschrift-Koordinaten
+signature_x: ${coords.x}
+signature_y: ${coords.y}
+signature_width: ${width}
+signature_height: ${height}
+signature_page: ${coords.page}`;
+            
+            navigator.clipboard.writeText(yamlText).then(() => {
+                showStatus('Koordinaten in Zwischenablage kopiert!', 'success');
+            }).catch(() => {
+                showStatus('Kopieren fehlgeschlagen. Koordinaten: X=' + coords.x + ', Y=' + coords.y, 'warning');
+            });
+        };
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

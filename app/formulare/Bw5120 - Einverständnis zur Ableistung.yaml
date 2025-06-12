@@ -32,6 +32,7 @@ fields:
     group: Persönliche Daten
   Personenkennziffer:
     group: Persönliche Daten
+    type: text
   Telefon:
     group: Persönliche Daten
     type: tel
@@ -92,19 +93,19 @@ fields:
   Signature1:
     group: Unterschriften
     type: signature
-    signature_width: 200
-    signature_height: 75
-    signature_x: 50
-    signature_y: 100
+    signature_width: 250
+    signature_height: 27
+    signature_x: 57
+    signature_y: 517
     signature_page: 2
     description: Unterschrift 1
   Signature2:
     group: Unterschriften
     type: signature
-    signature_width: 200
-    signature_height: 75
-    signature_x: 50
-    signature_y: 250
+    signature_width: 250
+    signature_height: 43
+    signature_x: 57
+    signature_y: 305
     signature_page: 2
     description: Unterschrift 2
   Strafverfahren:

@@ -357,7 +357,7 @@ async function saveConfigDirect() {
         // Option 1: Verwende PHP-Endpoint (falls verfügbar)
         let response;
         try {
-            response = await fetch(`../save-config.php/${encodeURIComponent(configName)}`, {
+            response = await fetch(`/app/backend/save-config.php?filename=${encodeURIComponent(configName)}`, {
                 method: 'PUT',
                 body: yamlContent,
                 headers: {

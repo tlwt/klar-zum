@@ -15,14 +15,19 @@ async function loadExistingConfig(pdfName) {
     
     try {
         const configName = pdfName.replace('.pdf', '.yaml');
+        console.log('🔍 DEBUG: Loading config file:', configName);
         const response = await fetch(`../formulare/${encodeURIComponent(configName)}`);
+        console.log('🔍 DEBUG: Config fetch response status:', response.status);
         if (response.ok) {
             const yamlText = await response.text();
+            console.log('🔍 DEBUG: Loaded YAML text length:', yamlText.length);
+            console.log('🔍 DEBUG: YAML preview:', yamlText.substring(0, 200));
             window.currentConfig = jsyaml.load(yamlText) || { fields: {}, groups: {} };
             
             // Extrahiere die ursprüngliche Feldreihenfolge aus dem YAML-Text
             extractFieldOrderFromYaml(yamlText);
             
+            console.log('🔍 DEBUG: Parsed config:', window.currentConfig);
             console.log('Geladene Konfiguration:', window.currentConfig);
             showConfigStatus('Existierende Konfiguration geladen', 'success');
         } else {
@@ -396,6 +401,10 @@ function getAutoFieldType(fieldName) {
 }
 
 function saveCurrentProperties() {
+   console.log('🔍 DEBUG: saveCurrentProperties called');
+   console.log('🔍 DEBUG: window.currentField =', window.currentField);
+   console.log('🔍 DEBUG: window.currentGroup =', window.currentGroup);
+   
    // Gruppen-Eigenschaften speichern
    if (window.currentGroup && document.getElementById('groupProperties').classList.contains('active')) {
        const groupConfig = window.currentConfig.groups[window.currentGroup] || {};
@@ -405,7 +414,12 @@ function saveCurrentProperties() {
    }
    
    // Feld-Eigenschaften speichern
-   if (window.currentField && document.getElementById('fieldProperties').classList.contains('active')) {
+   const fieldPropertiesPanel = document.getElementById('fieldProperties');
+   const fieldPropertiesActive = fieldPropertiesPanel?.classList.contains('active');
+   console.log('🔍 DEBUG: fieldProperties panel active:', fieldPropertiesActive);
+   
+   if (window.currentField) {
+       console.log('🔍 DEBUG: Saving field properties for:', window.currentField);
        const fieldConfig = window.currentConfig.fields[window.currentField] || {};
        fieldConfig.title = document.getElementById('fieldTitle').value;
        fieldConfig.description = document.getElementById('fieldDescription').value;
@@ -422,6 +436,22 @@ function saveCurrentProperties() {
            const signatureY = document.getElementById('signatureY');
            const signaturePage = document.getElementById('signaturePage');
            
+           console.log('🔍 DEBUG: Saving signature properties for field:', window.currentField);
+           console.log('🔍 DEBUG: UI Elements found:', {
+               signatureWidth: !!signatureWidth,
+               signatureHeight: !!signatureHeight,
+               signatureX: !!signatureX,
+               signatureY: !!signatureY,
+               signaturePage: !!signaturePage
+           });
+           console.log('🔍 DEBUG: UI Values:', {
+               width: signatureWidth?.value,
+               height: signatureHeight?.value,
+               x: signatureX?.value,
+               y: signatureY?.value,
+               page: signaturePage?.value
+           });
+           
            if (signatureWidth && signatureWidth.value) {
                fieldConfig.signature_width = parseInt(signatureWidth.value);
            }
@@ -437,6 +467,14 @@ function saveCurrentProperties() {
            if (signaturePage && signaturePage.value) {
                fieldConfig.signature_page = parseInt(signaturePage.value);
            }
+           
+           console.log('🔍 DEBUG: Saved signature config:', {
+               signature_width: fieldConfig.signature_width,
+               signature_height: fieldConfig.signature_height,
+               signature_x: fieldConfig.signature_x,
+               signature_y: fieldConfig.signature_y,
+               signature_page: fieldConfig.signature_page
+           });
        } else {
            // Entferne Unterschrift-Eigenschaften wenn nicht signature Typ
            delete fieldConfig.signature_width;
@@ -479,7 +517,9 @@ function saveCurrentProperties() {
 }
 
 function buildFinalConfig() {
+   console.log('🔍 DEBUG: Building final config...');
    saveCurrentProperties();
+   console.log('🔍 DEBUG: Current config after saving properties:', JSON.stringify(window.currentConfig, null, 2));
    
    const finalConfig = {
        groups: {},

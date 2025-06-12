@@ -47,7 +47,13 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data) {
             // Verwende explizit konfigurierte Koordinaten
             x = signatureConfig.x;
             y = signatureConfig.y;
-            console.log(`Verwende konfigurierte Position: X=${x}, Y=${y}`);
+            
+            // Debug: Zeige alle wichtigen Infos
+            console.log(`🔍 PDF-Koordinaten Debug für ${fieldName}:`);
+            console.log(`  Seitengröße: ${pageWidth} x ${pageHeight} Punkte`);
+            console.log(`  Konfiguriert: X=${x}, Y=${y}`);
+            console.log(`  Unterschriftgröße: ${signatureWidth} x ${signatureHeight}`);
+            console.log(`  PDF-Koordinatensystem: Ursprung unten links, Y-Achse nach oben`);
         } else {
             // Intelligente Standardpositionierung basierend auf Feldname
             const position = getIntelligentSignaturePosition(fieldName, pageWidth, pageHeight, signatureWidth, signatureHeight);
@@ -118,6 +124,22 @@ function getSignatureConfig(fieldName) {
         y: undefined,
         page: 1
     };
+}
+
+// Hilfsfunktion: Koordinaten-Umrechnung von Browser zu PDF
+function convertBrowserToPdfCoordinates(browserX, browserY, pageWidth, pageHeight) {
+    // Browser: Ursprung oben links, Y nach unten
+    // PDF: Ursprung unten links, Y nach oben
+    return {
+        x: browserX,
+        y: pageHeight - browserY  // Y-Achse umkehren
+    };
+}
+
+// Hilfsfunktion: Pixel zu Punkte umrechnen (falls nötig)
+function pixelsToPoints(pixels) {
+    // 1 Punkt = 1/72 Zoll, typischerweise ~0.75 Pixel bei 96 DPI
+    return pixels * 0.75;
 }
 
 // Neue Funktion: Intelligente Positionierung von Unterschriften
