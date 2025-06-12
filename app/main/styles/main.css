@@ -824,7 +824,7 @@ body.live-preview-active .view-actions {
 
 .preview-content {
     flex: 1;
-    padding: 15px;
+    padding: 10px;
     overflow: auto;
     display: flex;
     align-items: center;
@@ -833,8 +833,11 @@ body.live-preview-active .view-actions {
 }
 
 #livePreviewCanvas {
-    max-width: 100%;
-    max-height: 100%;
+    width: 95%;
+    height: 95%;
+    max-width: 95%;
+    max-height: 95%;
+    object-fit: contain;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     background: white;
     border-radius: 4px;

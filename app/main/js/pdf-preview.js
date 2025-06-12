@@ -7,7 +7,7 @@ window.livePreview = {
     currentPDF: null,
     currentPage: 1,
     totalPages: 1,
-    scale: 0.8, // Kleinerer Scale für Side-Panel
+    scale: 1.5, // Will be calculated dynamically for 95% fill
     pdfDocument: null,
     canvas: null,
     context: null,
@@ -456,6 +456,26 @@ async function setFieldValueForLivePreview(field, value, fieldName, pdfDoc) {
     }
 }
 
+// Calculate optimal scale to fill 95% of available space
+function calculateOptimalScale() {
+    if (!window.livePreview.pdfDocument || !window.livePreview.canvas) return 1.5;
+    
+    try {
+        const previewContent = document.querySelector('.preview-content');
+        if (!previewContent) return 1.5;
+        
+        const containerWidth = previewContent.clientWidth * 0.95; // 95% of container width
+        const containerHeight = previewContent.clientHeight * 0.95; // 95% of container height
+        
+        console.log(`📐 Container size: ${containerWidth}x${containerHeight}`);
+        
+        return { containerWidth, containerHeight };
+    } catch (error) {
+        console.warn('Error calculating optimal scale:', error);
+        return 1.5;
+    }
+}
+
 async function renderLivePreviewPage() {
     if (!window.livePreview.pdfDocument || !window.livePreview.canvas) {
         console.warn('PDF-Dokument oder Canvas nicht verfügbar für Rendering');
@@ -466,6 +486,19 @@ async function renderLivePreviewPage() {
         console.log(`Rendering Live-Vorschau Seite ${window.livePreview.currentPage} von ${window.livePreview.totalPages}`);
         
         const page = await window.livePreview.pdfDocument.getPage(window.livePreview.currentPage);
+        
+        // Calculate optimal scale for 95% fill
+        const containerInfo = calculateOptimalScale();
+        if (containerInfo.containerWidth && containerInfo.containerHeight) {
+            const originalViewport = page.getViewport({ scale: 1.0 });
+            const scaleX = containerInfo.containerWidth / originalViewport.width;
+            const scaleY = containerInfo.containerHeight / originalViewport.height;
+            const optimalScale = Math.min(scaleX, scaleY, 3.0); // Max scale of 3.0 to prevent too large images
+            
+            console.log(`📐 Calculated scale: ${optimalScale.toFixed(2)} (PDF: ${originalViewport.width}x${originalViewport.height})`);
+            window.livePreview.scale = optimalScale;
+        }
+        
         const viewport = page.getViewport({ scale: window.livePreview.scale });
         
         // Canvas-Größe anpassen
