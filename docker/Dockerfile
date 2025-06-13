@@ -9,11 +9,10 @@ RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx /run/nginx
 # Copy nginx configuration
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 
-# Copy website files
-COPY . /var/www/html/
-RUN rm -rf /var/www/html/docker
+# Create web directory (files will be mounted via volume)
+RUN mkdir -p /var/www/html
 
-# Set permissions
+# Set permissions for volume mount
 RUN chown -R nginx:nginx /var/www/html && \
     chmod -R 755 /var/www/html
 

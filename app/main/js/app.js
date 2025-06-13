@@ -41,12 +41,30 @@ async function generatePDFs(flatten = true) {
         const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
         showStatus(`Generiere ${selectedPDFList.length} PDF(s) als ${modeText}...`, 'info');
         
+        let successCount = 0;
+        let failedPDFs = [];
+        
         for (const pdf of selectedPDFList) {
-            await fillAndDownloadPDF(pdf, data, flatten);
+            try {
+                await fillAndDownloadPDF(pdf, data, flatten);
+                successCount++;
+                console.log(`✅ PDF erfolgreich generiert: ${pdf.name}`);
+            } catch (pdfError) {
+                console.error(`❌ Fehler bei PDF ${pdf.name}:`, pdfError);
+                failedPDFs.push(pdf.name);
+                // Fortsetzung mit nächstem PDF
+            }
         }
         
         saveData();
-        showStatus(`${selectedPDFList.length} PDF(s) erfolgreich als ${modeText} generiert und Daten gespeichert!`);
+        
+        if (successCount === selectedPDFList.length) {
+            showStatus(`${successCount} PDF(s) erfolgreich als ${modeText} generiert und Daten gespeichert!`, 'success');
+        } else if (successCount > 0) {
+            showStatus(`${successCount} von ${selectedPDFList.length} PDF(s) erfolgreich generiert. Fehler bei: ${failedPDFs.join(', ')}`, 'warning');
+        } else {
+            showStatus(`Alle PDF-Generierungen fehlgeschlagen: ${failedPDFs.join(', ')}`, 'error');
+        }
         
     } catch (error) {
         showStatus('Fehler bei der PDF-Generierung: ' + error.message, 'error');

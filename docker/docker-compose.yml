@@ -7,9 +7,5 @@ services:
       - "8080:80"
     restart: unless-stopped
     volumes:
-      # Mount das komplette App-Verzeichnis für Live-Updates während der Entwicklung
-      - ../app:/var/www/html/app
-      # Mount die Root-Dateien (index.html, etc.)
-      - ../index.html:/var/www/html/index.html
-      - ../README.md:/var/www/html/README.md
-      - ../CLAUDE.md:/var/www/html/CLAUDE.md
+      # Mount das komplette Projekt-Verzeichnis für Live-Updates während der Entwicklung
+      - ../:/var/www/html

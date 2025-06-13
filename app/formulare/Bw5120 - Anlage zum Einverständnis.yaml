@@ -1,0 +1,59 @@
+groups:
+  Persönliche Daten:
+    title: 👤 Persönliche Angaben
+    description: Grundlegende persönliche Informationen
+  Dienstleistung:
+    title: 🎖️ Dienstleistungsangaben
+    description: Informationen zur Dienstleistung
+  Unterschriften:
+    title: ✍️ Unterschriften
+    description: Erforderliche Unterschriften
+  Sonstige:
+    title: 📋 Sonstige Felder
+    description: Weitere Informationen
+fields:
+  Nachname:
+    group: Persönliche Daten
+  Vorname:
+    group: Persönliche Daten
+  Dienstgrad der Reserve:
+    group: Persönliche Daten
+    type: text
+  Personalnummer:
+    group: Persönliche Daten
+  Datum:
+    group: Persönliche Daten
+    type: date
+  Personenkennziffer:
+    group: Persönliche Daten
+  Straße Hausnummer:
+    group: Persönliche Daten
+  Telefon:
+    group: Persönliche Daten
+    type: tel
+  Fax:
+    group: Persönliche Daten
+    type: tel
+  EMail:
+    group: Persönliche Daten
+    type: email
+  vom Beginn der Dienstleitung:
+    group: Dienstleistung
+  bis Ende der Dienstleitung:
+    group: Dienstleistung
+  Nettojahreseinkunft:
+    group: Dienstleistung
+  selbstaendigeArbeit:
+    group: Dienstleistung
+  Nettojahreseinkunft_nichtselbstaendig:
+    group: Dienstleistung
+  Unterschrift:
+    group: Unterschriften
+    virtual_field: true
+    type: signature
+    title: Unterschrift
+    signature_width: 250
+    signature_height: 33
+    signature_x: 57
+    signature_y: 147
+    signature_page: 1

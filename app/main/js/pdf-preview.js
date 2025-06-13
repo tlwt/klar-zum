@@ -232,9 +232,21 @@ async function updateLivePreview() {
 
 async function createFilledPDFForLivePreview(pdfInfo, formData) {
     try {
-        // Kopie des Original-PDFs erstellen
-        const pdfBytes = await pdfInfo.document.save();
-        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        // Lade Original-PDF direkt vom Server für Live-Vorschau
+        const response = await fetch(pdfInfo.path);
+        if (!response.ok) {
+            throw new Error(`Konnte PDF nicht laden: ${pdfInfo.path}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        
+        let pdfDoc;
+        try {
+            pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+        } catch (loadError) {
+            console.warn(`PDF ${pdfInfo.name} kann nicht mit pdf-lib geladen werden, verwende Original für Live-Vorschau:`, loadError);
+            // Verwende das Original-PDF direkt ohne Bearbeitung für die Live-Vorschau
+            return arrayBuffer;
+        }
         const form = pdfDoc.getForm();
         
         let filledFields = 0;

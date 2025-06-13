@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Automatically enable live preview and select first PDF
 function enableLivePreviewAutomatically() {
-    console.log('🔄 Aktiviere Live-Vorschau automatisch...');
+    console.log('🔄 Live-Vorschau wird aktiviert');
     
     // Enable live preview if not already active
     if (!window.livePreview || !window.livePreview.isActive) {

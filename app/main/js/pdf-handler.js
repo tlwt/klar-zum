@@ -223,69 +223,164 @@ async function setFieldValue(field, value, fieldName, pdfDoc) {
             }
         }
         
-        if (field instanceof PDFLib.PDFTextField) {
-            field.setText(String(value));
-            console.log(`✓ TextField ${fieldName} gesetzt`);
+        // WICHTIG: Versuche zuerst form.getTextField() auch wenn instanceof fehlschlägt
+        try {
+            const textField = pdfDoc.getForm().getTextField(fieldName);
+            textField.setText(String(value));
+            // Update Appearances für bessere Kompatibilität
+            try {
+                textField.updateAppearances();
+            } catch (e) {
+                console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
+            }
+            console.log(`✓ TextField ${fieldName} über form.getTextField() gesetzt`);
             return true;
-        } 
-        else if (field instanceof PDFLib.PDFCheckBox) {
+        } catch (getTextFieldError) {
+            // Fallback auf instanceof check
+            if (field instanceof PDFLib.PDFTextField) {
+                field.setText(String(value));
+                // Update Appearances für bessere Kompatibilität
+                try {
+                    field.updateAppearances();
+                } catch (e) {
+                    console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
+                }
+                console.log(`✓ TextField ${fieldName} über instanceof gesetzt`);
+                return true;
+            }
+        }
+        
+        // Versuche CheckBox über form.getCheckBox()
+        try {
+            const checkBox = pdfDoc.getForm().getCheckBox(fieldName);
             const shouldCheck = value === '1' || value === 'true' || value === true || 
                                value === 'on' || value === 'Ja' || value === 'ja' || 
                                value === 'YES' || value === 'yes' || value === 'checked';
             
             if (shouldCheck) {
-                field.check();
-                console.log(`✓ CheckBox ${fieldName} aktiviert`);
+                checkBox.check();
+                console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() aktiviert`);
             } else {
-                field.uncheck();
-                console.log(`✓ CheckBox ${fieldName} deaktiviert`);
+                checkBox.uncheck();
+                console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() deaktiviert`);
             }
             return true;
-        } 
-        else if (field instanceof PDFLib.PDFRadioGroup) {
-            const options = field.getOptions();
+        } catch (getCheckBoxError) {
+            // Fallback auf instanceof check
+            if (field instanceof PDFLib.PDFCheckBox) {
+                const shouldCheck = value === '1' || value === 'true' || value === true || 
+                                   value === 'on' || value === 'Ja' || value === 'ja' || 
+                                   value === 'YES' || value === 'yes' || value === 'checked';
+                
+                if (shouldCheck) {
+                    field.check();
+                    console.log(`✓ CheckBox ${fieldName} über instanceof aktiviert`);
+                } else {
+                    field.uncheck();
+                    console.log(`✓ CheckBox ${fieldName} über instanceof deaktiviert`);
+                }
+                return true;
+            }
+        }
+        
+        // Versuche RadioGroup über form.getRadioGroup()
+        try {
+            const radioGroup = pdfDoc.getForm().getRadioGroup(fieldName);
+            const options = radioGroup.getOptions();
             const valueStr = String(value);
             
             // Versuche zuerst exakte Übereinstimmung
             if (options.includes(valueStr)) {
-                field.select(valueStr);
-                console.log(`✓ RadioGroup ${fieldName} auf "${valueStr}" gesetzt`);
+                radioGroup.select(valueStr);
+                console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf "${valueStr}" gesetzt`);
                 return true;
             }
             
             // Versuche fallback auf ersten Wert wenn verfügbar
             if (options.length > 0) {
-                field.select(options[0]);
-                console.log(`✓ RadioGroup ${fieldName} auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
+                radioGroup.select(options[0]);
+                console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
                 return true;
             }
             
             console.warn(`RadioGroup ${fieldName}: Keine passenden Optionen gefunden`);
             return false;
-        } 
-        else if (field instanceof PDFLib.PDFDropdown) {
-            const options = field.getOptions();
+        } catch (getRadioGroupError) {
+            // Fallback auf instanceof check
+            if (field instanceof PDFLib.PDFRadioGroup) {
+                const options = field.getOptions();
+                const valueStr = String(value);
+                
+                // Versuche zuerst exakte Übereinstimmung
+                if (options.includes(valueStr)) {
+                    field.select(valueStr);
+                    console.log(`✓ RadioGroup ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
+                    return true;
+                }
+                
+                // Versuche fallback auf ersten Wert wenn verfügbar
+                if (options.length > 0) {
+                    field.select(options[0]);
+                    console.log(`✓ RadioGroup ${fieldName} über instanceof auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
+                    return true;
+                }
+                
+                console.warn(`RadioGroup ${fieldName}: Keine passenden Optionen gefunden`);
+                return false;
+            }
+        }
+        
+        // Versuche Dropdown über form.getDropdown()
+        try {
+            const dropdown = pdfDoc.getForm().getDropdown(fieldName);
+            const options = dropdown.getOptions();
             const valueStr = String(value);
             
             // Versuche zuerst exakte Übereinstimmung
             if (options.includes(valueStr)) {
-                field.select(valueStr);
-                console.log(`✓ Dropdown ${fieldName} auf "${valueStr}" gesetzt`);
+                dropdown.select(valueStr);
+                console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${valueStr}" gesetzt`);
                 return true;
             }
             
             // Spezielle Logik für Übung/Uebung
             const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
             if (target) {
-                field.select(target);
-                console.log(`✓ Dropdown ${fieldName} auf "${target}" gesetzt (Fallback)`);
+                dropdown.select(target);
+                console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${target}" gesetzt (Fallback)`);
                 return true;
             }
             
             console.warn(`Dropdown ${fieldName}: Keine passenden Optionen gefunden`);
             return false;
-        } 
-        else if (field instanceof PDFLib.PDFOptionList) {
+        } catch (getDropdownError) {
+            // Fallback auf instanceof check
+            if (field instanceof PDFLib.PDFDropdown) {
+                const options = field.getOptions();
+                const valueStr = String(value);
+                
+                // Versuche zuerst exakte Übereinstimmung
+                if (options.includes(valueStr)) {
+                    field.select(valueStr);
+                    console.log(`✓ Dropdown ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
+                    return true;
+                }
+                
+                // Spezielle Logik für Übung/Uebung
+                const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
+                if (target) {
+                    field.select(target);
+                    console.log(`✓ Dropdown ${fieldName} über instanceof auf "${target}" gesetzt (Fallback)`);
+                    return true;
+                }
+                
+                console.warn(`Dropdown ${fieldName}: Keine passenden Optionen gefunden`);
+                return false;
+            }
+        }
+        
+        // Fallback für andere Feldtypen
+        if (field instanceof PDFLib.PDFOptionList) {
             const options = field.getOptions();
             if (options.length > 0) {
                 field.select(options[0]);
@@ -293,17 +388,17 @@ async function setFieldValue(field, value, fieldName, pdfDoc) {
                 return true;
             }
             return false;
-        } 
-        else {
-            console.warn(`Unbekannter Feldtyp für ${fieldName}: ${field.constructor.name}`);
-            // Fallback: Versuche setText wenn verfügbar
-            if (typeof field.setText === 'function') {
-                field.setText(String(value));
-                console.log(`✓ Unbekannter Typ ${fieldName} mit setText gesetzt`);
-                return true;
-            }
-            return false;
         }
+        
+        // Letzter Fallback: Versuche setText wenn verfügbar
+        console.warn(`Unbekannter Feldtyp für ${fieldName}: ${field.constructor.name}`);
+        if (typeof field.setText === 'function') {
+            field.setText(String(value));
+            console.log(`✓ Unbekannter Typ ${fieldName} mit setText gesetzt`);
+            return true;
+        }
+        
+        return false;
     } catch (error) {
         console.warn(`Fehler beim Setzen von Feld ${fieldName}:`, error);
         return false;
@@ -313,9 +408,25 @@ async function setFieldValue(field, value, fieldName, pdfDoc) {
 // Erweiterte fillAndDownloadPDF Funktion mit verbesserter Unterschrift-Behandlung
 async function fillAndDownloadPDF(pdf, data, flatten = true) {
     try {
-        const pdfBytes = await pdf.document.save();
-        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        // Lade Original-PDF direkt vom Server statt gespeichertes Dokument zu verwenden
+        const response = await fetch(pdf.path);
+        if (!response.ok) {
+            throw new Error(`Konnte PDF nicht laden: ${pdf.path}`);
+        }
+        const pdfBytes = await response.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
         const form = pdfDoc.getForm();
+        
+        // WICHTIG: Setze NeedAppearances Flag für PDFs die es benötigen
+        try {
+            const acroForm = pdfDoc.catalog.lookup(PDFLib.PDFName.of('AcroForm'));
+            if (acroForm) {
+                acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+                console.log('✓ NeedAppearances Flag gesetzt');
+            }
+        } catch (e) {
+            console.log('Konnte NeedAppearances Flag nicht setzen:', e.message);
+        }
         
         let filledFields = 0;
         const formData = getAllFormData();
@@ -326,9 +437,20 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         const allFields = form.getFields();
         console.log(`Gefundene Felder im PDF (${allFields.length}):`);
         
+        // DEBUG: Zeige alle verfügbaren Daten
+        console.log('Verfügbare formData Keys:', Object.keys(formData).filter(k => formData[k]));
+        console.log('Beispiel - Nachname:', formData['Nachname']);
+        
         // Hauptlogik: Iteriere über alle PDF-Felder und versuche sie zu setzen
         for (const fieldName of pdf.fields) {
             let value = null;
+            
+            // DEBUG für Nachname
+            if (fieldName === 'Nachname') {
+                console.log('DEBUG Nachname - formData[Nachname]:', formData['Nachname']);
+                console.log('DEBUG Nachname - fieldName:', fieldName);
+                console.log('DEBUG Nachname - pdfConfig.fields:', pdfConfig.fields);
+            }
             
             // Prüfe direkte Übereinstimmung
             if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
@@ -487,6 +609,26 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
             console.warn('Fehler beim Aktualisieren der Appearances:', error);
         }
         
+        // WICHTIG: Update alle Form Field Appearances VOR dem Speichern
+        try {
+            const allFields = form.getFields();
+            for (const field of allFields) {
+                if (field.constructor.name === 'PDFTextField' || 
+                    field.constructor.name === 'PDFCheckBox' || 
+                    field.constructor.name === 'PDFRadioGroup' || 
+                    field.constructor.name === 'PDFDropdown') {
+                    try {
+                        field.updateAppearances();
+                    } catch (e) {
+                        // Ignoriere Fehler beim Appearance Update
+                    }
+                }
+            }
+            console.log('✓ Alle Field Appearances VOR dem Speichern aktualisiert');
+        } catch (e) {
+            console.log('Fehler beim globalen Appearance Update:', e.message);
+        }
+        
         // Flatten PDF if requested
         if (flatten) {
             try {
@@ -494,11 +636,15 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                 console.log('✓ PDF-Formular wurde geflacht (flatten)');
             } catch (error) {
                 console.warn('Fehler beim Flatten des PDFs:', error);
+                console.log('📝 Speichere PDF ohne Flatten wegen Kompatibilitätsproblemen');
+                // Setze flatten auf false für dieses PDF
+                flatten = false;
             }
         }
         
         const finalPdfBytes = await pdfDoc.save({
-            useObjectStreams: false
+            useObjectStreams: false,
+            addDefaultFont: false
         });
         
         // Verwende FileSaver.js
@@ -540,13 +686,16 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
                 break;
             }
             
-            const fieldMatch = line.match(/^  ([^:]+):/);
+            // Nur echte Feldnamen erfassen (Zeilen mit genau 2 Leerzeichen gefolgt von Feldname:)
+            const fieldMatch = line.match(/^  ([^:]+):\s*$/);
             if (fieldMatch) {
                 const fieldName = fieldMatch[1].trim();
-                fieldOrder.push(fieldName);
-                console.log(`Feld gefunden: ${fieldName} (Position ${fieldOrder.length})`);
+                // Überspringe bekannte Metadaten-Schlüssel
+                if (!['group', 'type', 'description', 'options', 'mapping'].includes(fieldName)) {
+                    fieldOrder.push(fieldName);
+                    console.log(`Feld gefunden: ${fieldName} (Position ${fieldOrder.length})`);
                 
-                let fieldGroup = 'Sonstige';
+                    let fieldGroup = 'Sonstige';
                 
                 // Suche nach der group-Zeile für dieses Feld
                 for (let j = i + 1; j < lines.length; j++) {
@@ -564,7 +713,8 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
                     }
                 }
                 
-                fieldToGroupMap[fieldName] = fieldGroup;
+                    fieldToGroupMap[fieldName] = fieldGroup;
+                }
             }
         }
     }
@@ -671,11 +821,16 @@ async function loadPDFsFromDirectory() {
             const pdfName = pdfInfo.name;
             
             try {
+                console.log(`🔄 Lade PDF: ${pdfName}`);
                 const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
                 if (response.ok) {
+                    console.log(`📥 Response OK für ${pdfName}, Größe: ${response.headers.get('content-length')} bytes`);
                     const arrayBuffer = await response.arrayBuffer();
-                    const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                    console.log(`📦 ArrayBuffer erhalten für ${pdfName}, Größe: ${arrayBuffer.byteLength} bytes`);
+                    const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                    console.log(`✅ PDF-Dokument geladen für ${pdfName}`);
                     const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
+                    console.log(`📝 ${fields.length} Felder extrahiert für ${pdfName}`);
                     
                     // Lade individuelle Konfiguration für dieses PDF
                     const hasConfig = await loadPDFConfigForFile(pdfName);
@@ -714,6 +869,25 @@ async function loadPDFsFromDirectory() {
 
 async function extractFieldsFromPDF(pdfDoc, pdfName) {
     const extractedFields = [];
+    
+    // Fallback-Modus wenn pdfDoc null ist (beschädigtes PDF)
+    if (!pdfDoc) {
+        console.log(`Verwende Fallback-Felder für ${pdfName}`);
+        if (pdfName.includes('5120') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
+            extractedFields.push(
+                'Nachname', 'Vorname', 'DienstgradDerReserve', 'Personalnummer', 'Personenkennziffer',
+                'StrasseHausnummerPostleitzahlOrt', 'Datum', 'Telefon', 'Fax', 'EMail',
+                'AnschriftDienstleistungstruppenteil', 'Dienstleistungsdienststelle', 'OrtStandortDerDienstleistungsstelle',
+                'EinverstaendnisZurAbleistung', 'Strafverfahren', 'KurzfristigeHeranziehung', 'HeranziehungsbescheidWiderspruch',
+                'Mandatstraegerin', 'BeamtenArbeitsverhältnisBMVg', 'BeamtenArbeitsverhaeltnisOeffentlich',
+                'Arbeitsverhaeltnis', 'Selbststaendig', 'KeinArbeitsverhaeltnis', 'PensionaerSchueler',
+                'WiederverwendungBerufssoldatin', 'AnreiseGutscheine', 'InteressenskollisionAusgeschlossen',
+                'UnternehmenGeschaeftsverbindungen', 'UnternehmenBewerber', 'OrganisationWirtschaft',
+                'OrganisationInteressenvertreter', 'UebungZusammenhangBundeswehrauftrag'
+            );
+        }
+        return [...new Set(extractedFields)];
+    }
     
     try {
         const form = pdfDoc.getForm();
