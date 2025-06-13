@@ -388,6 +388,102 @@ function loadData(event) {
     reader.readAsText(file);
 }
 
+async function loadExampleData() {
+    try {
+        const response = await fetch('../testdaten/mustermann_max.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Versteckte Daten zurücksetzen
+        window.hiddenData = {};
+        
+        // Versteckte Daten aus dem Datensatz laden
+        if (data.hiddenData) {
+            window.hiddenData = { ...data.hiddenData };
+        }
+        
+        const formData = data.formData || data;
+        
+        // Sammle alle sichtbaren Feldnamen aus dem aktuellen Formular
+        const visibleFieldNames = new Set();
+        document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select').forEach(element => {
+            if (element.name || element.id) {
+                visibleFieldNames.add(element.name || element.id);
+            }
+        });
+        
+        console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
+        
+        // Nur Daten in hiddenData speichern, die NICHT in sichtbaren Feldern vorkommen
+        Object.keys(formData).forEach(key => {
+            if (!visibleFieldNames.has(key)) {
+                window.hiddenData[key] = formData[key];
+                console.log(`Feld ${key} als versteckt markiert`);
+            } else {
+                console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
+            }
+        });
+        
+        // Formularfelder setzen (nur sichtbare Felder)
+        for (const [key, value] of Object.entries(formData)) {
+            // Reguläre Felder
+            const element = document.getElementById(key);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = value === '1' || value === 'true' || value === true;
+                } else if (element.type === 'radio') {
+                    element.checked = element.value === value;
+                } else if (element.classList.contains('signature-data')) {
+                    // Unterschrift-Daten wiederherstellen
+                    element.value = value;
+                    restoreSignatureDisplay(key, value);
+                } else {
+                    element.value = value;
+                }
+                console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
+            } else {
+                // Radio Button Gruppen
+                const radioButtons = document.querySelectorAll(`input[type="radio"][name="${key}"]`);
+                if (radioButtons.length > 0) {
+                    radioButtons.forEach(radio => {
+                        radio.checked = radio.value === value;
+                    });
+                    console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
+                }
+            }
+        }
+        
+        if (data.settings) {
+            window.appSettings = { ...window.appSettings, ...data.settings };
+            loadSettingsToForm();
+        }
+        
+        // Live-Vorschau sofort nach dem Setzen der Formulardaten aktualisieren
+        if (window.livePreview && window.livePreview.isActive && typeof updateLivePreview === 'function') {
+            updateLivePreview();
+            console.log('✅ Live-Vorschau nach Beispieldaten-Laden aktualisiert');
+        }
+        
+        // Versteckte Daten anzeigen und Berechnungen nach dem Laden ausführen
+        setTimeout(() => {
+            updateHiddenDataSection();
+            addCalculationEventListeners();
+            calculateAllFields();
+            
+            // Unterschrift-Felder neu initialisieren
+            initializeAllSignatureFields();
+        }, 100);
+        
+        showStatus('📋 Beispieldaten (Max Mustermann) erfolgreich geladen!');
+    } catch (error) {
+        console.error('Fehler beim Laden der Beispieldaten:', error);
+        showStatus('❌ Fehler beim Laden der Beispieldaten: ' + error.message, 'error');
+    }
+}
+
 function handleUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const paramsDiv = document.getElementById('urlParams');
