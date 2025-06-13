@@ -515,10 +515,8 @@ function generateFormField(fieldName) {
                         <div class="signature-placeholder">Klicken Sie hier oder ziehen Sie ein Bild hinein</div>
                     </div>
                     <div class="signature-controls">
-                        <label for="signature-file-${fieldName}" style="margin: 0;">
-                            <button type="button">📁 Datei auswählen</button>
-                        </label>
-                        <input type="file" id="signature-file-${fieldName}" accept="image/*" onchange="uploadSignature('${fieldName}', this)">
+                        <button type="button" onclick="document.getElementById('signature-file-${fieldName}').click()">📁 Datei auswählen</button>
+                        <input type="file" id="signature-file-${fieldName}" accept="image/*" onchange="uploadSignature('${fieldName}', this)" style="display: none;">
                         <button type="button" onclick="clearSignature('${fieldName}')">🗑️ Löschen</button>
                     </div>
                 </div>

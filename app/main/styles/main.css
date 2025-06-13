@@ -1136,6 +1136,43 @@ body.live-preview-active .view-actions {
     color: white;
 }
 
+.signature-mode-tabs {
+    display: flex;
+    border-bottom: 2px solid #e1e5e9;
+    margin-bottom: 15px;
+}
+
+.signature-tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: #7f8c8d;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+}
+
+.signature-tab:hover {
+    color: #3498db;
+    background: #f8f9fa;
+}
+
+.signature-tab.active {
+    color: #3498db;
+    border-bottom-color: #3498db;
+    background: #f8fcff;
+}
+
+.signature-content {
+    display: none;
+}
+
+.signature-content.active {
+    display: block;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .app-container {
