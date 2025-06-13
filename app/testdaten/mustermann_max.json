@@ -1,0 +1,52 @@
+{
+  "formData": {
+    "Nachname": "Mustermann",
+    "Vorname": "Max",
+    "Dienstgrad": "HFw",
+    "Personalnummer": "12345678",
+    "Personenkennziffer": "010190-M-12345",
+    "Adresse": "Musterstraße 123, D-12345 Musterhausen",
+    "Datum": "2025-06-15",
+    "Telefon": "+49 123 456789",
+    "Fax": "",
+    "EMail": "max.mustermann@example.com",
+    "Anschrift Dienstleistungstruppenanteil": "Muster-Kaserne",
+    "von": "2025-07-01",
+    "bis": "2025-07-05",
+    "eine Dienstleistung bei Dienstleistungsdienststelle": "Muster Kdo",
+    "in Ort Standort der Dienstleistungsstelle": "Musterstadt",
+    "Ich bin mit einer kurzfristigen Heranziehung einverstanden Daher verzichte ich": "1",
+    "Anreise": "Ja",
+    "Bitte wählen": "einer Übung § 61 SG",
+    "Ich verzichte ferner auf mein Recht gegen den Heranziehungsbescheid Widerspruch zu erheben": "1",
+    "Beschaeftigung_Selbstaendig": "",
+    "Selbststaendig": "",
+    "Pensionaer": "",
+    "Strafverfahren": "Nein",
+    "Mandatstraeger": "Nein",
+    "Interesse": "Nein",
+    "Verpflichtungszeit": "nein",
+    "Diszi": "",
+    "Punkt_3": "",
+    "Mandat": "",
+    "Beschaeftigung_Beamter": "",
+    "Beschaeftigung_Arbeitsverhaeltnis": "",
+    "Beschaeftigung_KeinArbeitsverhaeltnis": "",
+    "Beschaeftigung_Pensionaer": "",
+    "signature-file-Signature1": "",
+    "signature-file-Signature2": "",
+    "Schutzbereich 3": "",
+    "Schutzbereich 2": ""
+  },
+  "hiddenData": {
+    "Schutzbereich 3": "",
+    "Schutzbereich 2": ""
+  },
+  "settings": {
+    "fileNamePattern": "[Nachname], [Vorname] - [PDF] - [Datum]",
+    "emailAddress": "",
+    "emailSubject": "Formularunterlagen - [Nachname], [Vorname]",
+    "emailBody": "Sehr geehrte Damen und Herren,\n\nanbei übersende ich Ihnen die ausgefüllten Formularunterlagen.\n\nMit freundlichen Grüßen"
+  },
+  "timestamp": "2025-06-12T13:55:58.880Z"
+}
