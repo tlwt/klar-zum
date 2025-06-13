@@ -123,6 +123,7 @@ fields:
     signature_y: 517
     signature_page: 2
     description: Unterschrift 1
+    mapping: Unterschrift
   Signature2:
     group: Unterschriften
     type: signature
@@ -132,6 +133,7 @@ fields:
     signature_y: 305
     signature_page: 2
     description: Unterschrift 2
+    mapping: Unterschrift
   Strafverfahren:
     group: Einverständnis
     type: radio

@@ -94,3 +94,5 @@ fields:
     type: text
   Signature2:
     group: Unterschriften
+    type: text
+    mapping: Unterschrift
