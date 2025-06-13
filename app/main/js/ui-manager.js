@@ -5,6 +5,15 @@
 function showView(viewName) {
     console.log(`🔄 Switching to view: ${viewName}`);
     
+    // Handle live preview when leaving form-fields view
+    if (viewName !== 'form-fields' && window.livePreview && window.livePreview.isActive) {
+        console.log('🔄 Disabling live preview when leaving form-fields view');
+        // Disable live preview to clean up layout classes
+        if (typeof toggleLivePreview === 'function') {
+            toggleLivePreview();
+        }
+    }
+    
     // Remove active from all menu items
     document.querySelectorAll('.menu-item').forEach(item => {
         item.classList.remove('active');
