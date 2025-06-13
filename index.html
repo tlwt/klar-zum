@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klar zum - Reservist Digital</title>
+    <title>Klar zum</title>
     <link rel="icon" type="image/x-icon" href="app/main/favicon.ico">
     <style>
         body {
@@ -25,53 +25,35 @@
             margin-bottom: 40px;
             border-left: 5px solid #5a7c47;
         }
-        .app-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 25px;
-            margin: 40px 0;
-        }
-        .app-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 30px 20px;
+        .start-button-container {
             text-align: center;
+            margin: 60px 0;
+        }
+        .start-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #5a7c47 0%, #4a6b3a 100%);
+            color: white;
             text-decoration: none;
-            color: inherit;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        .app-card:hover {
-            border-color: #5a7c47;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(90, 124, 71, 0.1);
-        }
-        .app-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-            display: block;
-        }
-        .app-title {
-            font-size: 1.3em;
+            font-size: 1.8em;
             font-weight: 600;
-            margin-bottom: 10px;
-            color: #2c3e50;
+            padding: 25px 60px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(90, 124, 71, 0.3);
+            border: none;
+            cursor: pointer;
         }
-        .app-description {
-            color: #666;
-            font-size: 0.95em;
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(90, 124, 71, 0.4);
+            background: linear-gradient(135deg, #4a6b3a 0%, #3a5b2a 100%);
         }
-        @media (max-width: 900px) {
-            .app-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
-            }
+        .start-button:active {
+            transform: translateY(-1px);
         }
-        @media (max-width: 600px) {
-            .app-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
+        .start-icon {
+            font-size: 1.2em;
+            margin-right: 15px;
         }
     </style>
 </head>
@@ -105,29 +87,10 @@
         </ul>
     </div>
 
-    <div class="app-grid">
-        <a href="app/main/" class="app-card">
-            <span class="app-icon">📄</span>
-            <div class="app-title">PDF Formular Ausfüller</div>
-            <div class="app-description">
-                Hauptanwendung zum schnellen Ausfüllen von PDF-Formularen mit Live-Vorschau und digitalen Unterschriften
-            </div>
-        </a>
-
-        <a href="app/config/" class="app-card">
-            <span class="app-icon">🔧</span>
-            <div class="app-title">Konfigurations-Editor</div>
-            <div class="app-description">
-                Visueller Editor zum Erstellen und Bearbeiten von Formular-Konfigurationen mit Drag & Drop
-            </div>
-        </a>
-
-        <a href="app/data-editor/" class="app-card">
-            <span class="app-icon">📊</span>
-            <div class="app-title">Daten-Editor</div>
-            <div class="app-description">
-                Verwalten und bearbeiten Sie gespeicherte Datensätze mit Such- und Filterfunktionen
-            </div>
+    <div class="start-button-container">
+        <a href="app/main/" class="start-button">
+            <span class="start-icon">🚀</span>
+            Start
         </a>
     </div>
 
