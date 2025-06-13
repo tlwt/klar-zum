@@ -188,6 +188,9 @@ function generateFormForSelectedPDFs() {
         
         // Unterschrift-Felder initialisieren
         initializeAllSignatureFields();
+        
+        // URL-Parameter nach Formular-Generierung verarbeiten
+        handleUrlParams();
     }, 100);
     
     console.log('=== DEBUGGING ENDE ===\n');
@@ -510,7 +513,7 @@ function generateFormField(fieldName) {
             const isFirst = index === 0;
             radioHTML += `
                 <div class="radio-container">
-                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}" ${isFirst ? 'checked' : ''}>
+                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}">
                     <label for="${fieldName}_${index}" class="radio-label">${option}</label>
                 </div>
             `;

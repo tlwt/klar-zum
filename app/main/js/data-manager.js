@@ -209,6 +209,12 @@ function loadData(event) {
             
             // Formularfelder setzen (nur sichtbare Felder)
             for (const [key, value] of Object.entries(formData)) {
+                // URL-Parameter haben Vorrang - überspringen wenn URL-Parameter vorhanden
+                if (window.urlParamData && window.urlParamData.hasOwnProperty(key)) {
+                    console.log(`Feld ${key} wird durch URL-Parameter geschützt`);
+                    continue;
+                }
+                
                 // Reguläre Felder
                 const element = document.getElementById(key);
                 if (element) {
@@ -345,6 +351,12 @@ async function loadExampleData() {
         
         // Formularfelder setzen (nur sichtbare Felder)
         for (const [key, value] of Object.entries(formData)) {
+            // URL-Parameter haben Vorrang - überspringen wenn URL-Parameter vorhanden
+            if (window.urlParamData && window.urlParamData.hasOwnProperty(key)) {
+                console.log(`Feld ${key} wird durch URL-Parameter geschützt (Beispieldaten)`);
+                continue;
+            }
+            
             // Reguläre Felder
             const element = document.getElementById(key);
             if (element) {
@@ -400,7 +412,7 @@ async function loadExampleData() {
     }
 }
 
-function handleUrlParams() {
+function parseUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const paramsDiv = document.getElementById('urlParams');
     const paramsContent = document.getElementById('urlParamsContent');
@@ -409,17 +421,64 @@ function handleUrlParams() {
     let content = '<ul>';
     
     for (const [key, value] of urlParams) {
+        // In urlParamData speichern für Vorrang bei loadData
+        window.urlParamData[key] = value;
+        
         // In hiddenData speichern, falls Feld nicht existiert
         window.hiddenData[key] = value;
         
-        const element = document.getElementById(key);
+        content += `<li><strong>${key}:</strong> ${value}</li>`;
+        hasParams = true;
+    }
+    
+    if (hasParams) {
+        content += '</ul>';
+        paramsContent.innerHTML = content;
+        paramsDiv.style.display = 'block';
+    }
+}
+
+function handleUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    for (const [key, value] of urlParams) {
+        // Versuche Element zu finden - zuerst über ID, dann über name/label
+        let element = document.getElementById(key);
+        
+        if (!element) {
+            // Suche nach Element mit name-Attribut
+            element = document.querySelector(`[name="${key}"]`);
+        }
+        
+        if (!element) {
+            // Suche nach Element dessen Label-Text dem key entspricht
+            const labels = document.querySelectorAll('#dataForm label');
+            for (const label of labels) {
+                if (label.textContent.trim() === key) {
+                    const forAttr = label.getAttribute('for');
+                    if (forAttr) {
+                        element = document.getElementById(forAttr);
+                        break;
+                    }
+                }
+            }
+        }
+        
         if (element) {
-            element.value = value;
-            content += `<li><strong>${key}:</strong> ${value}</li>`;
-            hasParams = true;
-        } else {
-            content += `<li><strong>${key}:</strong> ${value} (versteckt)</li>`;
-            hasParams = true;
+            if (element.type === 'radio') {
+                // Bei Radio Buttons das richtige Element mit dem Wert finden
+                const radioGroup = document.querySelectorAll(`input[name="${element.name}"]`);
+                for (const radio of radioGroup) {
+                    if (radio.value === value) {
+                        radio.checked = true;
+                        break;
+                    }
+                }
+            } else if (element.type === 'checkbox') {
+                element.checked = (value === '1' || value === 'true' || value === true);
+            } else {
+                element.value = value;
+            }
         }
     }
     
@@ -431,16 +490,90 @@ function handleUrlParams() {
         }
     });
     
-    if (hasParams) {
-        content += '</ul>';
-        paramsContent.innerHTML = content;
-        paramsDiv.style.display = 'block';
-    }
-    
     // Berechnungen nach dem Setzen der URL-Parameter ausführen
     setTimeout(() => {
         calculateAllFields();
     }, 500);
+}
+
+function generateUrlWithData() {
+    const url = new URL(window.location.href);
+    
+    // Aktuelle URL-Parameter löschen
+    url.search = '';
+    
+    // Nur explizit gesetzte Werte sammeln
+    const activeValues = {};
+    
+    // Text-Inputs, Textareas, Selects
+    document.querySelectorAll('#dataForm input[type="text"], #dataForm input[type="email"], #dataForm input[type="date"], #dataForm input[type="number"], #dataForm textarea, #dataForm select').forEach(element => {
+        const value = element.value;
+        const key = element.name || element.id;
+        
+        // Ausschließen: leere Werte, Unterschriften, Default-Werte von Dropdowns
+        if (value && value.trim() !== '' && 
+            value !== 'null' &&
+            !value.toLowerCase().includes('bitte wählen') &&
+            !value.toLowerCase().includes('please select') &&
+            !key.toLowerCase().includes('unterschrift') && 
+            !key.toLowerCase().includes('signature') &&
+            !value.startsWith('data:image/')) {
+            activeValues[key] = value;
+        }
+    });
+    
+    // Checkboxes - nur wenn checked
+    document.querySelectorAll('#dataForm input[type="checkbox"]').forEach(element => {
+        if (element.checked) {
+            const key = element.name || element.id;
+            activeValues[key] = element.value || '1';
+        }
+    });
+    
+    // Radio buttons - nur wenn selected
+    document.querySelectorAll('#dataForm input[type="radio"]:checked').forEach(element => {
+        const key = element.name || element.id;
+        activeValues[key] = element.value;
+    });
+    
+    // Parameter zur URL hinzufügen
+    Object.entries(activeValues).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+    });
+    
+    const urlString = url.toString();
+    
+    // URL in Zwischenablage kopieren
+    navigator.clipboard.writeText(urlString).then(() => {
+        showNotification('🔗 URL mit Formulardaten wurde in die Zwischenablage kopiert!', 'success');
+        
+        // Optional: URL auch in einem Dialog anzeigen
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
+            align-items: center; justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 10px; max-width: 80%; max-height: 80%;">
+                <h3>🔗 URL mit vorausgefüllten Daten</h3>
+                <p>Diese URL enthält alle aktuellen Formulardaten als Parameter:</p>
+                <textarea readonly style="width: 100%; height: 150px; margin: 10px 0; font-family: monospace; font-size: 12px;">${urlString}</textarea>
+                <div style="text-align: right;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding: 10px 20px;">Schließen</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
+    }).catch(err => {
+        showNotification('❌ Fehler beim Kopieren der URL: ' + err.message, 'error');
+        console.error('Fehler beim Kopieren:', err);
+    });
 }
 
 // Load settings data into form fields (called when loading saved data)

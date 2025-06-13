@@ -9,6 +9,7 @@ window.yamlFieldOrders = new Map(); // YAML-Feldreihenfolgen pro PDF
 window.selectedPDFs = new Set();
 window.calculatedFields = new Set(); // Felder mit Berechnungen
 window.hiddenData = {}; // Daten, die nicht in Formularen verwendet werden
+window.urlParamData = {}; // URL-Parameter die Vorrang haben
 
 window.appSettings = {
     fileNamePattern: '[Nachname], [Vorname] - [PDF] - [Datum]',

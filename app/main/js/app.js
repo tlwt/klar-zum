@@ -11,7 +11,7 @@ async function initializeApp() {
         
         await loadPDFsFromDirectory();
         generatePDFSelection();
-        handleUrlParams();
+        parseUrlParams(); // URL-Parameter früh parsen und anzeigen
         
         console.log('✅ App erfolgreich initialisiert');
         showMainApp();
