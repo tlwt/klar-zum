@@ -1,6 +1,8 @@
 # Klar zum
 
-Moderne Web-Anwendung zum Ausfüllen deutscher Reservisten-PDF-Formulare mit Live-Vorschau und intelligenter Feldkonfiguration.
+🌐 **Live-Demo**: https://tlwt.github.io/klar-zum/
+
+Moderne Web-Anwendung zum Ausfüllen deutscher Reservisten-PDF-Formulare mit Live-Vorschau und intelligenter Feldkonfiguration. Alle Daten werden komplett lokal in Ihrem Browser verarbeitet und an keine Server übertragen.
 
 ## 📋 Voraussetzungen
 
@@ -176,3 +178,5 @@ pdfs:
 ## 📄 Lizenz
 
 Dieses Projekt steht unter der [MIT Lizenz](LICENSE).
+
+Eine vollständige Übersicht der verwendeten Open-Source-Bibliotheken und deren Lizenzen finden Sie in [LICENSES.md](LICENSES.md).
