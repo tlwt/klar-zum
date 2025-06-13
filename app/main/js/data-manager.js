@@ -58,22 +58,6 @@ function getAllFormData() {
         });
     }
     
-    // Versteckte Felder aus dem separaten Bereich
-    const hiddenFields = document.getElementById('hiddenDataFields');
-    if (hiddenFields) {
-        hiddenFields.querySelectorAll('input, textarea, select').forEach(input => {
-            const fieldName = input.name || input.id.replace('hidden_', '');
-            if (input.type === 'checkbox') {
-                formData[fieldName] = input.checked ? input.value : '';
-            } else if (input.type === 'radio') {
-                if (input.checked) {
-                    formData[fieldName] = input.value;
-                }
-            } else {
-                formData[fieldName] = input.value;
-            }
-        });
-    }
     
     // Versteckte Daten aus hiddenData hinzufügen (nur wenn nicht bereits über Formular erfasst)
     Object.keys(window.hiddenData).forEach(key => {
@@ -140,75 +124,7 @@ function restoreSignatureDisplay(fieldId, base64Data) {
     console.log(`✓ Unterschrift für ${fieldId} wiederhergestellt`);
 }
 
-function updateHiddenDataSection() {
-    const hiddenDataSection = document.getElementById('hiddenDataSection');
-    const hiddenDataFields = document.getElementById('hiddenDataFields');
-    const hiddenDataCount = document.getElementById('hiddenDataCount');
-    
-    if (Object.keys(window.hiddenData).length === 0) {
-        hiddenDataSection.style.display = 'none';
-        return;
-    }
-    
-    hiddenDataFields.innerHTML = '';
-    let count = 0;
-    
-    console.log('Versteckte Daten:', window.hiddenData);
-    
-    Object.keys(window.hiddenData).forEach(key => {
-        // Prüfe ob das Feld bereits im sichtbaren Formular existiert
-        const visibleElement = document.getElementById(key);
-        if (visibleElement) {
-            console.log(`Feld ${key} ist bereits sichtbar - nicht als versteckt anzeigen`);
-            return; // Überspringe sichtbare Felder
-        }
-        
-        const value = window.hiddenData[key];
-        const div = document.createElement('div');
-        div.className = 'form-group';
-        
-        // Spezielle Behandlung für Unterschrift-Daten
-        if ((key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')) && 
-            value && value.startsWith('data:image/')) {
-            div.innerHTML = `
-                <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
-                <div class="signature-preview has-signature" style="max-width: 200px; height: 60px; margin: 5px 0;">
-                    <img src="${value}" alt="Unterschrift" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                </div>
-                <input type="hidden" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
-            `;
-        } else {
-            div.innerHTML = `
-                <label for="hidden_${key}">${key} <span class="hidden-badge">📦 Versteckt</span></label>
-                <input type="text" id="hidden_${key}" name="${key}" value="${value}" class="hidden-field">
-            `;
-        }
-        
-        hiddenDataFields.appendChild(div);
-        count++;
-    });
-    
-    hiddenDataCount.textContent = count;
-    
-    if (count > 0) {
-        hiddenDataSection.style.display = 'block';
-    } else {
-        hiddenDataSection.style.display = 'none';
-    }
-}
 
-function toggleHiddenData() {
-    const content = document.getElementById('hiddenDataContent');
-    const toggleText = document.getElementById('hiddenDataToggleText');
-    
-    if (content.style.display === 'none' || !content.style.display) {
-        content.style.display = 'block';
-        toggleText.textContent = 'Verbergen';
-    } else {
-        content.style.display = 'none';
-        toggleText.textContent = 'Anzeigen';
-    }
-}
 
 function getAllData() {
     const formData = getAllFormData();

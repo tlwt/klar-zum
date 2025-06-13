@@ -370,21 +370,6 @@ function showMainApp() {
     showView('pdf-selection');
 }
 
-// Toggle hidden data section
-function toggleHiddenData() {
-    const content = document.getElementById('hiddenDataContent');
-    const toggleText = document.getElementById('hiddenDataToggleText');
-    
-    if (content && toggleText) {
-        if (content.style.display === 'none' || content.style.display === '') {
-            content.style.display = 'block';
-            toggleText.textContent = 'Verstecken';
-        } else {
-            content.style.display = 'none';
-            toggleText.textContent = 'Anzeigen';
-        }
-    }
-}
 
 // Handle PDF field type changes in config
 function handleFieldTypeChange() {

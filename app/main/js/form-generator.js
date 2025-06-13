@@ -180,8 +180,6 @@ function generateFormForSelectedPDFs() {
     
     console.log(`Insgesamt ${sectionsCreated} Sektionen erstellt`);
     
-    // Versteckte Daten anzeigen
-    updateHiddenDataSection();
     
     // Event-Listener für Berechnungen hinzufügen
     setTimeout(() => {

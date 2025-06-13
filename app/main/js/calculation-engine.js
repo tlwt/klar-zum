@@ -3,7 +3,7 @@
 
 function addCalculationEventListeners() {
     // Event-Listener für alle Input-Felder hinzufügen
-    document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select, #hiddenDataFields input, #hiddenDataFields textarea').forEach(input => {
+    document.querySelectorAll('#dataForm input, #dataForm textarea, #dataForm select').forEach(input => {
         input.addEventListener('input', calculateAllFields);
         input.addEventListener('change', calculateAllFields);
     });
