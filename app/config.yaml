@@ -2,7 +2,7 @@
 allowConfigWrite: true  # Ermöglicht direktes Speichern von Konfigurationen
 
 pdfs:
-  - name: "Bw5120 - Einverständnis zur Ableistung.pdf"
+  - name: "Bw5120 - Einverstaendnis zur Ableistung.pdf"
     description: "Einverständniserklärung zur Ableistung von Reservistendienstleistungen"
     category: "Bundeswehr"
   - name: "Bw5120 - Anlage zum Einverstaendnis.pdf"

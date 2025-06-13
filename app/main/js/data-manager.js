@@ -328,11 +328,42 @@ function loadData(event) {
             if (data.selectedPDFs) {
                 window.selectedPDFs.clear();
                 data.selectedPDFs.forEach(pdfName => {
-                    window.selectedPDFs.add(pdfName);
-                    const checkbox = document.querySelector(`input[value="${pdfName}"]`);
+                    // Versuche direkten Match
+                    let checkbox = document.querySelector(`input[value="${pdfName}"]`);
+                    let actualPdfName = pdfName;
+                    
+                    // Falls nicht gefunden, versuche fuzzy matching (für umbenannte PDFs)
+                    if (!checkbox) {
+                        console.log(`⚠️ PDF ${pdfName} nicht gefunden, versuche fuzzy matching...`);
+                        
+                        // Versuche ähnliche Namen zu finden
+                        const allCheckboxes = document.querySelectorAll('.pdf-checkbox input[type="checkbox"]');
+                        for (const cb of allCheckboxes) {
+                            const normalizedStored = pdfName.toLowerCase().replace(/[äöüß]/g, match => {
+                                const replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss'};
+                                return replacements[match] || match;
+                            });
+                            const normalizedAvailable = cb.value.toLowerCase().replace(/[äöüß]/g, match => {
+                                const replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss'};
+                                return replacements[match] || match;
+                            });
+                            
+                            if (normalizedStored === normalizedAvailable) {
+                                checkbox = cb;
+                                actualPdfName = cb.value;
+                                console.log(`✅ Fuzzy match gefunden: ${pdfName} -> ${actualPdfName}`);
+                                break;
+                            }
+                        }
+                    }
+                    
                     if (checkbox) {
+                        window.selectedPDFs.add(actualPdfName);
                         checkbox.checked = true;
                         checkbox.closest('.pdf-checkbox').classList.add('selected');
+                        console.log(`✅ PDF ausgewählt: ${actualPdfName}`);
+                    } else {
+                        console.warn(`❌ PDF nicht gefunden: ${pdfName}`);
                     }
                 });
                 updateSelectionSummary();
