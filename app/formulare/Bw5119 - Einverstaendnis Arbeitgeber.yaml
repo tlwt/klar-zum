@@ -24,6 +24,7 @@ fields:
   DatumDate2:
     group: Persönliche Daten
     type: date
+    mapping: Heute
   VornameDerReservistinDesReservisten:
     group: Persönliche Daten
     type: text

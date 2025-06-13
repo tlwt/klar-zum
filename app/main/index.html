@@ -7,6 +7,7 @@
     <!-- LOKALE BIBLIOTHEKEN für bessere Kompatibilität -->
     <script src="lib/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="lib/js-yaml.min.js"></script>
     <!-- PDF.js for PDF preview rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -134,10 +135,13 @@
                             <h4>📄 PDF herunterladen</h4>
                             <div class="toolbar-buttons">
                                 <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
-                                    🔒 Flach (nicht bearbeitbar)
+                                    🔒 nicht bearbeitbar
                                 </button>
                                 <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
                                     ✏️ Bearbeitbar
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="generatePDFsAsZip(true)">
+                                    📦 Alle als ZIP
                                 </button>
                             </div>
                         </div>

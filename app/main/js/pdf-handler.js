@@ -685,6 +685,188 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
     }
 }
 
+async function fillPDFForZip(pdf, data, flatten = true) {
+    try {
+        // Lade Original-PDF direkt vom Server (gleiche Logik wie fillAndDownloadPDF)
+        const response = await fetch(pdf.path);
+        if (!response.ok) {
+            throw new Error(`Konnte PDF nicht laden: ${pdf.path}`);
+        }
+        const pdfBytes = await response.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+        const form = pdfDoc.getForm();
+        
+        // WICHTIG: Setze NeedAppearances Flag für PDFs die es benötigen
+        try {
+            const acroForm = pdfDoc.catalog.lookup(PDFLib.PDFName.of('AcroForm'));
+            if (acroForm) {
+                acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+                console.log('✓ NeedAppearances Flag gesetzt für ZIP');
+            }
+        } catch (e) {
+            console.log('Konnte NeedAppearances Flag nicht setzen für ZIP:', e.message);
+        }
+        
+        let filledFields = 0;
+        const formData = getAllFormData();
+        const pdfConfig = window.pdfConfigs.get(pdf.name) || {};
+        
+        console.log(`\n=== PDF FELDANALYSE FÜR ZIP (${pdf.name}) ===`);
+        const allFields = form.getFields();
+        console.log(`Gefundene Felder im PDF (${allFields.length}):`);
+        
+        // SCHRITT 1: ALLE VERFÜGBAREN FELDER (gleiche Logik wie fillAndDownloadPDF)
+        allFields.forEach(field => {
+            const fieldName = field.getName();
+            console.log(`📋 PDF-Feld: ${fieldName} (${field.constructor.name})`);
+        });
+
+        // MAPPING-SYSTEM (aus fillAndDownloadPDF)
+        const fieldMappings = new Map();
+        
+        // Baue Mapping-System auf
+        if (pdfConfig.fields) {
+            Object.entries(pdfConfig.fields).forEach(([pdfFieldName, config]) => {
+                if (config.mapping) {
+                    if (!fieldMappings.has(config.mapping)) {
+                        fieldMappings.set(config.mapping, []);
+                    }
+                    fieldMappings.get(config.mapping).push(pdfFieldName);
+                    console.log(`🔗 Mapping: ${config.mapping} → ${pdfFieldName}`);
+                }
+            });
+        }
+
+        // ALLE VERFÜGBAREN DATEN VERARBEITEN (mit Mapping-Support)
+        for (const [dataKey, dataValue] of Object.entries(formData)) {
+            if (!dataValue || dataValue.toString().trim() === '') continue;
+            
+            const valueStr = dataValue.toString();
+            
+            // Direkte Feldsuche
+            let targetFields = [];
+            
+            // 1. Direkte Übereinstimmung
+            try {
+                const directField = form.getField(dataKey);
+                if (directField) {
+                    targetFields.push(dataKey);
+                }
+            } catch (e) {
+                // Feld existiert nicht direkt
+            }
+            
+            // 2. Über Mapping-System
+            if (fieldMappings.has(dataKey)) {
+                const mappedFields = fieldMappings.get(dataKey);
+                mappedFields.forEach(mappedField => {
+                    try {
+                        const field = form.getField(mappedField);
+                        if (field && !targetFields.includes(mappedField)) {
+                            targetFields.push(mappedField);
+                        }
+                    } catch (e) {
+                        // Gemapptes Feld existiert nicht
+                    }
+                });
+            }
+            
+            // Setze Werte für alle gefundenen Zielfelder
+            for (const targetFieldName of targetFields) {
+                try {
+                    const field = form.getField(targetFieldName);
+                    
+                    if (field instanceof PDFLib.PDFTextField) {
+                        field.setText(valueStr);
+                        filledFields++;
+                        console.log(`✓ TextField ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                    } else if (field instanceof PDFLib.PDFCheckBox) {
+                        if (valueStr === '1' || valueStr === 'true' || valueStr === 'on' || valueStr === 'checked') {
+                            field.check();
+                            filledFields++;
+                            console.log(`✓ CheckBox ${targetFieldName} aktiviert (via ${dataKey})`);
+                        }
+                    } else if (field instanceof PDFLib.PDFRadioGroup) {
+                        const options = field.getOptions();
+                        if (options.includes(valueStr)) {
+                            field.select(valueStr);
+                            filledFields++;
+                            console.log(`✓ RadioGroup ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                        }
+                    } else if (field instanceof PDFLib.PDFDropdown) {
+                        const options = field.getOptions();
+                        if (options.includes(valueStr)) {
+                            field.select(valueStr);
+                            filledFields++;
+                            console.log(`✓ Dropdown ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                        }
+                    }
+                } catch (fieldError) {
+                    console.warn(`Fehler beim Setzen von ${targetFieldName}:`, fieldError);
+                }
+            }
+        }
+        
+        // SCHRITT 2: UNTERSCHRIFT-FELDER
+        console.log('\n=== UNTERSCHRIFT-VERARBEITUNG FÜR ZIP ===');
+        for (const [fieldName, fieldValue] of Object.entries(formData)) {
+            if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
+                fieldValue && fieldValue.toString().trim() !== '') {
+                
+                let alreadyProcessed = false;
+                
+                try {
+                    const field = form.getField(fieldName);
+                    if (field instanceof PDFLib.PDFTextField) {
+                        field.setText('[Unterschrift eingefügt]');
+                        filledFields++;
+                        alreadyProcessed = true;
+                        console.log(`✓ Unterschrift-TextField ${fieldName} gesetzt`);
+                    }
+                } catch (e) {
+                    console.log(`Unterschrift-Feld ${fieldName} nicht als TextField gefunden`);
+                }
+                
+                if (!alreadyProcessed) {
+                    try {
+                        const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue, pdf.name);
+                        if (success) {
+                            filledFields++;
+                            console.log(`✓ Unterschrift ${fieldName} als separates Bild eingefügt`);
+                        }
+                    } catch (signatureError) {
+                        console.warn(`Fehler beim Einbetten der separaten Unterschrift ${fieldName}:`, signatureError);
+                    }
+                }
+            }
+        }
+        
+        // SCHRITT 3: FORMULAR FLACHWANDELN (FALLS GEWÜNSCHT)
+        if (flatten) {
+            try {
+                form.flatten();
+                console.log('✓ Formular geflacht für ZIP');
+            } catch (flattenError) {
+                console.warn('⚠️ Warnung: Formular konnte nicht geflacht werden:', flattenError);
+            }
+        }
+        
+        // SCHRITT 4: PDF-BYTES GENERIEREN UND ALS BLOB ZURÜCKGEBEN
+        console.log('📦 Generiere PDF-Bytes für ZIP...');
+        const filledPdfBytes = await pdfDoc.save();
+        const blob = new Blob([filledPdfBytes], { type: 'application/pdf' });
+        
+        const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
+        console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} für ZIP (${modeText})`);
+        
+        return blob;
+        
+    } catch (error) {
+        console.error('Fehler beim Ausfüllen des PDFs für ZIP:', error);
+        throw error;
+    }
+}
+
 function extractFieldOrderFromYaml(yamlText, pdfName) {
     const lines = yamlText.split('\n');
     let inFieldsSection = false;
