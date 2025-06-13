@@ -740,3 +740,10 @@ function loadSettingsToForm() {
         console.error('Fehler beim Laden der Einstellungen in Formular:', error);
     }
 }
+
+// Funktion für versteckte Daten-Sektion (Placeholder für zukünftige Implementierung)
+function updateHiddenDataSection() {
+    // Placeholder Funktion - kann in Zukunft implementiert werden
+    // für die Anzeige versteckter Felder oder Debugging-Informationen
+    console.log('updateHiddenDataSection() aufgerufen');
+}

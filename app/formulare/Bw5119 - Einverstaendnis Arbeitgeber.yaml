@@ -96,3 +96,5 @@ fields:
     group: Unterschriften
     type: text
     mapping: Unterschrift
+    hidden_for_pdfs:
+      - Bw5119 - Einverstaendnis Arbeitgeber.pdf

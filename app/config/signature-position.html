@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unterschrift-Positionierung</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="../lib/pdf-lib.min.js"></script>
+    <script src="../lib/js-yaml.min.js"></script>
+    <script src="../lib/pdf.min.js"></script>
     <link rel="stylesheet" href="../main/styles/main.css">
     <style>
         .signature-positioning {
@@ -166,7 +166,7 @@
 
     <script>
         // PDF.js Worker (für CDNJS)
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '../lib/pdf.worker.min.js';
         
         window.pdfPositioning = {
             currentPdf: null,

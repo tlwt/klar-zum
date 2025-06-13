@@ -708,9 +708,10 @@ async function fillPDFForZip(pdf, data, flatten = true) {
         }
         
         let filledFields = 0;
-        const formData = getAllFormData();
+        const formData = data; // Verwende die übergebenen Daten anstatt getAllFormData() erneut aufzurufen
         const pdfConfig = window.pdfConfigs.get(pdf.name) || {};
         
+        console.log('🔍 ZIP: Verwende übergebene Formulardaten:', Object.keys(formData).length, 'Felder');
         console.log(`\n=== PDF FELDANALYSE FÜR ZIP (${pdf.name}) ===`);
         const allFields = form.getFields();
         console.log(`Gefundene Felder im PDF (${allFields.length}):`);
@@ -807,24 +808,141 @@ async function fillPDFForZip(pdf, data, flatten = true) {
             }
         }
         
-        // SCHRITT 2: UNTERSCHRIFT-FELDER
+        // SCHRITT 1.5: DIREKTE FELDSUCHE (wie in normaler PDF-Generierung)
+        console.log('\n=== DIREKTE FELDSUCHE FÜR ZIP ===');
+        for (const field of allFields) {
+            const fieldName = field.getName();
+            if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
+                const value = formData[fieldName];
+                console.log(`\n--- ZIP DIREKTE FELDSUCHE: ${fieldName} ---`);
+                
+                // Überspringe wenn bereits verarbeitet
+                if (!pdf.fields.includes(fieldName)) {
+                    try {
+                        if (field instanceof PDFLib.PDFTextField) {
+                            field.setText(value.toString());
+                            filledFields++;
+                            console.log(`✓ ZIP Direkte TextField ${fieldName} = "${value}"`);
+                        } else if (field instanceof PDFLib.PDFCheckBox) {
+                            const shouldCheck = value === '1' || value === 'true' || value === true || 
+                                               value === 'on' || value === 'Ja' || value === 'ja' || 
+                                               value === 'YES' || value === 'yes' || value === 'checked';
+                            if (shouldCheck) {
+                                field.check();
+                                filledFields++;
+                                console.log(`✓ ZIP Direkte CheckBox ${fieldName} aktiviert`);
+                            }
+                        } else if (field instanceof PDFLib.PDFRadioGroup) {
+                            const options = field.getOptions();
+                            if (options.includes(value.toString())) {
+                                field.select(value.toString());
+                                filledFields++;
+                                console.log(`✓ ZIP Direkte RadioGroup ${fieldName} = "${value}"`);
+                            }
+                        } else if (field instanceof PDFLib.PDFDropdown) {
+                            const options = field.getOptions();
+                            if (options.includes(value.toString())) {
+                                field.select(value.toString());
+                                filledFields++;
+                                console.log(`✓ ZIP Direkte Dropdown ${fieldName} = "${value}"`);
+                            }
+                        }
+                    } catch (directFieldError) {
+                        console.warn(`Fehler bei direkter Feldsuche ${fieldName} für ZIP:`, directFieldError);
+                    }
+                }
+            }
+        }
+        
+        // SCHRITT 2: UNTERSCHRIFT-FELDER (Verarbeite PDF-Felder direkt für korrekte Mappings)
         console.log('\n=== UNTERSCHRIFT-VERARBEITUNG FÜR ZIP ===');
+        console.log('🔍 Alle Formulardaten für ZIP:', Object.keys(formData));
+        console.log('🔍 Unterschrift-Felder in Formulardaten:', Object.keys(formData).filter(key => 
+            key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')));
+        
+        // Durchlaufe alle PDF-Felder die Unterschriften sind
+        if (pdfConfig.fields) {
+            for (const [pdfFieldName, fieldConfig] of Object.entries(pdfConfig.fields)) {
+                if ((pdfFieldName.toLowerCase().includes('signature') || 
+                     pdfFieldName.toLowerCase().includes('unterschrift')) &&
+                    fieldConfig.type === 'signature') {
+                    
+                    console.log(`\n--- Verarbeite PDF-Unterschrift-Feld: ${pdfFieldName} ---`);
+                    
+                    // Bestimme welches Formularfeld verwendet werden soll
+                    const formFieldName = fieldConfig.mapping || pdfFieldName;
+                    const fieldValue = formData[formFieldName];
+                    
+                    console.log(`  Mapping: ${pdfFieldName} → ${formFieldName}`);
+                    console.log(`  Wert vorhanden: ${!!fieldValue}`);
+                    
+                    if (fieldValue && fieldValue.toString().trim() !== '') {
+                        let alreadyProcessed = false;
+                        
+                        // Versuche als PDF-Formularfeld
+                        try {
+                            const field = form.getField(pdfFieldName);
+                            if (field instanceof PDFLib.PDFTextField) {
+                                field.setText('[Unterschrift eingefügt]');
+                                filledFields++;
+                                alreadyProcessed = true;
+                                console.log(`✓ ZIP: Unterschrift-TextField ${pdfFieldName} gesetzt`);
+                            }
+                        } catch (e) {
+                            console.log(`  ${pdfFieldName} ist kein PDF-Formularfeld`);
+                        }
+                        
+                        // Wenn nicht als Formularfeld verarbeitet, als Bild einbetten
+                        if (!alreadyProcessed) {
+                            try {
+                                const success = await embedSignatureInPDF(pdfDoc, pdfFieldName, fieldValue, pdf.name);
+                                if (success) {
+                                    filledFields++;
+                                    console.log(`✓ ZIP: Unterschrift ${pdfFieldName} als Bild eingefügt (von ${formFieldName})`);
+                                }
+                            } catch (signatureError) {
+                                console.warn(`Fehler beim Einbetten der Unterschrift ${pdfFieldName}:`, signatureError);
+                            }
+                        }
+                    } else {
+                        console.log(`  ⏭️ Keine Daten für ${formFieldName}`);
+                    }
+                }
+            }
+        }
+        
+        // SCHRITT 2.5: ERWEITERTE UNTERSCHRIFT-BEHANDLUNG (wie in normaler PDF-Generierung)
+        console.log('\n=== ERWEITERTE UNTERSCHRIFT-BEHANDLUNG FÜR ZIP ===');
+        console.log('🔍 Suche nach Base64 Unterschriften...');
+        const base64Signatures = Object.entries(formData).filter(([key, value]) => 
+            (key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')) && 
+            value && value.startsWith && value.startsWith('data:image/'));
+        console.log(`🔍 Gefundene Base64 Unterschriften (${base64Signatures.length}):`, base64Signatures.map(([key, value]) => 
+            `${key} (${value.substring(0, 50)}...)`));
+            
         for (const [fieldName, fieldValue] of Object.entries(formData)) {
             if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
-                fieldValue && fieldValue.toString().trim() !== '') {
+                fieldValue && fieldValue.startsWith('data:image/')) {
                 
+                console.log(`Verarbeite erweiterte Unterschrift-Feld: ${fieldName}`);
+                
+                // Prüfe ob diese Unterschrift für dieses PDF konfiguriert ist
+                const signatureConfig = getSignatureConfig(fieldName, pdf.name);
+                if (signatureConfig.x === undefined && signatureConfig.y === undefined) {
+                    console.log(`⏭️ ZIP: Unterschrift ${fieldName} ist nicht für ${pdf.name} konfiguriert - überspringe`);
+                    continue;
+                }
+                
+                // Prüfe ob bereits als Formularfeld verarbeitet
                 let alreadyProcessed = false;
-                
                 try {
                     const field = form.getField(fieldName);
-                    if (field instanceof PDFLib.PDFTextField) {
-                        field.setText('[Unterschrift eingefügt]');
-                        filledFields++;
+                    if (field) {
                         alreadyProcessed = true;
-                        console.log(`✓ Unterschrift-TextField ${fieldName} gesetzt`);
+                        console.log(`ZIP: Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
                     }
                 } catch (e) {
-                    console.log(`Unterschrift-Feld ${fieldName} nicht als TextField gefunden`);
+                    // Feld existiert nicht als Formularfeld - das ist ok
                 }
                 
                 if (!alreadyProcessed) {
@@ -832,10 +950,10 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                         const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue, pdf.name);
                         if (success) {
                             filledFields++;
-                            console.log(`✓ Unterschrift ${fieldName} als separates Bild eingefügt`);
+                            console.log(`✓ ZIP: Erweiterte Unterschrift ${fieldName} als separates Bild eingefügt`);
                         }
                     } catch (signatureError) {
-                        console.warn(`Fehler beim Einbetten der separaten Unterschrift ${fieldName}:`, signatureError);
+                        console.warn(`Fehler beim Einbetten der erweiterten Unterschrift ${fieldName} für ZIP:`, signatureError);
                     }
                 }
             }
