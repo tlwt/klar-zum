@@ -57,6 +57,18 @@
                     <span class="menu-icon">⚙️</span>
                     <span class="menu-text">Einstellungen</span>
                 </div>
+                
+                <div class="menu-separator"></div>
+                
+                <div class="menu-item external" onclick="window.location.href='../config/'">
+                    <span class="menu-icon">🔧</span>
+                    <span class="menu-text">Config Editor</span>
+                </div>
+                
+                <div class="menu-item external" onclick="window.location.href='../data-editor/'">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-text">Daten Editor</span>
+                </div>
             </div>
             
             <div class="sidebar-footer">
@@ -99,6 +111,7 @@
                         <label for="loadFile" class="file-label">📁 Daten laden</label>
                         <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
                         <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.open('../data-editor/', '_blank')">📊 Daten bearbeiten</button>
                         
                         <!-- PDF Generation Buttons -->
                         <div class="download-options-mini">
@@ -119,6 +132,11 @@
                         <div id="hiddenDataSection" class="hidden-data-section" style="display: none;">
                             <h4>🗃️ Versteckte Daten aus Datensatz</h4>
                             <p>Folgende Daten aus dem geladenen Datensatz werden gespeichert, obwohl sie in keinem Formular verwendet werden:</p>
+                            <div style="margin-bottom: 1rem;">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="window.open('../data-editor/', '_blank')">
+                                    📊 Daten im Editor bearbeiten
+                                </button>
+                            </div>
                             <div class="hidden-data-toggle" onclick="toggleHiddenData()">
                                 <span id="hiddenDataToggleText">Anzeigen</span> (<span id="hiddenDataCount">0</span> Felder)
                             </div>

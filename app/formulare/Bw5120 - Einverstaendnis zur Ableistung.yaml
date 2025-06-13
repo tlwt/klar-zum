@@ -98,6 +98,10 @@ fields:
     type: text
   Pensionaer:
     group: Dienstleistung
+  Pensionär:
+    group: Dienstleistung
+  Arbeitsverhältnis:
+    group: Dienstleistung
   Signature1:
     group: Unterschriften
     type: signature
@@ -143,4 +147,6 @@ fields:
     hidden_for_pdfs:
       - Bw5120 - Einverständnis zur Ableistung.pdf
   Mandat:
+    group: Sonstige
+  Selbstständig:
     group: Sonstige

@@ -87,3 +87,16 @@ Separate application at `app/config/index.html` for creating/editing YAML config
 - Signature positioning uses PDF coordinates (bottom-left origin)
 - Test signature placement using `unterschrift.html`
 - Coordinates are stored in YAML under `signatureConfig`
+
+## Issue Management
+
+- use tea to manage issues
+
+## Docker Usage
+
+- denk daran, dass du immer docker nutzt, wenn funktionen getestet werden.
+
+## Container Deployment Notes
+
+- der container muß nicht neu gestartet werden, die änderungen werden per volumen eingebunden
+- Der Port ist 8080 vom container

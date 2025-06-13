@@ -32,6 +32,9 @@ function initializeConfigTab() {
     
     // Check direct save capability
     checkDirectSaveCapability();
+    
+    // Setup auto-save listeners
+    setupAutoSaveListeners();
 }
 
 // Load config for selected PDF
@@ -214,8 +217,8 @@ function showGroupProperties(groupKey) {
     document.getElementById('configGroupDescription').value = groupData.description || '';
     
     // Show group properties panel
-    document.getElementById('configGroupProperties').classList.add('active');
-    document.getElementById('configFieldProperties').classList.remove('active');
+    document.getElementById('configGroupProperties').style.display = 'block';
+    document.getElementById('configFieldProperties').style.display = 'none';
 }
 
 // Show field properties
@@ -229,21 +232,31 @@ function showFieldProperties(fieldName) {
     document.getElementById('configFieldCalculation').value = fieldData.calculation || '';
     document.getElementById('configFieldHidden').checked = fieldData.hidden || false;
     
+    // Add event listener for field type changes
+    const fieldTypeSelect = document.getElementById('configFieldType');
+    fieldTypeSelect.onchange = function() {
+        if (this.value === 'signature') {
+            document.getElementById('configSignatureSettings').style.display = 'block';
+        } else {
+            document.getElementById('configSignatureSettings').style.display = 'none';
+        }
+    };
+    
     // Handle signature fields
     if (fieldData.type === 'signature') {
-        document.getElementById('configSignatureFields').style.display = 'block';
+        document.getElementById('configSignatureSettings').style.display = 'block';
         document.getElementById('configSignatureWidth').value = fieldData.signature_width || '';
         document.getElementById('configSignatureHeight').value = fieldData.signature_height || '';
         document.getElementById('configSignatureX').value = fieldData.signature_x || '';
         document.getElementById('configSignatureY').value = fieldData.signature_y || '';
         document.getElementById('configSignaturePage').value = fieldData.signature_page || '';
     } else {
-        document.getElementById('configSignatureFields').style.display = 'none';
+        document.getElementById('configSignatureSettings').style.display = 'none';
     }
     
     // Show field properties panel
-    document.getElementById('configFieldProperties').classList.add('active');
-    document.getElementById('configGroupProperties').classList.remove('active');
+    document.getElementById('configFieldProperties').style.display = 'block';
+    document.getElementById('configGroupProperties').style.display = 'none';
 }
 
 // Add new group
@@ -268,7 +281,7 @@ function deleteConfigGroup() {
         delete window.configState.currentConfig.groups[window.configState.selectedGroup];
         window.configState.selectedGroup = null;
         loadGroupsIntoUI(window.configState.currentConfig.groups);
-        document.getElementById('configGroupProperties').classList.remove('active');
+        document.getElementById('configGroupProperties').style.display = 'none';
     }
 }
 
@@ -372,6 +385,25 @@ function updateConfigFromUI() {
     }
 }
 
+// Setup auto-save event listeners for form fields
+function setupAutoSaveListeners() {
+    const inputs = [
+        'configGroupTitle', 'configGroupDescription',
+        'configFieldTitle', 'configFieldDescription', 'configFieldType', 
+        'configFieldMapping', 'configFieldCalculation', 'configFieldHidden',
+        'configSignatureWidth', 'configSignatureHeight', 'configSignatureX', 
+        'configSignatureY', 'configSignaturePage'
+    ];
+    
+    inputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', updateConfigFromUI);
+            element.addEventListener('change', updateConfigFromUI);
+        }
+    });
+}
+
 // Preview config
 function previewConfig() {
     if (!window.configState.selectedPDF) {
@@ -410,10 +442,12 @@ function previewConfig() {
 // Show/hide workspace
 function showConfigWorkspace() {
     document.getElementById('configWorkspace').style.display = 'block';
+    document.getElementById('configActions').style.display = 'block';
 }
 
 function hideConfigWorkspace() {
     document.getElementById('configWorkspace').style.display = 'none';
+    document.getElementById('configActions').style.display = 'none';
 }
 
 // Check direct save capability

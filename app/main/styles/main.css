@@ -120,6 +120,28 @@ body {
 
 .menu-text {
     font-weight: 500;
+    flex: 1;
+}
+
+.menu-separator {
+    height: 1px;
+    background: #34495e;
+    margin: 10px 20px;
+}
+
+.menu-item.external {
+    color: #bdc3c7;
+    font-size: 0.95rem;
+}
+
+.menu-item.external:hover {
+    background: #34495e;
+    color: white;
+}
+
+.external-icon {
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
 
 .sidebar-footer {

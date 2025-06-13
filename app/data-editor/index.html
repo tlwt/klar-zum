@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datensatz Editor - Reservist Digital</title>
+    <link rel="stylesheet" href="../main/styles/main.css">
+    <link rel="stylesheet" href="styles/data-editor.css">
+    <link rel="icon" type="image/x-icon" href="../main/favicon.ico">
+    <!-- Immer neu laden -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1>📊 Data Tools</h1>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-item" onclick="window.location.href='../main/'">
+                    <span class="menu-icon">📄</span>
+                    <span class="menu-text">PDF Ausfüller</span>
+                </div>
+                
+                <div class="menu-item" onclick="window.location.href='../config/'">
+                    <span class="menu-icon">🔧</span>
+                    <span class="menu-text">Config Editor</span>
+                </div>
+                
+                <div class="menu-item active">
+                    <span class="menu-icon">📊</span>
+                    <span class="menu-text">Daten Editor</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="app-info">
+                    <small>Reservist Digital</small>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="view-header">
+                <h2>📊 Datensatz Editor</h2>
+                <p>Bearbeiten Sie gespeicherte JSON-Datensätze - Felder hinzufügen, ändern und löschen</p>
+            </div>
+
+            <div class="view-content">
+            <!-- File Load Section -->
+            <section class="load-section">
+                <div class="section-header">
+                    <h2>📁 Datensatz laden</h2>
+                    <p>Laden Sie eine gespeicherte JSON-Datei zur Bearbeitung</p>
+                </div>
+                <div class="load-controls">
+                    <label for="loadDataFile" class="file-label">
+                        📂 JSON-Datei auswählen
+                    </label>
+                    <input type="file" id="loadDataFile" class="file-input" accept=".json" onchange="loadDataFile(event)">
+                    
+                    <button class="btn btn-secondary" onclick="createNewDataset()">
+                        ➕ Neuen Datensatz erstellen
+                    </button>
+                    
+                    <button class="btn btn-success" onclick="saveDataset()">
+                        💾 Datensatz speichern
+                    </button>
+                </div>
+                
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <div class="info-item">
+                        <strong>Datei:</strong> <span id="fileName"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Anzahl Felder:</strong> <span id="fieldCount"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Timestamp:</strong> <span id="timestamp"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Editor Section -->
+            <section id="editorSection" class="editor-section" style="display: none;">
+                <div class="section-header">
+                    <h2>✏️ Felder bearbeiten</h2>
+                    <div class="editor-controls">
+                        <button class="btn btn-primary" onclick="addNewField()">
+                            ➕ Neues Feld hinzufügen
+                        </button>
+                        <button class="btn btn-secondary" onclick="sortFields()">
+                            🔤 Alphabetisch sortieren
+                        </button>
+                        <div class="search-box">
+                            <input type="text" id="searchField" placeholder="🔍 Felder suchen..." onkeyup="filterFields()">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="editor-content">
+                    <div class="fields-container">
+                        <div id="fieldsList" class="fields-list"></div>
+                    </div>
+                </div>
+                
+            </section>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <div id="status" class="status-bar"></div>
+    </div>
+
+    <!-- Add Field Modal -->
+    <div id="addFieldModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Neues Feld hinzufügen</h3>
+                <button class="modal-close" onclick="closeAddFieldModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newFieldName">Feldname:</label>
+                    <input type="text" id="newFieldName" placeholder="z.B. Nachname" required>
+                </div>
+                <div class="form-group">
+                    <label for="newFieldValue">Wert:</label>
+                    <input type="text" id="newFieldValue" placeholder="Feldwert eingeben">
+                </div>
+                <div class="form-group">
+                    <label for="newFieldType">Feldtyp:</label>
+                    <select id="newFieldType">
+                        <option value="text">Text</option>
+                        <option value="email">E-Mail</option>
+                        <option value="tel">Telefon</option>
+                        <option value="date">Datum</option>
+                        <option value="number">Zahl</option>
+                        <option value="checkbox">Ja/Nein</option>
+                        <option value="signature">Unterschrift (Base64)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="addField()">Hinzufügen</button>
+                <button class="btn btn-secondary" onclick="closeAddFieldModal()">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Signature Editor Modal -->
+    <div id="signatureModal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>✍️ Unterschrift bearbeiten</h3>
+                <button class="modal-close" onclick="closeSignatureModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="signature-field">
+                    <div class="signature-mode-tabs">
+                        <button type="button" class="signature-tab active" onclick="switchSignatureMode('draw')">✏️ Zeichnen</button>
+                        <button type="button" class="signature-tab" onclick="switchSignatureMode('upload')">📁 Hochladen</button>
+                    </div>
+
+                    <div id="signature-draw" class="signature-content active">
+                        <div class="signature-preview">
+                            <canvas id="signature-canvas" class="signature-canvas" width="400" height="150"></canvas>
+                        </div>
+                        <div class="signature-controls">
+                            <button type="button" onclick="clearSignature()" class="btn-secondary">🗑️ Löschen</button>
+                            <button type="button" onclick="undoSignature()" class="btn-secondary">↶ Rückgängig</button>
+                        </div>
+                    </div>
+
+                    <div id="signature-upload" class="signature-content">
+                        <div class="signature-preview" id="signature-preview">
+                            <div class="signature-placeholder">Klicken Sie hier oder ziehen Sie ein Bild hinein</div>
+                        </div>
+                        <div class="signature-controls">
+                            <label for="signature-file" style="margin: 0;">
+                                <button type="button" class="btn-secondary">📁 Datei auswählen</button>
+                            </label>
+                            <input type="file" id="signature-file" accept="image/*" onchange="uploadSignature(this)">
+                            <button type="button" onclick="clearSignature()" class="btn-secondary">🗑️ Löschen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveSignature()">💾 Übernehmen</button>
+                <button class="btn btn-secondary" onclick="closeSignatureModal()">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="js/data-editor.js"></script>
+</body>
+</html>
