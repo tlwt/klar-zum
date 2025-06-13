@@ -30,6 +30,8 @@ fields:
     group: Persönliche Daten
   Straße Hausnummer:
     group: Persönliche Daten
+    type: text
+    mapping: Adresse
   Telefon:
     group: Persönliche Daten
     type: tel

@@ -350,10 +350,11 @@ async function loadExampleData() {
         });
         
         // Formularfelder setzen (nur sichtbare Felder)
+        console.log('🔒 URL-Parameter Schutz aktiv für Felder:', Object.keys(window.urlParamData || {}));
         for (const [key, value] of Object.entries(formData)) {
             // URL-Parameter haben Vorrang - überspringen wenn URL-Parameter vorhanden
             if (window.urlParamData && window.urlParamData.hasOwnProperty(key)) {
-                console.log(`Feld ${key} wird durch URL-Parameter geschützt (Beispieldaten)`);
+                console.log(`🔒 Feld ${key} wird durch URL-Parameter geschützt (Beispieldaten) - URL-Wert: ${window.urlParamData[key]}, Beispiel-Wert: ${value}`);
                 continue;
             }
             
@@ -432,10 +433,17 @@ function parseUrlParams() {
     const paramsDiv = document.getElementById('urlParams');
     const paramsContent = document.getElementById('urlParamsContent');
     
+    // Initialisiere urlParamData falls nicht vorhanden
+    if (!window.urlParamData) {
+        window.urlParamData = {};
+    }
+    
     let hasParams = false;
     let content = '<ul>';
     
+    console.log('🔗 Parsing URL parameters...');
     for (const [key, value] of urlParams) {
+        console.log(`📋 URL-Parameter gefunden: ${key} = ${value}`);
         // In urlParamData speichern für Vorrang bei loadData
         window.urlParamData[key] = value;
         
@@ -515,9 +523,19 @@ function getFieldDisplayName(elementId) {
     // Finde das zugehörige Label
     const label = document.querySelector(`label[for="${elementId}"]`);
     if (label) {
-        // Entferne Berechnungs-Badge und andere HTML-Elemente
-        let labelText = label.textContent.trim();
-        labelText = labelText.replace(/\s*🧮\s*$/, ''); // Entferne Berechnungs-Badge
+        // Clone das Label und entferne alle Badge-Elemente
+        const labelClone = label.cloneNode(true);
+        
+        // Entferne PDF-Info-Badges
+        const pdfBadges = labelClone.querySelectorAll('.pdf-info-badge');
+        pdfBadges.forEach(badge => badge.remove());
+        
+        // Entferne Berechnungs-Badges
+        const calculatedBadges = labelClone.querySelectorAll('.calculated-badge');
+        calculatedBadges.forEach(badge => badge.remove());
+        
+        // Hole den bereinigten Text
+        let labelText = labelClone.textContent.trim();
         return labelText;
     }
     return elementId; // Fallback zur Element-ID
