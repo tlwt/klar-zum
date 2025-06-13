@@ -271,7 +271,7 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
                 try {
                     const field = form.getField(fieldName);
                     if (field) {
-                        const success = await setFieldValueForLivePreview(field, value, fieldName, pdfDoc);
+                        const success = await setFieldValueForLivePreview(field, value, fieldName, pdfDoc, pdfInfo.name);
                         if (success) {
                             filledFields++;
                         }
@@ -279,7 +279,7 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
                         // Spezielle Behandlung für Unterschrift-Felder ohne Formularfeld
                         if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
                             if (value && value.startsWith('data:image/')) {
-                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value);
+                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value, pdfInfo.name);
                                 if (success) {
                                     filledFields++;
                                 }
@@ -293,7 +293,7 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
                     if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
                         if (value && value.startsWith('data:image/')) {
                             try {
-                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value);
+                                const success = await embedSignatureInPDF(pdfDoc, fieldName, value, pdfInfo.name);
                                 if (success) {
                                     filledFields++;
                                 }
@@ -311,6 +311,13 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
             if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
                 fieldValue && fieldValue.startsWith('data:image/')) {
                 
+                // Prüfe ob diese Unterschrift für dieses PDF konfiguriert ist
+                const signatureConfig = getSignatureConfig(fieldName, pdfInfo.name);
+                if (signatureConfig.x === undefined && signatureConfig.y === undefined) {
+                    console.log(`⏭️ Live-Vorschau: Unterschrift ${fieldName} ist nicht für ${pdfInfo.name} konfiguriert - überspringe`);
+                    continue;
+                }
+                
                 // Prüfe ob bereits als Formularfeld verarbeitet
                 let alreadyProcessed = false;
                 try {
@@ -324,7 +331,7 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
                 
                 if (!alreadyProcessed) {
                     try {
-                        const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue);
+                        const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue, pdfInfo.name);
                         if (success) {
                             filledFields++;
                         }
@@ -387,12 +394,12 @@ function setupLivePreviewListeners() {
     document.addEventListener('signature-updated', scheduleUpdate);
 }
 
-async function setFieldValueForLivePreview(field, value, fieldName, pdfDoc) {
+async function setFieldValueForLivePreview(field, value, fieldName, pdfDoc, currentPdfName) {
     try {
         // Spezielle Behandlung für Unterschrift (Base64-Bilder)
         if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
             if (value && value.startsWith('data:image/')) {
-                return await embedSignatureInPDF(pdfDoc, fieldName, value);
+                return await embedSignatureInPDF(pdfDoc, fieldName, value, currentPdfName);
             } else {
                 return false;
             }

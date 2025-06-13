@@ -23,58 +23,112 @@ function generateFormForSelectedPDFs() {
     
     console.log('=== DEBUG: Feldanalyse ===');
     
+    // Schritt 1: Sammle alle Felder und Konfigurationen pro PDF
+    const pdfFieldsInfo = new Map();
     window.selectedPDFs.forEach(pdfName => {
         const fields = window.pdfFields.get(pdfName) || [];
         const pdfConfig = window.pdfConfigs.get(pdfName) || {};
+        pdfFieldsInfo.set(pdfName, { fields, config: pdfConfig });
         
         console.log(`\n--- PDF: ${pdfName} ---`);
         console.log(`Gefundene Felder (${fields.length}):`, fields);
         console.log(`Konfiguration:`, pdfConfig);
         console.log(`Hat Konfiguration:`, Object.keys(pdfConfig).length > 0);
         console.log(`Hat Feld-Konfiguration:`, !!(pdfConfig.fields && Object.keys(pdfConfig.fields).length > 0));
+    });
+    
+    // Schritt 2: Sammle alle unique Felder
+    const allUniqueFields = new Set();
+    pdfFieldsInfo.forEach(({ fields }) => {
+        fields.forEach(field => allUniqueFields.add(field));
+    });
+    
+    console.log(`\n=== ALLE UNIQUE FELDER (${allUniqueFields.size}) ===`);
+    console.log(Array.from(allUniqueFields));
+    
+    // Schritt 3: Prüfe jedes Feld - nur anzeigen wenn es in ALLEN PDFs erlaubt ist
+    allUniqueFields.forEach(field => {
+        console.log(`\n--- PRÜFE FELD: ${field} ---`);
         
-        if (fields.length === 0) {
-            console.warn(`WARNUNG: PDF ${pdfName} hat keine Felder!`);
-        }
+        let shouldShowFieldGlobally = true;
+        let globalMapping = field;
+        let globalCalculation = null;
         
-        fields.forEach(field => {
+        // Prüfe das Feld - es wird angezeigt wenn es in MINDESTENS EINEM PDF erlaubt ist
+        let fieldFoundInAnyPdf = false;
+        
+        for (const [pdfName, { fields, config: pdfConfig }] of pdfFieldsInfo) {
+            const hasFieldInPdf = fields.includes(field);
+            
+            if (!hasFieldInPdf) {
+                console.log(`  ${pdfName}: Feld nicht vorhanden`);
+                continue; // Feld existiert in diesem PDF nicht
+            }
+            
             const fieldConf = pdfConfig.fields?.[field] || {};
             const hiddenForPDFs = fieldConf.hidden_for_pdfs || [];
             
-            console.log(`  Feld: ${field}`);
+            console.log(`  ${pdfName}: Prüfe Sichtbarkeit`);
             console.log(`    Konfiguration:`, fieldConf);
-            console.log(`    Versteckt für PDFs:`, hiddenForPDFs);
             
-            // Feld ist sichtbar, wenn:
-            // 1. Keine Konfiguration vorhanden ist (dann alle Felder anzeigen)
-            // 2. Konfiguration vorhanden ist UND Feld nicht für dieses PDF versteckt ist
-            const shouldShowField = !pdfConfig.fields || 
-                                   Object.keys(pdfConfig.fields).length === 0 || 
-                                   !hiddenForPDFs.some(hiddenPdf => pdfName.includes(hiddenPdf));
+            let shouldShowFieldInThisPdf;
             
-            console.log(`    Soll angezeigt werden:`, shouldShowField);
-            
-            if (shouldShowField) {
-                const mappedName = fieldConf.mapping || field;
-                console.log(`    → Wird gemappt auf: ${mappedName}`);
-                
-                activeFields.add(mappedName);
-                
-                if (!fieldMappings.has(mappedName)) {
-                    fieldMappings.set(mappedName, []);
-                }
-                fieldMappings.get(mappedName).push(field);
-                
-                // Berechnung speichern, falls vorhanden
-                if (fieldConf.berechnung) {
-                    fieldCalculations.set(mappedName, fieldConf.berechnung);
-                    window.calculatedFields.add(mappedName);
-                    console.log(`    → Hat Berechnung: ${fieldConf.berechnung}`);
-                }
+            if (!pdfConfig.fields || Object.keys(pdfConfig.fields).length === 0) {
+                // Keine Konfiguration: Alle Felder anzeigen
+                shouldShowFieldInThisPdf = true;
             } else {
-                console.log(`    → Wird versteckt`);
+                // Konfiguration vorhanden
+                const isSignatureField = field.toLowerCase().includes('signature') || field.toLowerCase().includes('unterschrift');
+                const isFieldInConfig = fieldConf && Object.keys(fieldConf).length > 0;
+                const isHiddenForThisPdf = hiddenForPDFs.some(hiddenPdf => pdfName.includes(hiddenPdf));
+                
+                if (isSignatureField) {
+                    // Unterschrift-Felder: Nur anzeigen wenn explizit in der Konfiguration definiert
+                    shouldShowFieldInThisPdf = isFieldInConfig && !isHiddenForThisPdf;
+                    console.log(`    Unterschrift-Feld: inConfig=${isFieldInConfig}, notHidden=${!isHiddenForThisPdf}`);
+                } else {
+                    // Normale Felder: Anzeigen außer wenn explizit versteckt
+                    shouldShowFieldInThisPdf = !isHiddenForThisPdf;
+                }
             }
-        });
+            
+            console.log(`    Sichtbar in ${pdfName}: ${shouldShowFieldInThisPdf}`);
+            
+            if (shouldShowFieldInThisPdf) {
+                fieldFoundInAnyPdf = true;
+                console.log(`    → Feld ist in ${pdfName} erlaubt`);
+                
+                // Sammle Mapping und Berechnung
+                if (fieldConf.mapping) {
+                    globalMapping = fieldConf.mapping;
+                }
+                if (fieldConf.berechnung) {
+                    globalCalculation = fieldConf.berechnung;
+                }
+            }
+        }
+        
+        shouldShowFieldGlobally = fieldFoundInAnyPdf;
+        
+        console.log(`  GLOBAL SICHTBAR: ${shouldShowFieldGlobally}`);
+        
+        if (shouldShowFieldGlobally) {
+            console.log(`  → Wird gemappt auf: ${globalMapping}`);
+            
+            activeFields.add(globalMapping);
+            
+            if (!fieldMappings.has(globalMapping)) {
+                fieldMappings.set(globalMapping, []);
+            }
+            fieldMappings.get(globalMapping).push(field);
+            
+            // Berechnung speichern, falls vorhanden
+            if (globalCalculation) {
+                fieldCalculations.set(globalMapping, globalCalculation);
+                window.calculatedFields.add(globalMapping);
+                console.log(`  → Berechnung gespeichert: ${globalCalculation}`);
+            }
+        }
     });
     
     console.log('\n=== ERGEBNIS ===');

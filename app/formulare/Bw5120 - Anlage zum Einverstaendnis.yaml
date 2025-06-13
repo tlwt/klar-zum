@@ -47,13 +47,11 @@ fields:
     group: Dienstleistung
   Nettojahreseinkunft_nichtselbstaendig:
     group: Dienstleistung
-  Unterschrift:
+  Signature1:
     group: Unterschriften
-    virtual_field: true
     type: signature
-    title: Unterschrift
     signature_width: 250
     signature_height: 33
-    signature_x: 57
-    signature_y: 147
+    signature_x: 59
+    signature_y: 148
     signature_page: 1
