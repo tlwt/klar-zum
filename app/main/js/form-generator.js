@@ -104,6 +104,7 @@ function generateFormForSelectedPDFs() {
                 }
                 if (fieldConf.berechnung) {
                     globalCalculation = fieldConf.berechnung;
+                    console.log(`🧮 Found calculation for ${field}:`, globalCalculation);
                 }
             }
         }
@@ -112,21 +113,27 @@ function generateFormForSelectedPDFs() {
         
         console.log(`  GLOBAL SICHTBAR: ${shouldShowFieldGlobally}`);
         
-        if (shouldShowFieldGlobally) {
-            console.log(`  → Wird gemappt auf: ${globalMapping}`);
+        if (shouldShowFieldGlobally || globalCalculation) {
+            // Zeige Feld wenn es entweder in PDF existiert ODER eine Berechnung hat
+            const displayName = globalMapping || field;
+            console.log(`  → Wird angezeigt als: ${displayName}`);
             
-            activeFields.add(globalMapping);
+            activeFields.add(displayName);
             
-            if (!fieldMappings.has(globalMapping)) {
-                fieldMappings.set(globalMapping, []);
+            if (!fieldMappings.has(displayName)) {
+                fieldMappings.set(displayName, []);
             }
-            fieldMappings.get(globalMapping).push(field);
+            
+            // Nur PDF-Felder zum Mapping hinzufügen
+            if (fieldFoundInAnyPdf) {
+                fieldMappings.get(displayName).push(field);
+            }
             
             // Berechnung speichern, falls vorhanden
             if (globalCalculation) {
-                fieldCalculations.set(globalMapping, globalCalculation);
-                window.calculatedFields.add(globalMapping);
-                console.log(`  → Berechnung gespeichert: ${globalCalculation}`);
+                fieldCalculations.set(displayName, globalCalculation);
+                window.calculatedFields.add(displayName);
+                console.log(`  → Berechnung gespeichert für ${displayName}: ${globalCalculation}`);
             }
         }
     });
@@ -138,6 +145,9 @@ function generateFormForSelectedPDFs() {
     
     window.currentFieldMappings = fieldMappings;
     window.currentFieldCalculations = fieldCalculations;
+    
+    console.log('📊 Field Mappings:', fieldMappings);
+    console.log('🧮 Field Calculations:', fieldCalculations);
     
     if (activeFields.size === 0) {
         console.error('FEHLER: Keine aktiven Felder gefunden!');
@@ -398,6 +408,27 @@ function sortFieldsInGroup(fields, groupName) {
     return finalFieldOrder;
 }
 
+function getFieldPdfInfo(fieldName) {
+    const pdfList = [];
+    
+    // Durchsuche alle ausgewählten PDFs nach diesem Feld
+    window.selectedPDFs.forEach(pdfName => {
+        const pdfConfig = window.pdfConfigs.get(pdfName);
+        if (pdfConfig && pdfConfig.fields) {
+            // Prüfe ob das Feld direkt oder über Mapping in diesem PDF vorkommt
+            for (const [pdfFieldName, fieldConf] of Object.entries(pdfConfig.fields)) {
+                if (pdfFieldName === fieldName || 
+                    (fieldConf.mapping && fieldConf.mapping === fieldName)) {
+                    pdfList.push(pdfName.replace('.pdf', ''));
+                    break;
+                }
+            }
+        }
+    });
+    
+    return pdfList;
+}
+
 function generateFormField(fieldName) {
     let title = fieldName;
     let description = '';
@@ -443,15 +474,25 @@ function generateFormField(fieldName) {
         }
     }
     
-    const calculatedClass = isCalculated ? 'calculated-field' : '';
+    const calculatedClass = isCalculated ? 'calculated-field hidden-field' : '';
     const calculatedBadge = isCalculated ? '<span class="calculated-badge">🧮 Berechnet</span>' : '';
     const readonlyAttr = isCalculated ? 'readonly' : '';
+    const hiddenStyle = isCalculated ? 'style="display: none;"' : '';
+    
+    // PDF-Info Badge
+    const pdfList = getFieldPdfInfo(fieldName);
+    const pdfInfoBadge = pdfList.length > 0 ? `
+        <span class="pdf-info-badge" title="Verwendet in: ${pdfList.join(', ')}">
+            <span class="info-icon">ⓘ</span>
+            <span class="pdf-tooltip">Verwendet in:<br>${pdfList.join('<br>')}</span>
+        </span>
+    ` : '';
     
     // Spezielle Behandlung für Unterschrift
     if (type === 'signature') {
         return `
             <div class="form-group signature-field">
-                <label>${title}${calculatedBadge}</label>
+                <label>${title}${calculatedBadge}${pdfInfoBadge}</label>
                 ${description ? `<div class="field-description">${description}</div>` : ''}
                 
                 <div class="signature-mode-tabs">
@@ -493,7 +534,7 @@ function generateFormField(fieldName) {
             <div class="form-group">
                 <div class="checkbox-container">
                     <input type="checkbox" id="${fieldName}" name="${fieldName}" value="1">
-                    <label for="${fieldName}" class="checkbox-label">${title}${calculatedBadge}</label>
+                    <label for="${fieldName}" class="checkbox-label">${title}${calculatedBadge}${pdfInfoBadge}</label>
                 </div>
                 ${description ? `<div class="field-description">${description}</div>` : ''}
             </div>
@@ -504,7 +545,7 @@ function generateFormField(fieldName) {
     if (type === 'radio' && options.length > 0) {
         let radioHTML = `
             <div class="form-group">
-                <label class="form-label">${title}${calculatedBadge}</label>
+                <label class="form-label">${title}${calculatedBadge}${pdfInfoBadge}</label>
                 ${description ? `<div class="field-description">${description}</div>` : ''}
                 <div class="radio-group">
         `;
@@ -530,7 +571,7 @@ function generateFormField(fieldName) {
     if (type === 'select' && options.length > 0) {
         let selectHTML = `
             <div class="form-group">
-                <label for="${fieldName}">${title}${calculatedBadge}</label>
+                <label for="${fieldName}">${title}${calculatedBadge}${pdfInfoBadge}</label>
                 ${description ? `<div class="field-description">${description}</div>` : ''}
                 <select id="${fieldName}" name="${fieldName}" class="${calculatedClass}" ${readonlyAttr}>
         `;
@@ -548,9 +589,14 @@ function generateFormField(fieldName) {
     }
     
     // Standard-Felder (text, email, tel, date, number)
+    if (isCalculated) {
+        // Berechnete Felder als hidden inputs
+        return `<input type="hidden" id="${fieldName}" name="${fieldName}" class="${calculatedClass}">`;
+    }
+    
     return `
         <div class="form-group">
-            <label for="${fieldName}">${title}${calculatedBadge}</label>
+            <label for="${fieldName}">${title}${calculatedBadge}${pdfInfoBadge}</label>
             ${description ? `<div class="field-description">${description}</div>` : ''}
             <input type="${type}" id="${fieldName}" name="${fieldName}" class="${calculatedClass}" ${readonlyAttr}>
         </div>

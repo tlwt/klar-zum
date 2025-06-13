@@ -1,0 +1,95 @@
+groups:
+  Persönliche Daten:
+    title: 👤 Persönliche Angaben
+    description: Grundlegende persönliche Informationen
+  Dienstleistung:
+    title: 🎖️ Dienstleistungsangaben
+    description: Informationen zur Dienstleistung
+  Arbeitgeber:
+    title: Arbeitgeber
+    description: ''
+  Unterschriften:
+    title: ✍️ Unterschriften
+    description: Erforderliche Unterschriften
+  Sonstige:
+    title: 📋 Sonstige Felder
+    description: Weitere Informationen
+fields:
+  Datum:
+    group: Persönliche Daten
+    type: date
+    mapping: Heute
+  Personalnummer:
+    group: Persönliche Daten
+  DatumDate2:
+    group: Persönliche Daten
+    type: date
+  VornameDerReservistinDesReservisten:
+    group: Persönliche Daten
+    type: text
+    mapping: Vorname
+  NachnameDerReservistinDesReservisten:
+    group: Persönliche Daten
+    type: text
+    mapping: Nachname
+  NameDerReservistinDesReservisten:
+    group: Persönliche Daten
+    type: text
+    berechnung: CONCAT({Vorname}, " ", {Nachname})
+  Personenkennziffer:
+    group: Persönliche Daten
+  StrasseHausnummer:
+    group: Persönliche Daten
+    type: text
+    berechnung: '{Adresse}.split(", ")[0]'
+  PostleitzahlWohnort:
+    group: Persönliche Daten
+    type: text
+    berechnung: '{Adresse}.split(", ")[1]'
+  EMailAdresse:
+    group: Persönliche Daten
+    type: email
+    mapping: EMail
+  Telefonnummer:
+    group: Persönliche Daten
+    type: tel
+    mapping: Telefon
+  fromDate1:
+    group: Dienstleistung
+    type: date
+    mapping: von
+  toDate1:
+    group: Dienstleistung
+    type: date
+    mapping: bis
+  NameDesUnternehmens:
+    group: Arbeitgeber
+  fromDate2:
+    group: Arbeitgeber
+    type: date
+  toDate2:
+    group: Arbeitgeber
+    type: date
+  fromDate3:
+    group: Arbeitgeber
+    type: date
+  toDate3:
+    group: Arbeitgeber
+    type: date
+  Einverstanden:
+    group: Arbeitgeber
+    type: checkbox
+  NichtEinverstanden:
+    group: Arbeitgeber
+    type: checkbox
+  EinverstnadenImJahr:
+    group: Arbeitgeber
+  Ort:
+    group: Arbeitgeber
+  Group1:
+    group: Arbeitgeber
+  JahrEinverstanden:
+    group: Arbeitgeber
+    type: text
+  Signature2:
+    group: Unterschriften

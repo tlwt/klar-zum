@@ -19,11 +19,13 @@ fields:
   Dienstgrad der Reserve:
     group: Persönliche Daten
     type: text
+    mapping: Dienstgrad
   Personalnummer:
     group: Persönliche Daten
   Datum:
     group: Persönliche Daten
     type: date
+    title: Heute
   Personenkennziffer:
     group: Persönliche Daten
   Straße Hausnummer:
@@ -39,8 +41,12 @@ fields:
     type: email
   vom Beginn der Dienstleitung:
     group: Dienstleistung
+    type: date
+    mapping: von
   bis Ende der Dienstleitung:
     group: Dienstleistung
+    type: date
+    mapping: bis
   Nettojahreseinkunft:
     group: Dienstleistung
   selbstaendigeArbeit:

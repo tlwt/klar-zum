@@ -22,14 +22,18 @@ fields:
   Dienstgrad der Reserve:
     group: Persönliche Daten
     type: text
+    mapping: Dienstgrad
   Personalnummer:
     group: Persönliche Daten
   Datum:
     group: Persönliche Daten
     type: date
     description: Heutiges Datum
+    mapping: Heute
   Straße Hausnummer:
     group: Persönliche Daten
+    type: text
+    mapping: Adresse
   Personenkennziffer:
     group: Persönliche Daten
     type: text
@@ -47,6 +51,7 @@ fields:
     title: Einverständnis zur Ableistung
     type: select
     options:
+      - null
       - einer Übung § 61 SG
       - eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft (§ 63b SG)
   Anschrift Dienstleistungstruppenanteil:
@@ -54,9 +59,11 @@ fields:
   vom Beginn der Dienstleitung:
     group: Dienstleistung
     type: date
+    mapping: von
   bis Ende der Dienstleitung:
     group: Dienstleistung
     type: date
+    mapping: bis
   Ich bin mit einer kurzfristigen Heranziehung einverstanden Daher verzichte ich:
     group: Dienstleistung
     type: checkbox

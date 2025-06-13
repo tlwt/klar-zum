@@ -389,6 +389,12 @@ async function loadExampleData() {
             loadSettingsToForm();
         }
         
+        // Sofort Berechnungen ausführen nach dem Setzen der Daten
+        console.log('🧮 Führe Berechnungen direkt nach Beispieldaten-Laden aus...');
+        if (typeof calculateAllFields === 'function') {
+            calculateAllFields();
+        }
+        
         // Live-Vorschau sofort nach dem Setzen der Formulardaten aktualisieren
         if (window.livePreview && window.livePreview.isActive && typeof updateLivePreview === 'function') {
             updateLivePreview();
@@ -397,12 +403,21 @@ async function loadExampleData() {
         
         // Versteckte Daten anzeigen und Berechnungen nach dem Laden ausführen
         setTimeout(() => {
+            console.log('🧮 Starte zusätzliche Berechnungen nach Beispieldaten-Laden...');
             updateHiddenDataSection();
             addCalculationEventListeners();
             calculateAllFields();
             
             // Unterschrift-Felder neu initialisieren
             initializeAllSignatureFields();
+            
+            // Live-Vorschau NACH den Berechnungen nochmals aktualisieren
+            if (window.livePreview && window.livePreview.isActive && typeof updateLivePreview === 'function') {
+                setTimeout(() => {
+                    updateLivePreview();
+                    console.log('✅ Live-Vorschau nach Berechnungen nochmals aktualisiert');
+                }, 50);
+            }
         }, 100);
         
         showStatus('📋 Beispieldaten (Max Mustermann) erfolgreich geladen!');
