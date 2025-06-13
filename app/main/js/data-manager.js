@@ -496,6 +496,18 @@ function handleUrlParams() {
     }, 500);
 }
 
+function getFieldDisplayName(elementId) {
+    // Finde das zugehörige Label
+    const label = document.querySelector(`label[for="${elementId}"]`);
+    if (label) {
+        // Entferne Berechnungs-Badge und andere HTML-Elemente
+        let labelText = label.textContent.trim();
+        labelText = labelText.replace(/\s*🧮\s*$/, ''); // Entferne Berechnungs-Badge
+        return labelText;
+    }
+    return elementId; // Fallback zur Element-ID
+}
+
 function generateUrlWithData() {
     const url = new URL(window.location.href);
     
@@ -508,32 +520,35 @@ function generateUrlWithData() {
     // Text-Inputs, Textareas, Selects
     document.querySelectorAll('#dataForm input[type="text"], #dataForm input[type="email"], #dataForm input[type="date"], #dataForm input[type="number"], #dataForm textarea, #dataForm select').forEach(element => {
         const value = element.value;
-        const key = element.name || element.id;
+        const elementId = element.name || element.id;
+        const displayName = getFieldDisplayName(elementId);
         
         // Ausschließen: leere Werte, Unterschriften, Default-Werte von Dropdowns
         if (value && value.trim() !== '' && 
             value !== 'null' &&
             !value.toLowerCase().includes('bitte wählen') &&
             !value.toLowerCase().includes('please select') &&
-            !key.toLowerCase().includes('unterschrift') && 
-            !key.toLowerCase().includes('signature') &&
+            !displayName.toLowerCase().includes('unterschrift') && 
+            !displayName.toLowerCase().includes('signature') &&
             !value.startsWith('data:image/')) {
-            activeValues[key] = value;
+            activeValues[displayName] = value;
         }
     });
     
     // Checkboxes - nur wenn checked
     document.querySelectorAll('#dataForm input[type="checkbox"]').forEach(element => {
         if (element.checked) {
-            const key = element.name || element.id;
-            activeValues[key] = element.value || '1';
+            const elementId = element.name || element.id;
+            const displayName = getFieldDisplayName(elementId);
+            activeValues[displayName] = element.value || '1';
         }
     });
     
     // Radio buttons - nur wenn selected
     document.querySelectorAll('#dataForm input[type="radio"]:checked').forEach(element => {
-        const key = element.name || element.id;
-        activeValues[key] = element.value;
+        const elementId = element.name || element.id;
+        const displayName = getFieldDisplayName(elementId);
+        activeValues[displayName] = element.value;
     });
     
     // Parameter zur URL hinzufügen
@@ -547,33 +562,116 @@ function generateUrlWithData() {
     navigator.clipboard.writeText(urlString).then(() => {
         showNotification('🔗 URL mit Formulardaten wurde in die Zwischenablage kopiert!', 'success');
         
-        // Optional: URL auch in einem Dialog anzeigen
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
-            align-items: center; justify-content: center;
-        `;
-        
-        modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 10px; max-width: 80%; max-height: 80%;">
-                <h3>🔗 URL mit vorausgefüllten Daten</h3>
-                <p>Diese URL enthält alle aktuellen Formulardaten als Parameter:</p>
-                <textarea readonly style="width: 100%; height: 150px; margin: 10px 0; font-family: monospace; font-size: 12px;">${urlString}</textarea>
-                <div style="text-align: right;">
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding: 10px 20px;">Schließen</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.remove();
-        };
+        // URL-Dialog mit bearbeitbaren Parametern anzeigen
+        showUrlParameterDialog(activeValues);
     }).catch(err => {
         showNotification('❌ Fehler beim Kopieren der URL: ' + err.message, 'error');
         console.error('Fehler beim Kopieren:', err);
     });
+}
+
+function showUrlParameterDialog(activeValues) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
+        align-items: center; justify-content: center;
+    `;
+    
+    // Parameter-Liste erstellen
+    let parameterList = '';
+    Object.entries(activeValues).forEach(([key, value]) => {
+        parameterList += `
+            <div class="url-param-item" style="display: flex; align-items: center; margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                <strong style="min-width: 150px; margin-right: 10px;">${key}:</strong>
+                <span style="flex: 1; margin-right: 10px;">${value}</span>
+                <button onclick="removeUrlParameter('${key}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">❌ Entfernen</button>
+            </div>
+        `;
+    });
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 90%; max-height: 90%; overflow-y: auto;">
+            <h3>🔗 URL mit vorausgefüllten Daten</h3>
+            <p>Diese Parameter werden in die URL aufgenommen. Sie können ungewünschte Parameter entfernen:</p>
+            
+            <div id="urlParameterList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;">
+                ${parameterList}
+            </div>
+            
+            <h4>Generierte URL:</h4>
+            <textarea id="generatedUrl" readonly style="width: 100%; height: 120px; margin: 10px 0; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="copyUpdatedUrl()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; margin-right: 10px; cursor: pointer;">📋 URL kopieren</button>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Schließen</button>
+            </div>
+        </div>
+    `;
+    
+    // Global verfügbare Funktionen für den Dialog
+    window.currentUrlParams = { ...activeValues };
+    
+    window.removeUrlParameter = function(key) {
+        delete window.currentUrlParams[key];
+        updateUrlParameterDialog();
+    };
+    
+    window.copyUpdatedUrl = function() {
+        const textarea = document.getElementById('generatedUrl');
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            showNotification('🔗 Aktualisierte URL wurde in die Zwischenablage kopiert!', 'success');
+        }).catch(err => {
+            showNotification('❌ Fehler beim Kopieren der URL: ' + err.message, 'error');
+        });
+    };
+    
+    window.updateUrlParameterDialog = function() {
+        const url = new URL(window.location.href);
+        url.search = '';
+        
+        // Parameter zur URL hinzufügen
+        Object.entries(window.currentUrlParams).forEach(([key, value]) => {
+            url.searchParams.set(key, value);
+        });
+        
+        // URL-Textfeld aktualisieren
+        document.getElementById('generatedUrl').value = url.toString();
+        
+        // Parameter-Liste aktualisieren
+        let parameterList = '';
+        Object.entries(window.currentUrlParams).forEach(([key, value]) => {
+            parameterList += `
+                <div class="url-param-item" style="display: flex; align-items: center; margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                    <strong style="min-width: 150px; margin-right: 10px;">${key}:</strong>
+                    <span style="flex: 1; margin-right: 10px;">${value}</span>
+                    <button onclick="removeUrlParameter('${key}')" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">❌ Entfernen</button>
+                </div>
+            `;
+        });
+        
+        if (Object.keys(window.currentUrlParams).length === 0) {
+            parameterList = '<p style="text-align: center; color: #6c757d; font-style: italic;">Keine Parameter ausgewählt</p>';
+        }
+        
+        document.getElementById('urlParameterList').innerHTML = parameterList;
+    };
+    
+    document.body.appendChild(modal);
+    
+    // Initial URL generieren
+    updateUrlParameterDialog();
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+            // Cleanup global functions
+            delete window.currentUrlParams;
+            delete window.removeUrlParameter;
+            delete window.copyUpdatedUrl;
+            delete window.updateUrlParameterDialog;
+        }
+    };
 }
 
 // Load settings data into form fields (called when loading saved data)
