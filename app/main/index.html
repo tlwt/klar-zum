@@ -203,32 +203,37 @@
                 </div>
                 
                 <div class="view-content">
-                    <div class="settings-grid">
-                        <div class="form-group">
-                            <label for="fileNamePattern">📝 Dateinamen-Muster</label>
-                            <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [PDF], [Datum]</div>
-                            <input type="text" id="fileNamePattern" name="fileNamePattern" value="[Nachname], [Vorname] - [PDF] - [Datum]">
-                        </div>
+                    <div class="form-section">
+                        <h3>⚙️ Allgemeine Einstellungen</h3>
+                        <div class="description">Konfigurieren Sie Dateinamen-Muster und E-Mail-Einstellungen für den Export.</div>
                         
-                        <div class="form-group">
-                            <label for="emailAddress">📧 E-Mail-Adresse</label>
-                            <input type="email" id="emailAddress" name="emailAddress" placeholder="empfaenger@example.com">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="emailSubject">📋 E-Mail-Betreff</label>
-                            <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [Datum]</div>
-                            <input type="text" id="emailSubject" name="emailSubject" value="Formularunterlagen - [Nachname], [Vorname]">
-                        </div>
-                        
-                        <div class="form-group full-width">
-                            <label for="emailBody">📄 E-Mail-Text</label>
-                            <div class="field-description">Standard-Text für die E-Mail</div>
-                            <textarea id="emailBody" name="emailBody" rows="6">Sehr geehrte Damen und Herren,
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label for="fileNamePattern">📝 Dateinamen-Muster</label>
+                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [PDF], [Datum]</div>
+                                <input type="text" id="fileNamePattern" name="fileNamePattern" value="[Nachname], [Vorname] - [PDF] - [Datum]">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="emailAddress">📧 E-Mail-Adresse</label>
+                                <input type="email" id="emailAddress" name="emailAddress" placeholder="empfaenger@example.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="emailSubject">📋 E-Mail-Betreff</label>
+                                <div class="field-description">Verwenden Sie Platzhalter wie [Nachname], [Vorname], [Datum]</div>
+                                <input type="text" id="emailSubject" name="emailSubject" value="Formularunterlagen - [Nachname], [Vorname]">
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="emailBody">📄 E-Mail-Text</label>
+                                <div class="field-description">Standard-Text für die E-Mail</div>
+                                <textarea id="emailBody" name="emailBody" rows="6">Sehr geehrte Damen und Herren,
 
 anbei übersende ich Ihnen die ausgefüllten Formularunterlagen.
 
 Mit freundlichen Grüßen</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
