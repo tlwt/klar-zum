@@ -8,7 +8,7 @@ always ask user for confirmation that feature works before committing.
 
 ## Project Overview
 
-Reservist-Digital is a web-based PDF form filler for German military reservist documentation. It's a pure frontend application using vanilla JavaScript with no build process.
+Reservist-Digital is a modern web-based PDF form filler for German military reservist documentation. It features a sophisticated multi-app architecture with live PDF preview, intelligent form generation, and visual configuration editors.
 
 ## Development Setup
 
@@ -27,15 +27,24 @@ npx http-server
 
 ## Architecture
 
-### Module Structure
+### Multi-App Structure
 
-- `js/app.js` - Main application initialization
+The application consists of three separate but integrated web applications:
+
+1. **Main App** (`app/main/`) - Core PDF form filling functionality
+2. **Config Editor** (`app/config/`) - Visual YAML configuration editor  
+3. **Data Editor** (`app/data-editor/`) - JSON dataset editing and management
+
+### Module Structure (Main App)
+
+- `js/app.js` - Main application initialization and loading
 - `js/config.js` - Global configuration and state management
-- `js/pdf-handler.js` - PDF loading, filling, and signature handling
+- `js/pdf-handler.js` - PDF loading, filling, and signature handling with pdf-lib
 - `js/form-generator.js` - Dynamic form generation from YAML configs
 - `js/calculation-engine.js` - Formula evaluation for calculated fields
 - `js/data-manager.js` - Save/load form data as JSON
-- `js/ui-manager.js` - UI interactions and tab management
+- `js/ui-manager.js` - Email-client style UI with navigation and PDF preview
+- `js/pdf-preview.js` - Live PDF preview functionality
 
 ### Configuration System
 
@@ -55,16 +64,45 @@ sections:
 
 ### Key Features
 
-- **Digital Signatures**: Canvas-based drawing with configurable PDF positioning
+#### Main Application Features
+- **Live PDF Preview**: Real-time 95% viewport PDF preview with split-screen layout
+- **Smart PDF Selection**: 50/50 layout with hover preview showing actual PDF content
+- **Email-Client UI**: Modern, professional interface with sidebar navigation
+- **Digital Signatures**: Canvas-based drawing and image upload with precise positioning
 - **Calculated Fields**: Support formulas like `CONCAT({field1}, " ", {field2})`
 - **Field Mapping**: Map form fields to different PDF field names
-- **Multi-PDF Generation**: Fill multiple PDFs at once
+- **Multi-PDF Generation**: Fill multiple PDFs simultaneously (flat or editable)
+- **Export Options**: Configurable filename patterns and email integration
+
+#### User Interface Improvements (2025)
+- **Clickable PDF Entries**: Entire PDF selection items are clickable
+- **Improved Form Controls**: Left-aligned checkboxes/radio buttons with proper spacing
+- **Notification System**: Modern toast notifications replacing status bars
+- **Responsive Design**: Mobile-friendly with adaptive layouts
+- **Navigation Consistency**: Unified behavior between sidebar and action buttons
 
 ### Configuration Editor
 
-Separate application at `app/config/index.html` for creating/editing YAML configurations. Access at `http://localhost:8000/app/config/`
+Visual YAML configuration editor at `app/config/index.html`. Access at `http://localhost:8000/app/config/`
 
-**Direct Save Feature**: If `allowConfigWrite: true` is set in `config.yaml`, the configuration editor shows an additional "🚀 Konfiguration direkt speichern" button that attempts to save configurations directly to the server (requires PUT endpoint support).
+Features:
+- **Drag & Drop Interface**: Visual field organization and grouping
+- **Signature Positioning**: Advanced coordinate system with visual helpers
+- **Field Type Management**: Comprehensive form field configuration
+- **Live Validation**: Real-time YAML syntax checking
+
+**Direct Save Feature**: If `allowConfigWrite: true` is set in `config.yaml`, shows "🚀 Konfiguration direkt speichern" button for server-side saves.
+
+### Data Editor
+
+JSON dataset management application at `app/data-editor/index.html`. Access at `http://localhost:8000/app/data-editor/`
+
+Features:
+- **Field Management**: Add, edit, delete fields in saved datasets
+- **Search & Filter**: Real-time field searching and filtering
+- **Alphabetical Sorting**: Organize fields for better usability
+- **Type Validation**: Support for different field types (text, email, date, etc.)
+- **Signature Editing**: Visual signature editor with canvas and upload support
 
 ## Common Tasks
 
@@ -72,21 +110,34 @@ Separate application at `app/config/index.html` for creating/editing YAML config
 
 1. Add PDF to `app/formulare/` directory
 2. Add PDF entry to `app/config.yaml`
-3. Use config editor (`app/config/`) to map fields
-4. Test with main application (`app/main/`)
+3. Use config editor (`app/config/`) to map fields and configure signatures
+4. Test with main application (`app/main/`) using live preview
+5. Verify PDF selection hover preview works correctly
 
 ### Debugging PDF Issues
 
 - Check browser console for pdf-lib errors
-- Verify YAML syntax and field mappings
-- Use `test-form.html` for isolated testing
-- Enable caching headers are set to `no-cache` for development
+- Verify YAML syntax and field mappings in config editor
+- Test PDF selection hover preview for proper rendering
+- Use network tab to check PDF loading (path: `../formulare/filename.pdf`)
+- Ensure caching headers are set to `no-cache` for development
+- Check live preview functionality with real-time updates
 
 ### Working with Signatures
 
 - Signature positioning uses PDF coordinates (bottom-left origin)
-- Test signature placement using `unterschrift.html`
-- Coordinates are stored in YAML under `signatureConfig`
+- Use config editor's signature positioning tool with coordinate helpers
+- Test signature placement in live preview mode
+- Coordinates are stored in YAML under signature field configuration
+- Support both canvas drawing and image upload methods
+
+### UI/UX Development
+
+- **Layout Issues**: Check for `live-preview-active` class conflicts when switching views
+- **Navigation**: Ensure sidebar menu items and action buttons trigger correct functions
+- **Form Controls**: Use `.checkbox-container` and `.radio-container` classes for proper alignment
+- **Notifications**: Use `showNotification()` function instead of old status bar methods
+- **Responsive**: Test mobile layout with stacked preview panels
 
 ## Issue Management
 
