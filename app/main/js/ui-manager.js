@@ -34,11 +34,6 @@ function showView(viewName) {
 // Initialize view-specific functionality
 function initializeView(viewName) {
     switch (viewName) {
-        case 'configuration':
-            if (typeof initializeConfigTab === 'function') {
-                setTimeout(initializeConfigTab, 100);
-            }
-            break;
         case 'form-fields':
             // Update live preview if active
             if (window.livePreview && window.livePreview.isActive) {
@@ -58,7 +53,6 @@ function switchTab(tabName) {
     const viewMap = {
         'pdf-selection': 'pdf-selection',
         'form-fields': 'form-fields',
-        'configuration': 'configuration',
         'settings': 'settings'
     };
     

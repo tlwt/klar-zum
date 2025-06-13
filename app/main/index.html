@@ -48,11 +48,6 @@
                     <span class="menu-text">Formulare</span>
                 </div>
                 
-                <div class="menu-item" onclick="showView('configuration')" data-view="configuration">
-                    <span class="menu-icon">🔧</span>
-                    <span class="menu-text">Konfiguration</span>
-                </div>
-                
                 <div class="menu-item" onclick="showView('settings')" data-view="settings">
                     <span class="menu-icon">⚙️</span>
                     <span class="menu-text">Einstellungen</span>
@@ -185,159 +180,6 @@
                 </div>
             </div>
             
-            <!-- Configuration View -->
-            <div id="configuration-view" class="content-view">
-                <div class="view-header">
-                    <h2>🔧 PDF-Konfiguration Editor</h2>
-                    <p>Erstellen und bearbeiten Sie YAML-Konfigurationen für PDF-Formulare</p>
-                </div>
-                
-                <div class="view-content">
-                    <div class="config-layout">
-                        <!-- Config Selector -->
-                        <div class="config-selector-panel">
-                            <div class="panel-header">
-                                <h3>📄 PDF auswählen</h3>
-                            </div>
-                            <div class="panel-content">
-                                <select id="configPdfSelector" class="config-pdf-select" onchange="loadConfigForPDF()">
-                                    <option value="">-- PDF auswählen --</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Config Workspace -->
-                        <div id="configWorkspace" class="config-workspace" style="display: none;">
-                            <!-- Groups Panel -->
-                            <div class="config-panel">
-                                <div class="panel-header">
-                                    <h3>📁 Gruppen</h3>
-                                    <button class="btn btn-sm" onclick="addNewConfigGroup()">+ Gruppe</button>
-                                </div>
-                                <div class="panel-content">
-                                    <div id="configGroupsList" class="config-list"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Fields Panel -->
-                            <div class="config-panel">
-                                <div class="panel-header">
-                                    <h3>📝 Felder <span id="configSelectedGroupName" class="group-indicator"></span></h3>
-                                </div>
-                                <div class="panel-content">
-                                    <div id="configFieldsList" class="config-list"></div>
-                                    <div id="configUnassignedFields" class="unassigned-section" style="display: none;">
-                                        <h4>🗃️ Nicht zugewiesen</h4>
-                                        <div id="configUnassignedFieldsList" class="config-list"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Properties Panel -->
-                            <div class="config-panel properties-panel">
-                                <div class="panel-header">
-                                    <h3>⚙️ Eigenschaften</h3>
-                                </div>
-                                <div class="panel-content">
-                                    <!-- Group Properties -->
-                                    <div id="configGroupProperties" class="property-section" style="display: none;">
-                                        <div class="form-group">
-                                            <label for="configGroupTitle">Titel:</label>
-                                            <input type="text" id="configGroupTitle" placeholder="z.B. Persönliche Daten">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="configGroupDescription">Beschreibung:</label>
-                                            <textarea id="configGroupDescription" placeholder="Beschreibung der Gruppe" rows="3"></textarea>
-                                        </div>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteConfigGroup()">🗑️ Gruppe löschen</button>
-                                    </div>
-                                    
-                                    <!-- Field Properties -->
-                                    <div id="configFieldProperties" class="property-section" style="display: none;">
-                                        <div class="form-group">
-                                            <label for="configFieldTitle">Titel:</label>
-                                            <input type="text" id="configFieldTitle" placeholder="Angezeigter Name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="configFieldDescription">Beschreibung:</label>
-                                            <textarea id="configFieldDescription" placeholder="Hilfetext" rows="2"></textarea>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="configFieldType">Typ:</label>
-                                            <select id="configFieldType">
-                                                <option value="text">Text</option>
-                                                <option value="email">E-Mail</option>
-                                                <option value="tel">Telefon</option>
-                                                <option value="date">Datum</option>
-                                                <option value="number">Zahl</option>
-                                                <option value="checkbox">Checkbox</option>
-                                                <option value="radio">Radio Button</option>
-                                                <option value="select">Dropdown</option>
-                                                <option value="signature">✍️ Unterschrift</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="configFieldMapping">Mapping:</label>
-                                            <input type="text" id="configFieldMapping" placeholder="Anderer Feldname (optional)">
-                                        </div>
-                                        
-                                        <!-- Signature Settings -->
-                                        <div id="configSignatureSettings" class="signature-settings" style="display: none;">
-                                            <h4>✍️ Unterschrift-Einstellungen</h4>
-                                            <div class="signature-grid">
-                                                <div class="form-group">
-                                                    <label for="configSignatureWidth">Breite (px):</label>
-                                                    <input type="number" id="configSignatureWidth" placeholder="200">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="configSignatureHeight">Höhe (px):</label>
-                                                    <input type="number" id="configSignatureHeight" placeholder="100">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="configSignatureX">X-Position:</label>
-                                                    <input type="number" id="configSignatureX" placeholder="50">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="configSignatureY">Y-Position:</label>
-                                                    <input type="number" id="configSignatureY" placeholder="100">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="configSignaturePage">Seite:</label>
-                                                    <input type="number" id="configSignaturePage" placeholder="1">
-                                                </div>
-                                            </div>
-                                            <div class="coordinate-help">
-                                                <strong>💡 PDF-Koordinaten:</strong> Ursprung unten links (0,0), Y-Achse nach oben
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="configFieldCalculation">Berechnung:</label>
-                                            <input type="text" id="configFieldCalculation" placeholder='z.B. CONCAT({Vorname}, " ", {Nachname})'>
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="configFieldHidden">
-                                                Feld verstecken
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="view-actions" id="configActions" style="display: none;">
-                    <button id="configSaveDirectBtn" class="btn btn-primary" onclick="saveConfigDirect()" style="display: none;">
-                        🚀 Direkt speichern
-                    </button>
-                    <button class="btn btn-primary" onclick="saveAndDownloadConfig()">💾 Speichern & Download</button>
-                    <button class="btn btn-secondary" onclick="previewConfig()">👁️ Vorschau</button>
-                    <button class="btn btn-secondary" onclick="window.open('../config/signature-position.html', '_blank')">🎯 Unterschrift Tool</button>
-                </div>
-            </div>
-            
             <!-- Settings View -->
             <div id="settings-view" class="content-view">
                 <div class="view-header">
@@ -411,6 +253,5 @@ Mit freundlichen Grüßen</textarea>
     <script src="js/ui-manager.js"></script>
     <script src="js/app.js"></script>
     <!-- Config integration at the end -->
-    <script src="js/config-integration.js"></script>
 </body>
 </html>
