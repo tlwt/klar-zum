@@ -490,13 +490,11 @@ function generateFormField(fieldName) {
     if (type === 'checkbox') {
         return `
             <div class="form-group">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <input type="checkbox" id="${fieldName}" name="${fieldName}" value="1" style="margin-top: 4px; transform: scale(1.2);">
-                    <div style="flex: 1;">
-                        <label for="${fieldName}" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: #555;">${title}${calculatedBadge}</label>
-                        ${description ? `<div class="field-description" style="margin-top: 4px;">${description}</div>` : ''}
-                    </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="${fieldName}" name="${fieldName}" value="1">
+                    <label for="${fieldName}" class="checkbox-label">${title}${calculatedBadge}</label>
                 </div>
+                ${description ? `<div class="field-description">${description}</div>` : ''}
             </div>
         `;
     }
@@ -505,18 +503,17 @@ function generateFormField(fieldName) {
     if (type === 'radio' && options.length > 0) {
         let radioHTML = `
             <div class="form-group">
-                <label>${title}${calculatedBadge}</label>
+                <label class="form-label">${title}${calculatedBadge}</label>
                 ${description ? `<div class="field-description">${description}</div>` : ''}
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                <div class="radio-group">
         `;
         
         options.forEach((option, index) => {
             const isFirst = index === 0;
             radioHTML += `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}" 
-                           ${isFirst ? 'checked' : ''} style="transform: scale(1.2);">
-                    <label for="${fieldName}_${index}" style="margin: 0; cursor: pointer;">${option}</label>
+                <div class="radio-container">
+                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}" ${isFirst ? 'checked' : ''}>
+                    <label for="${fieldName}_${index}" class="radio-label">${option}</label>
                 </div>
             `;
         });

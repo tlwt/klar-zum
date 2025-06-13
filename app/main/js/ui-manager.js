@@ -120,8 +120,26 @@ function generatePDFSelection() {
         
         const div = document.createElement('div');
         div.className = 'pdf-checkbox';
+        div.setAttribute('data-pdf-name', pdf.name);
+        div.setAttribute('data-pdf-index', index);
+        
+        // Make the entire div clickable
+        div.onclick = function(event) {
+            // Prevent double-triggering when clicking the checkbox itself
+            if (event.target.type !== 'checkbox') {
+                const checkbox = div.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                onPDFSelectionChange();
+            }
+        };
+        
+        // Add hover effects for PDF preview
+        div.onmouseenter = function() {
+            showPDFPreview(pdf);
+        };
+        
         div.innerHTML = `
-            <input type="checkbox" id="pdf_${index}" value="${pdf.name}" onchange="onPDFSelectionChange()">
+            <input type="checkbox" id="pdf_${index}" value="${pdf.name}" onchange="onPDFSelectionChange()" onclick="event.stopPropagation()">
             <div class="pdf-info">
                 <h4>${pdf.name}</h4>
                 <div class="pdf-path">${pdf.path}</div>
@@ -129,7 +147,7 @@ function generatePDFSelection() {
                 <div class="fields-preview">
                     <div class="fields-short">Felder (${pdf.fields.length}): ${fieldsPreview.short}</div>
                     <div class="fields-full">Felder (${pdf.fields.length}): ${fieldsPreview.full}</div>
-                    ${pdf.fields.length > 3 ? `<div class="fields-toggle" onclick="toggleFields(this)">Alle anzeigen</div>` : ''}
+                    ${pdf.fields.length > 3 ? `<div class="fields-toggle" onclick="toggleFields(this); event.stopPropagation();">Alle anzeigen</div>` : ''}
                 </div>
             </div>
         `;
@@ -207,6 +225,9 @@ function onPDFSelectionChange() {
     updateNextButton();
     
     console.log('onPDFSelectionChange() beendet');
+    
+    // Keep the last selected PDF visible in preview
+    updatePDFPreviewForSelection();
 }
 
 function updateSelectionSummary() {
@@ -490,7 +511,6 @@ function enableLivePreviewAutomatically() {
             
             // The toggleLivePreview function will call initializeLivePreview()
             // which already handles auto-selection of the first PDF, so we don't need to do it here
-            showStatus('Live-Vorschau automatisch aktiviert', 'success');
         }
     } else {
         console.log('Live-Vorschau bereits aktiv');
@@ -521,6 +541,129 @@ function enableLivePreviewAutomatically() {
                 console.log(`✅ Dropdown neu gefüllt und erstes PDF ausgewählt: ${firstPDF}`);
             }
         }
+    }
+}
+
+// PDF Preview functionality
+let currentlySelectedPDF = null; // Track last selected PDF
+
+function showPDFPreview(pdf) {
+    console.log('📄 Showing PDF preview for:', pdf.name);
+    
+    const previewContent = document.getElementById('pdfPreviewContent');
+    if (!previewContent) {
+        console.warn('PDF preview content element not found');
+        return;
+    }
+    
+    previewContent.innerHTML = `
+        <div id="pdfPreviewContainer_${pdf.name.replace(/[^a-zA-Z0-9]/g, '_')}" style="width: 100%; height: 100%; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <div style="text-align: center; color: #7f8c8d;">
+                <div style="font-size: 24px; margin-bottom: 10px;">📄</div>
+                <div>PDF wird geladen...</div>
+            </div>
+        </div>
+    `;
+    
+    // Load and render the actual PDF
+    loadActualPDFPreview(pdf);
+}
+
+async function loadActualPDFPreview(pdf) {
+    const containerId = `pdfPreviewContainer_${pdf.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const container = document.getElementById(containerId);
+    
+    if (!container) {
+        console.warn('PDF preview container not found:', containerId);
+        return;
+    }
+    
+    try {
+        console.log('🔄 Loading PDF preview for:', pdf.name);
+        
+        // Load the PDF file - correct path relative to main app
+        const pdfPath = `../formulare/${pdf.name}`;
+        const response = await fetch(pdfPath);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        
+        // Get the first page
+        const pages = pdfDoc.getPages();
+        if (pages.length === 0) {
+            throw new Error('PDF has no pages');
+        }
+        
+        const firstPage = pages[0];
+        const { width, height } = firstPage.getSize();
+        
+        // Create a new PDF with just the first page for preview
+        const previewDoc = await PDFLib.PDFDocument.create();
+        const [copiedPage] = await previewDoc.copyPages(pdfDoc, [0]);
+        previewDoc.addPage(copiedPage);
+        
+        // Convert to data URL
+        const pdfBytes = await previewDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create an embed element to show the PDF
+        container.innerHTML = `
+            <embed src="${url}" type="application/pdf" width="100%" height="100%" style="border: none; border-radius: 4px;">
+        `;
+        
+        console.log('✅ PDF preview loaded successfully for:', pdf.name);
+        
+    } catch (error) {
+        console.warn('❌ Error loading PDF preview:', error);
+        
+        // Show fallback content
+        container.innerHTML = `
+            <div style="text-align: center; color: #7f8c8d; padding: 20px;">
+                <div style="font-size: 32px; margin-bottom: 10px;">📄</div>
+                <div style="font-weight: bold; margin-bottom: 5px;">${pdf.name}</div>
+                <div style="font-size: 0.9rem;">PDF Vorschau nicht verfügbar</div>
+                <div style="font-size: 0.8rem; margin-top: 5px; color: #95a5a6;">
+                    Grund: ${error.message}
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updatePDFPreviewForSelection() {
+    // Show preview for the last selected PDF
+    if (window.selectedPDFs && window.selectedPDFs.size > 0) {
+        const lastSelectedPDFName = Array.from(window.selectedPDFs).pop();
+        const pdf = window.availablePDFs?.find(p => p.name === lastSelectedPDFName);
+        if (pdf) {
+            currentlySelectedPDF = pdf;
+            showPDFPreview(pdf);
+            console.log('📄 Updated preview for selected PDF:', lastSelectedPDFName);
+        }
+    } else if (currentlySelectedPDF) {
+        // If no PDFs are selected but we had one before, keep showing it
+        showPDFPreview(currentlySelectedPDF);
+        console.log('📄 Keeping previous PDF in preview');
+    } else {
+        // Show placeholder
+        showPDFPreviewPlaceholder();
+    }
+}
+
+function showPDFPreviewPlaceholder() {
+    const previewContent = document.getElementById('pdfPreviewContent');
+    if (previewContent) {
+        previewContent.innerHTML = `
+            <div class="preview-placeholder">
+                <div class="preview-icon">📄</div>
+                <p>Bewegen Sie die Maus über ein PDF, um eine Vorschau zu sehen</p>
+            </div>
+        `;
     }
 }
 

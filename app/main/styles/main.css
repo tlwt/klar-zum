@@ -440,17 +440,62 @@ body {
     line-height: 1.4;
 }
 
-.checkbox-label {
-    display: flex !important;
-    align-items: center;
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
     gap: 8px;
-    font-weight: normal !important;
-    cursor: pointer;
+    margin-bottom: 5px;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-container input[type="checkbox"] {
     width: auto !important;
     margin: 0 !important;
+    margin-top: 2px;
+    transform: scale(1.1);
+    flex-shrink: 0;
+}
+
+.checkbox-label {
+    margin: 0 !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.radio-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.radio-container input[type="radio"] {
+    width: auto !important;
+    margin: 0 !important;
+    margin-top: 2px;
+    transform: scale(1.1);
+    flex-shrink: 0;
+}
+
+.radio-label {
+    margin: 0 !important;
+    cursor: pointer;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
 }
 
 
@@ -547,10 +592,102 @@ body {
 }
 
 /* PDF Selection */
+.pdf-selection-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    height: 100%;
+    min-height: 500px;
+}
+
+.pdf-selection-list {
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
 .pdf-selection {
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+.pdf-preview-panel {
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e1e5e9;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    height: 80vh;
+    min-height: 600px;
+}
+
+.pdf-preview-panel .preview-header {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.pdf-preview-panel .preview-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.pdf-preview-panel .preview-content {
+    flex: 1;
+    padding: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #7f8c8d;
+    text-align: center;
+}
+
+.preview-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.pdf-preview-active {
+    display: block;
+}
+
+.pdf-preview-info {
+    margin-bottom: 20px;
+}
+
+.pdf-preview-info h5 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.pdf-preview-details {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 15px;
+}
+
+.pdf-preview-canvas {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #e1e5e9;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .pdf-checkbox {
@@ -601,6 +738,22 @@ body {
 .pdf-fields {
     font-size: 0.9em;
     color: #95a5a6;
+}
+
+.fields-preview .fields-full {
+    display: none;
+}
+
+.fields-toggle {
+    color: #3498db;
+    cursor: pointer;
+    font-size: 0.85em;
+    margin-top: 5px;
+    text-decoration: underline;
+}
+
+.fields-toggle:hover {
+    color: #2980b9;
 }
 
 
@@ -942,6 +1095,16 @@ body.live-preview-active .view-actions {
     .form-container {
         border-right: none;
         border-bottom: 1px solid #e1e5e9;
+    }
+    
+    .pdf-selection-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .pdf-preview-panel {
+        position: static;
+        max-height: 300px;
     }
 }
 

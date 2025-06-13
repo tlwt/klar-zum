@@ -44,6 +44,11 @@ fields:
     type: email
   Bitte wählen:
     group: Dienstleistung
+    title: Einverständnis zur Ableistung
+    type: select
+    options:
+      - einer Übung § 61 SG
+      - eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft (§ 63b SG)
   Anschrift Dienstleistungstruppenanteil:
     group: Dienstleistung
   vom Beginn der Dienstleitung:
