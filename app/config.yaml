@@ -8,3 +8,6 @@ pdfs:
   - name: "Bw5120 - Anlage zum Einverstaendnis.pdf"
     description: "Anlage zur Einverständniserklärung zur Ableistung von Reservistendienstleistungen"
     category: "Bundeswehr"
+  - name: "Bw5119 - Einverstaendnis Arbeitgeber.pdf"
+    description: "Arbeitgeber-Einverständniserklärung zur Ableistung von Reservistendienstleistungen"
+    category: "Bundeswehr"    

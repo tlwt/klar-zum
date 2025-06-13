@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservist Digital</title>
+    <title>Klar zum - Reservist Digital</title>
     <link rel="icon" type="image/x-icon" href="app/main/favicon.ico">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 50px auto;
             padding: 20px;
             line-height: 1.6;
@@ -18,10 +18,17 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        .intro-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 5px solid #5a7c47;
+        }
         .app-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
             margin: 40px 0;
         }
         .app-card {
@@ -54,6 +61,12 @@
             color: #666;
             font-size: 0.95em;
         }
+        @media (max-width: 900px) {
+            .app-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
         @media (max-width: 600px) {
             .app-grid {
                 grid-template-columns: 1fr;
@@ -64,8 +77,32 @@
 </head>
 <body>
     <div class="header">
-        <h1>🪖 Reservist Digital</h1>
-        <p>PDF-Formular-Ausfüller für deutsche Reservisten-Dokumente</p>
+        <h1>🎯 Klar zum</h1>
+        <p><strong>Die beschleunigte Weise zum Ausfüllen von Antragsformularen</strong></p>
+    </div>
+
+    <div class="intro-section">
+        <h2>💡 Über "Klar zum"</h2>
+        <p>Der Name <strong>"Klar zum"</strong> stammt von der verkürzten militärischen Meldung <em>"Klar zum Gefecht"</em> und steht für die beschleunigte, effiziente Art der Kommunikation.</p>
+        
+        <p>Genauso wie diese verkürzte Meldung Zeit spart, bietet dieses Tool die <strong>beschleunigte Weise zum Ausfüllen von deutschen Reservisten-Antragsformularen</strong> - schnell, präzise und ohne Umwege.</p>
+
+        <h3>🔒 Datenschutz & Sicherheit:</h3>
+        <ul>
+            <li><strong>🏠 100% lokal:</strong> Alle Daten werden ausschließlich auf Ihrem Gerät verarbeitet</li>
+            <li><strong>☁️ Keine Cloud:</strong> Keine Speicherung oder Übermittlung in externe Dienste</li>
+            <li><strong>🔐 Datenschutz:</strong> Ihre persönlichen Daten bleiben unter Ihrer Kontrolle</li>
+            <li><strong>💾 Wiederverwendbare Datensätze:</strong> Daten werden unabhängig von Formularen gespeichert</li>
+        </ul>
+
+        <h3>🚀 Hauptfunktionen:</h3>
+        <ul>
+            <li><strong>📄 Live PDF-Vorschau:</strong> Sehen Sie Ihre Eingaben sofort im ausgefüllten Formular</li>
+            <li><strong>🔄 Einmal ausfüllen, immer nutzen:</strong> Gespeicherte Datensätze für jeden neuen Antrag laden</li>
+            <li><strong>✍️ Digitale Unterschriften:</strong> Zeichnen oder laden Sie Ihre Unterschrift hoch</li>
+            <li><strong>📧 Direkter Export:</strong> Generieren Sie ausfüllfertige PDFs oder E-Mail-Entwürfe</li>
+            <li><strong>🔧 Anpassbare Konfiguration:</strong> Passen Sie Formulare an Ihre Bedürfnisse an</li>
+        </ul>
     </div>
 
     <div class="app-grid">
@@ -73,21 +110,39 @@
             <span class="app-icon">📄</span>
             <div class="app-title">PDF Formular Ausfüller</div>
             <div class="app-description">
-                Automatisches Ausfüllen von PDF-Formularen mit gespeicherten Daten und digitalen Unterschriften
+                Hauptanwendung zum schnellen Ausfüllen von PDF-Formularen mit Live-Vorschau und digitalen Unterschriften
             </div>
         </a>
 
         <a href="app/config/" class="app-card">
-            <span class="app-icon">⚙️</span>
+            <span class="app-icon">🔧</span>
             <div class="app-title">Konfigurations-Editor</div>
             <div class="app-description">
-                Erstellen und bearbeiten von YAML-Konfigurationen für PDF-Felder und Formulare
+                Visueller Editor zum Erstellen und Bearbeiten von Formular-Konfigurationen mit Drag & Drop
+            </div>
+        </a>
+
+        <a href="app/data-editor/" class="app-card">
+            <span class="app-icon">📊</span>
+            <div class="app-title">Daten-Editor</div>
+            <div class="app-description">
+                Verwalten und bearbeiten Sie gespeicherte Datensätze mit Such- und Filterfunktionen
             </div>
         </a>
     </div>
 
-    <div style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
-        <p>Für die beste Funktionalität sollte diese Anwendung über einen lokalen Webserver ausgeführt werden.</p>
+    <div style="margin-top: 60px; padding-top: 30px; border-top: 2px solid #e0e0e0; color: #666; font-size: 0.85em;">
+        <h3 style="color: #2c3e50; font-size: 1.1em; margin-bottom: 15px;">📋 Impressum</h3>
+        <p style="margin: 5px 0;"><strong>Till Witt</strong></p>
+        <p style="margin: 5px 0;">Oberleutnant der Reserve</p>
+        <p style="margin: 5px 0;">Colmarer Str. 6</p>
+        <p style="margin: 5px 0;">D-28211 Bremen</p>
+        <p style="margin: 15px 0 5px 0;">
+            📧 <a href="mailto:mail@tillwitt.de" style="color: #5a7c47; text-decoration: none;">mail@tillwitt.de</a>
+        </p>
+        <p style="margin: 5px 0;">
+            📞 <a href="tel:+4917399913613" style="color: #5a7c47; text-decoration: none;">+49 173 9913613</a>
+        </p>
     </div>
 </body>
 </html>
