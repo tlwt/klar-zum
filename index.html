@@ -25,9 +25,20 @@
             margin-bottom: 40px;
             border-left: 5px solid #5a7c47;
         }
+        .intro-content {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .intro-text {
+            flex: 1;
+        }
+        .intro-video {
+            flex: 0 0 40%;
+        }
         .start-button-container {
             text-align: center;
-            margin: 60px 0;
+            margin: 40px 0;
         }
         .start-button {
             display: inline-block;
@@ -55,6 +66,46 @@
             font-size: 1.2em;
             margin-right: 15px;
         }
+        .video-container {
+            position: relative; 
+            padding-bottom: 56.25%; 
+            height: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .video-container iframe {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+        }
+        @media (max-width: 768px) {
+            .intro-content {
+                flex-direction: column;
+            }
+            .intro-video {
+                flex: none;
+            }
+        }
+        .github-link {
+            display: inline-block;
+            background: #24292e;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 500;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        .github-link:hover {
+            background: #1c1f23;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(36, 41, 46, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -63,35 +114,61 @@
         <p><strong>Die beschleunigte Weise zum Ausfüllen von Antragsformularen</strong></p>
     </div>
 
-    <div class="intro-section">
-        <h2>💡 Über "Klar zum"</h2>
-        <p>Der Name <strong>"Klar zum"</strong> stammt von der verkürzten militärischen Meldung <em>"Klar zum Gefecht"</em> und steht für die beschleunigte, effiziente Art der Kommunikation.</p>
-        
-        <p>Genauso wie diese verkürzte Meldung Zeit spart, bietet dieses Tool die <strong>beschleunigte Weise zum Ausfüllen von deutschen Reservisten-Antragsformularen</strong> - schnell, präzise und ohne Umwege.</p>
-
-        <h3>🔒 Datenschutz & Sicherheit:</h3>
-        <ul>
-            <li><strong>🏠 100% lokal:</strong> Alle Daten werden ausschließlich auf Ihrem Gerät verarbeitet</li>
-            <li><strong>☁️ Keine Cloud:</strong> Keine Speicherung oder Übermittlung in externe Dienste</li>
-            <li><strong>🔐 Datenschutz:</strong> Ihre persönlichen Daten bleiben unter Ihrer Kontrolle</li>
-            <li><strong>💾 Wiederverwendbare Datensätze:</strong> Daten werden unabhängig von Formularen gespeichert</li>
-        </ul>
-
-        <h3>🚀 Hauptfunktionen:</h3>
-        <ul>
-            <li><strong>📄 Live PDF-Vorschau:</strong> Sehen Sie Ihre Eingaben sofort im ausgefüllten Formular</li>
-            <li><strong>🔄 Einmal ausfüllen, immer nutzen:</strong> Gespeicherte Datensätze für jeden neuen Antrag laden</li>
-            <li><strong>✍️ Digitale Unterschriften:</strong> Zeichnen oder laden Sie Ihre Unterschrift hoch</li>
-            <li><strong>📧 Direkter Export:</strong> Generieren Sie ausfüllfertige PDFs oder E-Mail-Entwürfe</li>
-            <li><strong>🔧 Anpassbare Konfiguration:</strong> Passen Sie Formulare an Ihre Bedürfnisse an</li>
-        </ul>
-    </div>
-
     <div class="start-button-container">
         <a href="app/main/" class="start-button">
             <span class="start-icon">🚀</span>
             Start
         </a>
+    </div>
+
+    <div class="intro-section">
+        <h2>💡 Über "Klar zum"</h2>
+        
+        <div class="intro-content">
+            <div class="intro-text">
+                <p>Der Name <strong>"Klar zum"</strong> stammt von der verkürzten militärischen Meldung <em>"Klar zum Gefecht"</em> und steht für die beschleunigte, effiziente Art der Kommunikation.</p>
+                
+                <p>Genauso wie diese verkürzte Meldung Zeit spart, bietet dieses Tool die <strong>beschleunigte Weise zum Ausfüllen von deutschen Reservisten-Antragsformularen</strong> - schnell, präzise und ohne Umwege.</p>
+
+                <h3>🔒 Datenschutz & Sicherheit:</h3>
+                <ul>
+                    <li><strong>🏠 100% lokal:</strong> Alle Daten werden ausschließlich auf Ihrem Gerät verarbeitet</li>
+                    <li><strong>☁️ Keine Cloud:</strong> Keine Speicherung oder Übermittlung in externe Dienste</li>
+                    <li><strong>🔐 Datenschutz:</strong> Ihre persönlichen Daten bleiben unter Ihrer Kontrolle</li>
+                    <li><strong>💾 Wiederverwendbare Datensätze:</strong> Daten werden unabhängig von Formularen gespeichert</li>
+                </ul>
+
+                <h3>🚀 Hauptfunktionen:</h3>
+                <ul>
+                    <li><strong>📄 Live PDF-Vorschau:</strong> Sehen Sie Ihre Eingaben sofort im ausgefüllten Formular</li>
+                    <li><strong>🔄 Einmal ausfüllen, immer nutzen:</strong> Gespeicherte Datensätze für jeden neuen Antrag laden</li>
+                    <li><strong>✍️ Digitale Unterschriften:</strong> Zeichnen oder laden Sie Ihre Unterschrift hoch</li>
+                    <li><strong>📧 Direkter Export:</strong> Generieren Sie ausfüllfertige PDFs oder E-Mail-Entwürfe</li>
+                    <li><strong>🔧 Anpassbare Konfiguration:</strong> Passen Sie Formulare an Ihre Bedürfnisse an</li>
+                </ul>
+            </div>
+
+            <div class="intro-video">
+                <div class="video-container">
+                    <iframe src="https://www.loom.com/embed/05f1fe0063274c8da499f78d05ddb2b9?sid=164fbb7e-d5c0-4ce6-b3af-fbcf5254eace" 
+                            frameborder="0" 
+                            webkitallowfullscreen 
+                            mozallowfullscreen 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                
+                <p style="margin: 15px 0; font-size: 0.9em; color: #666; text-align: center;">
+                    🎬 Demo der wichtigsten Features
+                </p>
+                
+                <div style="text-align: center;">
+                    <a href="https://github.com/tlwt/klar-zum/" class="github-link" target="_blank" rel="noopener noreferrer">
+                        📂 Quellcode auf GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div style="margin-top: 60px; padding-top: 30px; border-top: 2px solid #e0e0e0; color: #666; font-size: 0.85em;">

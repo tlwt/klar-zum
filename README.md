@@ -1,6 +1,13 @@
-# reservist-digital
+# Klar zum
 
 Moderne Web-Anwendung zum Ausfüllen deutscher Reservisten-PDF-Formulare mit Live-Vorschau und intelligenter Feldkonfiguration.
+
+## 📋 Voraussetzungen
+
+- Moderner Webbrowser (Chrome, Firefox, Safari, Edge)
+- Für Entwicklung: Python 3.x oder Node.js
+- Für Docker: Docker Engine 20.10+
+- Empfohlen: 4GB RAM, 500MB freier Speicher
 
 ## ✨ Features
 
@@ -12,6 +19,14 @@ Moderne Web-Anwendung zum Ausfüllen deutscher Reservisten-PDF-Formulare mit Liv
 - **✍️ Digitale Unterschriften**: Zeichnen oder Upload von Signaturen
 - **💾 Export-Funktionen**: Flache oder bearbeitbare PDFs mit konfigurierbaren Dateinamen
 - **📧 E-Mail-Integration**: Direkter E-Mail-Draft mit ausgefüllten Formularen
+- **🔒 100% Datenschutz**: Alle Daten bleiben lokal in Ihrem Browser
+
+## 🔒 Sicherheit & Datenschutz
+
+- **100% lokale Verarbeitung**: Keine Daten verlassen Ihren Browser
+- **Keine Cloud-Abhängigkeiten**: Vollständige Datenkontrolle
+- **Keine Tracking/Analytics**: Respektiert Ihre Privatsphäre
+- **Open Source**: Überprüfbarer Code
 
 ## Anwendungen
 
@@ -22,7 +37,25 @@ Nach dem Start sind folgende Module verfügbar:
 - **🔧 Konfigurations-Editor**: http://localhost:8080/app/config/
 - **📊 Daten-Editor**: http://localhost:8080/app/data-editor/
 
-## Docker Setup
+## 🚀 Installation
+
+### Option 1: Lokaler Webserver (Entwicklung)
+
+```bash
+# Repository klonen
+git clone https://github.com/yourusername/klar-zum.git
+cd klar-zum
+
+# Mit Python 3
+python -m http.server 8000
+
+# Mit Node.js
+npx http-server -p 8000
+
+# Öffnen Sie http://localhost:8000
+```
+
+### Option 2: Docker Setup
 
 ### Mit Docker Compose (empfohlen)
 
@@ -43,23 +76,12 @@ Die Anwendung ist dann unter http://localhost:8080 erreichbar.
 
 ```bash
 # Build
-docker build -f docker/Dockerfile -t reservist-digital .
+docker build -f docker/Dockerfile -t klar-zum .
 
 # Run
-docker run -d -p 8080:80 --name reservist-digital reservist-digital
+docker run -d -p 8080:80 --name klar-zum klar-zum
 ```
 
-### Entwicklung
-
-Für die Entwicklung kann ein lokaler Webserver verwendet werden:
-
-```bash
-# Python 3
-python -m http.server 8000
-
-# Node.js
-npx http-server
-```
 
 ## 🚀 Neue Features (2025)
 
@@ -127,3 +149,30 @@ pdfs:
 - **PHP-Unterstützung**: Optionale Serverseitige Funktionen
 - **Docker-optimiert**: Multi-Stage Build, Alpine Linux (130MB)
 - **Entwicklungsfreundlich**: Hot-Reload, Cache-Kontrolle
+
+## 🔧 Fehlerbehebung
+
+### PDF wird nicht geladen
+- Prüfen Sie die Browser-Konsole (F12)
+- Stellen Sie sicher, dass die PDF-Datei im `app/formulare/` Ordner liegt
+- Überprüfen Sie die YAML-Konfiguration auf Tippfehler
+
+### Unterschrift wird nicht angezeigt
+- Koordinaten in der YAML-Konfiguration prüfen
+- Konfigurations-Editor für visuelle Positionierung nutzen
+
+### CORS-Fehler bei lokalem Server
+- Verwenden Sie einen HTTP-Server statt `file://` Protokoll
+- Nutzen Sie die empfohlenen Server-Befehle oben
+
+## 🤝 Beitragen
+
+1. Fork das Repository
+2. Feature Branch erstellen (`git checkout -b feature/AmazingFeature`)
+3. Änderungen committen (`git commit -m 'Add AmazingFeature'`)
+4. Branch pushen (`git push origin feature/AmazingFeature`)
+5. Pull Request öffnen
+
+## 📄 Lizenz
+
+Dieses Projekt steht unter der [MIT Lizenz](LICENSE).

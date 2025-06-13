@@ -8,7 +8,13 @@ always ask user for confirmation that feature works before committing.
 
 ## Project Overview
 
-Reservist-Digital is a modern web-based PDF form filler for German military reservist documentation. It features a sophisticated multi-app architecture with live PDF preview, intelligent form generation, and visual configuration editors.
+Klar zum (formerly Reservist-Digital) is a modern web-based PDF form filler for German military reservist documentation. It features a sophisticated multi-app architecture with live PDF preview, intelligent form generation, and visual configuration editors.
+
+### Security & Privacy Focus
+- **100% Local Processing**: All data processing happens client-side in the browser
+- **No Cloud Dependencies**: Complete data privacy and offline capability
+- **No External APIs**: No tracking, analytics, or data transmission
+- **Open Source**: Transparent and auditable codebase
 
 ## Development Setup
 
@@ -92,6 +98,13 @@ Features:
 - **Live Validation**: Real-time YAML syntax checking
 
 **Direct Save Feature**: If `allowConfigWrite: true` is set in `config.yaml`, shows "🚀 Konfiguration direkt speichern" button for server-side saves.
+
+### Technology Stack
+- **Frontend**: Pure Vanilla JavaScript (no frameworks)
+- **Libraries**: pdf-lib, PDF.js, js-yaml, jszip, FileSaver.js, Sortable.js
+- **Backend**: Optional PHP support for configuration saving
+- **Deployment**: Docker with Alpine Linux, nginx, and PHP-FPM (130MB container)
+- **No Build Process**: Static files served directly
 
 ### Data Editor
 
