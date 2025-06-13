@@ -118,22 +118,37 @@
                 <div class="view-header">
                     <h2>📝 Formularfelder ausfüllen</h2>
                     <div class="toolbar">
-                        <label for="loadFile" class="file-label">📁 Daten laden</label>
-                        <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
-                        <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
-                        <button type="button" class="btn btn-secondary" onclick="loadExampleData()">📋 Beispieldaten laden</button>
-                        
-                        <!-- PDF Generation Buttons -->
-                        <div class="download-options-mini">
-                            <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
-                                🔒 Flach (nicht bearbeitbar)
-                            </button>
-                            <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
-                                ✏️ Bearbeitbar
-                            </button>
+                        <!-- Datenverwaltung -->
+                        <div class="toolbar-section">
+                            <h4>📁 Datenverwaltung</h4>
+                            <div class="toolbar-buttons">
+                                <label for="loadFile" class="file-label">📁 Daten laden</label>
+                                <input type="file" id="loadFile" class="file-input" accept=".json" onchange="loadData(event)">
+                                <button type="button" class="btn btn-secondary" onclick="saveData()">💾 Daten speichern</button>
+                                <button type="button" class="btn btn-secondary" onclick="loadExampleData()">📋 Beispieldaten laden</button>
+                            </div>
                         </div>
                         
-                        <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
+                        <!-- PDF herunterladen -->
+                        <div class="toolbar-section">
+                            <h4>📄 PDF herunterladen</h4>
+                            <div class="toolbar-buttons">
+                                <button type="button" class="btn btn-primary" onclick="generatePDFs(true)">
+                                    🔒 Flach (nicht bearbeitbar)
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="generatePDFs(false)">
+                                    ✏️ Bearbeitbar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Kommunikation -->
+                        <div class="toolbar-section">
+                            <h4>📧 Kommunikation</h4>
+                            <div class="toolbar-buttons">
+                                <button type="button" class="btn btn-secondary" onclick="openEmailDraft()" id="emailButton">📧 E-Mail erstellen</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

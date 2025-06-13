@@ -200,6 +200,33 @@ body {
     flex-wrap: wrap;
 }
 
+.toolbar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e1e5e9;
+    min-width: 200px;
+}
+
+.toolbar-section h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.toolbar-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .download-options-mini {
     display: flex;
     gap: 8px;
