@@ -11,6 +11,7 @@ groups:
   Sonstige:
     title: 📋 Sonstige Felder
     description: Weitere Informationen
+
 fields:
   Nachname:
     group: Persönliche Daten
@@ -42,6 +43,7 @@ fields:
   EMail:
     group: Persönliche Daten
     type: email
+
   vom Beginn der Dienstleitung:
     group: Dienstleistung
     type: date
@@ -50,12 +52,33 @@ fields:
     group: Dienstleistung
     type: date
     mapping: bis
-  Nettojahreseinkunft:
-    group: Dienstleistung
   selbstaendigeArbeit:
     group: Dienstleistung
-  Nettojahreseinkunft_nichtselbstaendig:
+    type: radio
+    options:
+      - "Mannschaften werden voraussichtlich 3.300 &#160; beziehungsweise 39.600 &#160; &#252;bersteigen. (Selbststaendig)"
+      - "Unteroffiziere werden voraussichtlich 4.350 &#160; beziehungsweise 52.200 &#160; &#252;bersteigen. (Selbststaendig)"
+      - "Offiziere werden voraussichtlich 5.400 &#160; beziehungsweise 64.800 &#160; &#252;bersteigen. (Selbststaendig)"
+      - "Stabsoffiziere werden voraussichtlich 7.050 &#160; beziehungsweise 84.600 &#160; &#252;bersteigen. (Selbststaendig)"
+      - "Mannschaften werden voraussichtlich 3.300 &#160; beziehungsweise 39.600 &#160; &#252;bersteigen."
+      - "Unteroffiziere werden voraussichtlich 4.350 &#160; beziehungsweise 52.200 &#160; &#252;bersteigen."
+      - "Offiziere werden voraussichtlich 5.400 &#160; beziehungsweise 64.800 &#160; &#252;bersteigen."
+      - "Stabsoffiziere werden voraussichtlich 7.050 &#160; beziehungsweise 84.600 &#160; &#252;bersteigen."
+  Nettojahreseinkunft:
+    type: radio
+    options:
+       - Ja
+       - Nein 
     group: Dienstleistung
+
+    
+  Nettojahreseinkunft_nichtselbstaendig:
+    type: radio
+    options:
+       - Ja
+       - Nein 
+    group: Dienstleistung
+
   Signature1:
     group: Unterschriften
     type: signature

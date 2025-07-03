@@ -4,7 +4,7 @@
 // Erweiterte Funktion zum Einbetten von Unterschriften mit konfigurierbarer Position
 async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName) {
     try {
-        console.log(`Versuche Unterschrift für Feld ${fieldName} in PDF ${currentPdfName} einzubetten...`);
+        // console.log(`Versuche Unterschrift für Feld ${fieldName} in PDF ${currentPdfName} einzubetten...`);
         
         // Base64-Daten zu Bytes konvertieren
         const base64String = base64Data.split(',')[1];
@@ -23,7 +23,7 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName
         
         // Suche nach Konfiguration für dieses Feld im aktuellen PDF
         const signatureConfig = getSignatureConfig(fieldName, currentPdfName);
-        console.log(`Unterschrift-Konfiguration für ${fieldName}:`, signatureConfig);
+        // console.log(`Unterschrift-Konfiguration für ${fieldName}:`, signatureConfig);
         
         const pages = pdfDoc.getPages();
         
@@ -59,10 +59,10 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName
             signatureWidth = maxSignatureHeight * aspectRatio;
         }
         
-        console.log(`🔍 Unterschrift-Größenberechnung für ${fieldName}:`);
-        console.log(`  Original Bildgröße: ${imageWidth} x ${imageHeight} (Verhältnis: ${aspectRatio.toFixed(2)})`);
-        console.log(`  Max konfiguriert: ${maxSignatureWidth} x ${maxSignatureHeight}`);
-        console.log(`  Finale Größe: ${signatureWidth.toFixed(1)} x ${signatureHeight.toFixed(1)}`);
+        // console.log(`🔍 Unterschrift-Größenberechnung für ${fieldName}:`);
+        // console.log(`  Original Bildgröße: ${imageWidth} x ${imageHeight} (Verhältnis: ${aspectRatio.toFixed(2)})`);
+        // console.log(`  Max konfiguriert: ${maxSignatureWidth} x ${maxSignatureHeight}`);
+        // console.log(`  Finale Größe: ${signatureWidth.toFixed(1)} x ${signatureHeight.toFixed(1)}`);
         
         let x, y;
         
@@ -72,16 +72,16 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName
             y = signatureConfig.y;
             
             // Debug: Zeige alle wichtigen Infos
-            console.log(`🔍 PDF-Koordinaten Debug für ${fieldName}:`);
-            console.log(`  Seitengröße: ${pageWidth} x ${pageHeight} Punkte`);
-            console.log(`  Konfiguriert: X=${x}, Y=${y}`);
-            console.log(`  PDF-Koordinatensystem: Ursprung unten links, Y-Achse nach oben`);
+            // console.log(`🔍 PDF-Koordinaten Debug für ${fieldName}:`);
+            // console.log(`  Seitengröße: ${pageWidth} x ${pageHeight} Punkte`);
+            // console.log(`  Konfiguriert: X=${x}, Y=${y}`);
+            // console.log(`  PDF-Koordinatensystem: Ursprung unten links, Y-Achse nach oben`);
         } else {
             // Intelligente Standardpositionierung basierend auf Feldname
             const position = getIntelligentSignaturePosition(fieldName, pageWidth, pageHeight, signatureWidth, signatureHeight);
             x = position.x;
             y = position.y;
-            console.log(`Verwende intelligente Position für ${fieldName}: X=${x}, Y=${y}`);
+            // console.log(`Verwende intelligente Position für ${fieldName}: X=${x}, Y=${y}`);
         }
         
         // Validiere Koordinaten (stelle sicher, dass Unterschrift auf der Seite bleibt)
@@ -97,7 +97,7 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName
         });
         
         const pageNumber = pages.indexOf(targetPage) + 1;
-        console.log(`✓ Unterschrift ${fieldName} erfolgreich platziert auf Seite ${pageNumber} bei X=${x}, Y=${y}`);
+        // console.log(`✓ Unterschrift ${fieldName} erfolgreich platziert auf Seite ${pageNumber} bei X=${x}, Y=${y}`);
         
         return true;
         
@@ -109,7 +109,7 @@ async function embedSignatureInPDF(pdfDoc, fieldName, base64Data, currentPdfName
 
 // Neue Funktion: Hole Unterschrift-Konfiguration für ein Feld eines spezifischen PDFs
 function getSignatureConfig(fieldName, currentPdfName) {
-    console.log(`🔍 Suche Unterschrift-Konfiguration für ${fieldName} in PDF ${currentPdfName}`);
+    // console.log(`🔍 Suche Unterschrift-Konfiguration für ${fieldName} in PDF ${currentPdfName}`);
     
     // Suche nur in der Konfiguration des aktuellen PDFs
     const config = window.pdfConfigs.get(currentPdfName);
@@ -117,7 +117,7 @@ function getSignatureConfig(fieldName, currentPdfName) {
         // Direkte Suche nach dem Feldnamen
         const fieldConfig = config.fields[fieldName];
         if (fieldConfig && fieldConfig.type === 'signature') {
-            console.log(`✅ Gefunden: Direkte Konfiguration für ${fieldName} in ${currentPdfName}`, fieldConfig);
+            // console.log(`✅ Gefunden: Direkte Konfiguration für ${fieldName} in ${currentPdfName}`, fieldConfig);
             return {
                 width: fieldConfig.signature_width || 200,
                 height: fieldConfig.signature_height || 100,
@@ -130,7 +130,7 @@ function getSignatureConfig(fieldName, currentPdfName) {
         // Suche auch nach gemappten Feldern in diesem PDF
         for (const [originalField, originalConfig] of Object.entries(config.fields)) {
             if (originalConfig.mapping === fieldName && originalConfig.type === 'signature') {
-                console.log(`✅ Gefunden: Gemappte Konfiguration für ${fieldName} -> ${originalField} in ${currentPdfName}`, originalConfig);
+                // console.log(`✅ Gefunden: Gemappte Konfiguration für ${fieldName} -> ${originalField} in ${currentPdfName}`, originalConfig);
                 return {
                     width: originalConfig.signature_width || 200,
                     height: originalConfig.signature_height || 100,
@@ -142,7 +142,7 @@ function getSignatureConfig(fieldName, currentPdfName) {
         }
     }
     
-    console.log(`⚠️ Keine Unterschrift-Konfiguration für ${fieldName} in ${currentPdfName} gefunden, verwende Standard`);
+    // console.log(`⚠️ Keine Unterschrift-Konfiguration für ${fieldName} in ${currentPdfName} gefunden, verwende Standard`);
     
     // Fallback: Standard-Konfiguration
     return {
@@ -217,14 +217,14 @@ function getIntelligentSignaturePosition(fieldName, pageWidth, pageHeight, signa
 // Erweiterte setFieldValue Funktion mit verbesserter Unterschrift-Behandlung
 async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
     try {
-        console.log(`Setze Feld ${fieldName} (${field.constructor.name}) auf Wert: "${value}" in PDF ${currentPdfName}`);
+        // console.log(`Setze Feld ${fieldName} (${field.constructor.name}) auf Wert: "${value}" in PDF ${currentPdfName}`);
         
         // Spezielle Behandlung für Unterschrift (Base64-Bilder)
         if (fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) {
             if (value && value.startsWith('data:image/')) {
                 return await embedSignatureInPDF(pdfDoc, fieldName, value, currentPdfName);
             } else {
-                console.log(`Unterschrift-Feld ${fieldName} hat keine gültigen Bilddaten`);
+                // console.log(`Unterschrift-Feld ${fieldName} hat keine gültigen Bilddaten`);
                 return false;
             }
         }
@@ -237,9 +237,9 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             try {
                 textField.updateAppearances();
             } catch (e) {
-                console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
+                // console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
             }
-            console.log(`✓ TextField ${fieldName} über form.getTextField() gesetzt`);
+            // console.log(`✓ TextField ${fieldName} über form.getTextField() gesetzt`);
             return true;
         } catch (getTextFieldError) {
             // Fallback auf instanceof check
@@ -249,9 +249,9 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
                 try {
                     field.updateAppearances();
                 } catch (e) {
-                    console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
+                    // console.log(`Konnte Appearances für ${fieldName} nicht updaten:`, e.message);
                 }
-                console.log(`✓ TextField ${fieldName} über instanceof gesetzt`);
+                // console.log(`✓ TextField ${fieldName} über instanceof gesetzt`);
                 return true;
             }
         }
@@ -265,10 +265,10 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             
             if (shouldCheck) {
                 checkBox.check();
-                console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() aktiviert`);
+                // console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() aktiviert`);
             } else {
                 checkBox.uncheck();
-                console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() deaktiviert`);
+                // console.log(`✓ CheckBox ${fieldName} über form.getCheckBox() deaktiviert`);
             }
             return true;
         } catch (getCheckBoxError) {
@@ -280,10 +280,10 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
                 
                 if (shouldCheck) {
                     field.check();
-                    console.log(`✓ CheckBox ${fieldName} über instanceof aktiviert`);
+                    // console.log(`✓ CheckBox ${fieldName} über instanceof aktiviert`);
                 } else {
                     field.uncheck();
-                    console.log(`✓ CheckBox ${fieldName} über instanceof deaktiviert`);
+                    // console.log(`✓ CheckBox ${fieldName} über instanceof deaktiviert`);
                 }
                 return true;
             }
@@ -298,14 +298,14 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             // Versuche zuerst exakte Übereinstimmung
             if (options.includes(valueStr)) {
                 radioGroup.select(valueStr);
-                console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf "${valueStr}" gesetzt`);
+                // console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf "${valueStr}" gesetzt`);
                 return true;
             }
             
             // Versuche fallback auf ersten Wert wenn verfügbar
             if (options.length > 0) {
                 radioGroup.select(options[0]);
-                console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
+                // console.log(`✓ RadioGroup ${fieldName} über form.getRadioGroup() auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
                 return true;
             }
             
@@ -320,14 +320,14 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
                 // Versuche zuerst exakte Übereinstimmung
                 if (options.includes(valueStr)) {
                     field.select(valueStr);
-                    console.log(`✓ RadioGroup ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
+                    // console.log(`✓ RadioGroup ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
                     return true;
                 }
                 
                 // Versuche fallback auf ersten Wert wenn verfügbar
                 if (options.length > 0) {
                     field.select(options[0]);
-                    console.log(`✓ RadioGroup ${fieldName} über instanceof auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
+                    // console.log(`✓ RadioGroup ${fieldName} über instanceof auf ersten Wert "${options[0]}" gesetzt (Fallback)`);
                     return true;
                 }
                 
@@ -345,7 +345,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             // Versuche zuerst exakte Übereinstimmung
             if (options.includes(valueStr)) {
                 dropdown.select(valueStr);
-                console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${valueStr}" gesetzt`);
+                // console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${valueStr}" gesetzt`);
                 return true;
             }
             
@@ -353,7 +353,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
             if (target) {
                 dropdown.select(target);
-                console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${target}" gesetzt (Fallback)`);
+                // console.log(`✓ Dropdown ${fieldName} über form.getDropdown() auf "${target}" gesetzt (Fallback)`);
                 return true;
             }
             
@@ -368,7 +368,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
                 // Versuche zuerst exakte Übereinstimmung
                 if (options.includes(valueStr)) {
                     field.select(valueStr);
-                    console.log(`✓ Dropdown ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
+                    // console.log(`✓ Dropdown ${fieldName} über instanceof auf "${valueStr}" gesetzt`);
                     return true;
                 }
                 
@@ -376,7 +376,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
                 const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
                 if (target) {
                     field.select(target);
-                    console.log(`✓ Dropdown ${fieldName} über instanceof auf "${target}" gesetzt (Fallback)`);
+                    // console.log(`✓ Dropdown ${fieldName} über instanceof auf "${target}" gesetzt (Fallback)`);
                     return true;
                 }
                 
@@ -390,7 +390,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
             const options = field.getOptions();
             if (options.length > 0) {
                 field.select(options[0]);
-                console.log(`✓ OptionList ${fieldName} auf ersten Wert gesetzt`);
+                // console.log(`✓ OptionList ${fieldName} auf ersten Wert gesetzt`);
                 return true;
             }
             return false;
@@ -400,7 +400,7 @@ async function setFieldValue(field, value, fieldName, pdfDoc, currentPdfName) {
         console.warn(`Unbekannter Feldtyp für ${fieldName}: ${field.constructor.name}`);
         if (typeof field.setText === 'function') {
             field.setText(String(value));
-            console.log(`✓ Unbekannter Typ ${fieldName} mit setText gesetzt`);
+            // console.log(`✓ Unbekannter Typ ${fieldName} mit setText gesetzt`);
             return true;
         }
         
@@ -428,7 +428,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
             const acroForm = pdfDoc.catalog.lookup(PDFLib.PDFName.of('AcroForm'));
             if (acroForm) {
                 acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
-                console.log('✓ NeedAppearances Flag gesetzt');
+                // console.log('✓ NeedAppearances Flag gesetzt');
             }
         } catch (e) {
             console.log('Konnte NeedAppearances Flag nicht setzen:', e.message);
@@ -438,25 +438,25 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         const formData = getAllFormData();
         const pdfConfig = window.pdfConfigs.get(pdf.name) || {};
         
-        console.log('\n=== PDF FELDANALYSE ===');
-        console.log(`PDF: ${pdf.name}`);
+        // console.log('\n=== PDF FELDANALYSE ===');
+        // console.log(`PDF: ${pdf.name}`);
         const allFields = form.getFields();
-        console.log(`Gefundene Felder im PDF (${allFields.length}):`);
+        // console.log(`Gefundene Felder im PDF (${allFields.length}):`);
         
         // DEBUG: Zeige alle verfügbaren Daten
-        console.log('Verfügbare formData Keys:', Object.keys(formData).filter(k => formData[k]));
-        console.log('Beispiel - Nachname:', formData['Nachname']);
+        // console.log('Verfügbare formData Keys:', Object.keys(formData).filter(k => formData[k]));
+        // console.log('Beispiel - Nachname:', formData['Nachname']);
         
         // Hauptlogik: Iteriere über alle PDF-Felder und versuche sie zu setzen
         for (const fieldName of pdf.fields) {
             let value = null;
             
             // DEBUG für Nachname
-            if (fieldName === 'Nachname') {
-                console.log('DEBUG Nachname - formData[Nachname]:', formData['Nachname']);
-                console.log('DEBUG Nachname - fieldName:', fieldName);
-                console.log('DEBUG Nachname - pdfConfig.fields:', pdfConfig.fields);
-            }
+            // if (fieldName === 'Nachname') {
+            //     console.log('DEBUG Nachname - formData[Nachname]:', formData['Nachname']);
+            //     console.log('DEBUG Nachname - fieldName:', fieldName);
+            //     console.log('DEBUG Nachname - pdfConfig.fields:', pdfConfig.fields);
+            // }
             
             // Prüfe direkte Übereinstimmung
             if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
@@ -470,8 +470,8 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
             }
             
             if (value !== null && value !== undefined) {
-                console.log(`\n--- VERARBEITE FELD: ${fieldName} ---`);
-                console.log(`Wert: "${value}"`);
+                // console.log(`\n--- VERARBEITE FELD: ${fieldName} ---`);
+                // console.log(`Wert: "${value}"`);
                 
                 try {
                     const field = form.getField(fieldName);
@@ -489,7 +489,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                                 const success = await embedSignatureInPDF(pdfDoc, fieldName, value, pdf.name);
                                 if (success) {
                                     filledFields++;
-                                    console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt`);
+                                    // console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt`);
                                 }
                             }
                         }
@@ -504,7 +504,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                                 const success = await embedSignatureInPDF(pdfDoc, fieldName, value, pdf.name);
                                 if (success) {
                                     filledFields++;
-                                    console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt (Fallback)`);
+                                    // console.log(`✓ Unterschrift ${fieldName} als Bild eingefügt (Fallback)`);
                                 }
                             } catch (signatureError) {
                                 console.warn(`Fehler beim Einbetten der Unterschrift ${fieldName}:`, signatureError);
@@ -520,7 +520,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
             const fieldName = field.getName();
             if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
                 const value = formData[fieldName];
-                console.log(`\n--- DIREKTE FELDSUCHE: ${fieldName} ---`);
+                // console.log(`\n--- DIREKTE FELDSUCHE: ${fieldName} ---`);
                 
                 // Überspringe wenn bereits verarbeitet
                 if (!pdf.fields.includes(fieldName)) {
@@ -533,17 +533,17 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         }
         
         // Behandle Unterschrift-Felder die nicht als PDF-Formularfelder existieren
-        console.log('\n=== ERWEITERTE UNTERSCHRIFT-BEHANDLUNG ===');
+        // console.log('\n=== ERWEITERTE UNTERSCHRIFT-BEHANDLUNG ===');
         for (const [fieldName, fieldValue] of Object.entries(formData)) {
             if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
                 fieldValue && fieldValue.startsWith('data:image/')) {
                 
-                console.log(`Verarbeite Unterschrift-Feld: ${fieldName}`);
+                // console.log(`Verarbeite Unterschrift-Feld: ${fieldName}`);
                 
                 // Prüfe ob diese Unterschrift für dieses PDF konfiguriert ist
                 const signatureConfig = getSignatureConfig(fieldName, pdf.name);
                 if (signatureConfig.x === undefined && signatureConfig.y === undefined) {
-                    console.log(`⏭️ Unterschrift ${fieldName} ist nicht für ${pdf.name} konfiguriert - überspringe`);
+                    // console.log(`⏭️ Unterschrift ${fieldName} ist nicht für ${pdf.name} konfiguriert - überspringe`);
                     continue;
                 }
                 
@@ -553,7 +553,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                     const field = form.getField(fieldName);
                     if (field) {
                         alreadyProcessed = true;
-                        console.log(`Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
+                        // console.log(`Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
                     }
                 } catch (e) {
                     // Feld existiert nicht als Formularfeld - das ist ok
@@ -564,7 +564,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                         const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue, pdf.name);
                         if (success) {
                             filledFields++;
-                            console.log(`✓ Unterschrift ${fieldName} als separates Bild eingefügt`);
+                            // console.log(`✓ Unterschrift ${fieldName} als separates Bild eingefügt`);
                         }
                     } catch (signatureError) {
                         console.warn(`Fehler beim Einbetten der separaten Unterschrift ${fieldName}:`, signatureError);
@@ -574,7 +574,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         }
         
         // GENERISCHER FALLBACK (für unerkannte Felder)
-        console.log('\n=== GENERISCHER FALLBACK ===');
+        // console.log('\n=== GENERISCHER FALLBACK ===');
         allFields.forEach(field => {
             const fieldName = field.getName();
             
@@ -585,28 +585,28 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
             try {
                 if (field instanceof PDFLib.PDFTextField) {
                     field.setText('Beispiel');
-                    console.log(`✓ Fallback TextField ${fieldName} auf "Beispiel" gesetzt`);
+                    // console.log(`✓ Fallback TextField ${fieldName} auf "Beispiel" gesetzt`);
                 } else if (field instanceof PDFLib.PDFCheckBox) {
                     field.check();
-                    console.log(`✓ Fallback CheckBox ${fieldName} aktiviert`);
+                    // console.log(`✓ Fallback CheckBox ${fieldName} aktiviert`);
                 } else if (field instanceof PDFLib.PDFRadioGroup) {
                     const options = field.getOptions();
                     if (options.length > 0) {
                         field.select(options[0]);
-                        console.log(`✓ Fallback RadioGroup ${fieldName} auf ersten Wert gesetzt`);
+                        // console.log(`✓ Fallback RadioGroup ${fieldName} auf ersten Wert gesetzt`);
                     }
                 } else if (field instanceof PDFLib.PDFDropdown) {
                     const options = field.getOptions();
                     const target = options.find(v => /übung|uebung/i.test(v)) || options[0];
                     if (target) {
                         field.select(target);
-                        console.log(`✓ Fallback Dropdown ${fieldName} auf "${target}" gesetzt`);
+                        // console.log(`✓ Fallback Dropdown ${fieldName} auf "${target}" gesetzt`);
                     }
                 } else if (field instanceof PDFLib.PDFOptionList) {
                     const options = field.getOptions();
                     if (options.length > 0) {
                         field.select(options[0]);
-                        console.log(`✓ Fallback OptionList ${fieldName} auf ersten Wert gesetzt`);
+                        // console.log(`✓ Fallback OptionList ${fieldName} auf ersten Wert gesetzt`);
                     }
                 }
             } catch (fallbackError) {
@@ -637,7 +637,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
                     }
                 }
             }
-            console.log('✓ Alle Field Appearances VOR dem Speichern aktualisiert');
+            // console.log('✓ Alle Field Appearances VOR dem Speichern aktualisiert');
         } catch (e) {
             console.log('Fehler beim globalen Appearance Update:', e.message);
         }
@@ -646,7 +646,7 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         if (flatten) {
             try {
                 form.flatten();
-                console.log('✓ PDF-Formular wurde geflacht (flatten)');
+                // console.log('✓ PDF-Formular wurde geflacht (flatten)');
             } catch (error) {
                 console.warn('Fehler beim Flatten des PDFs:', error);
                 console.log('📝 Speichere PDF ohne Flatten wegen Kompatibilitätsproblemen');
@@ -664,20 +664,20 @@ async function fillAndDownloadPDF(pdf, data, flatten = true) {
         const customFileName = generateFileName(pdf.name, data, flatten);
         const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
         
-        console.log(`📥 Starte Download für ${pdf.name} (${customFileName})`);
-        console.log(`📦 Blob-Größe: ${blob.size} bytes`);
+        // console.log(`📥 Starte Download für ${pdf.name} (${customFileName})`);
+        // console.log(`📦 Blob-Größe: ${blob.size} bytes`);
         
         // Direkter Download ohne Verzögerung für parallele Downloads
         try {
             saveAs(blob, customFileName);
-            console.log(`✅ Download gestartet für ${customFileName}`);
+            // console.log(`✅ Download gestartet für ${customFileName}`);
         } catch (downloadError) {
             console.error(`❌ Download-Fehler für ${customFileName}:`, downloadError);
             throw downloadError;
         }
         
         const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
-        console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} (${modeText})`);
+        // console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} (${modeText})`);
         
     } catch (error) {
         console.error('Fehler beim Ausfüllen des PDFs:', error);
@@ -701,7 +701,7 @@ async function fillPDFForZip(pdf, data, flatten = true) {
             const acroForm = pdfDoc.catalog.lookup(PDFLib.PDFName.of('AcroForm'));
             if (acroForm) {
                 acroForm.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
-                console.log('✓ NeedAppearances Flag gesetzt für ZIP');
+                // console.log('✓ NeedAppearances Flag gesetzt für ZIP');
             }
         } catch (e) {
             console.log('Konnte NeedAppearances Flag nicht setzen für ZIP:', e.message);
@@ -711,16 +711,16 @@ async function fillPDFForZip(pdf, data, flatten = true) {
         const formData = data; // Verwende die übergebenen Daten anstatt getAllFormData() erneut aufzurufen
         const pdfConfig = window.pdfConfigs.get(pdf.name) || {};
         
-        console.log('🔍 ZIP: Verwende übergebene Formulardaten:', Object.keys(formData).length, 'Felder');
-        console.log(`\n=== PDF FELDANALYSE FÜR ZIP (${pdf.name}) ===`);
+        // console.log('🔍 ZIP: Verwende übergebene Formulardaten:', Object.keys(formData).length, 'Felder');
+        // console.log(`\n=== PDF FELDANALYSE FÜR ZIP (${pdf.name}) ===`);
         const allFields = form.getFields();
-        console.log(`Gefundene Felder im PDF (${allFields.length}):`);
+        // console.log(`Gefundene Felder im PDF (${allFields.length}):`);
         
         // SCHRITT 1: ALLE VERFÜGBAREN FELDER (gleiche Logik wie fillAndDownloadPDF)
-        allFields.forEach(field => {
-            const fieldName = field.getName();
-            console.log(`📋 PDF-Feld: ${fieldName} (${field.constructor.name})`);
-        });
+        // allFields.forEach(field => {
+        //     const fieldName = field.getName();
+        //     console.log(`📋 PDF-Feld: ${fieldName} (${field.constructor.name})`);
+        // });
 
         // MAPPING-SYSTEM (aus fillAndDownloadPDF)
         const fieldMappings = new Map();
@@ -733,7 +733,7 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                         fieldMappings.set(config.mapping, []);
                     }
                     fieldMappings.get(config.mapping).push(pdfFieldName);
-                    console.log(`🔗 Mapping: ${config.mapping} → ${pdfFieldName}`);
+                    // console.log(`🔗 Mapping: ${config.mapping} → ${pdfFieldName}`);
                 }
             });
         }
@@ -780,26 +780,26 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                     if (field instanceof PDFLib.PDFTextField) {
                         field.setText(valueStr);
                         filledFields++;
-                        console.log(`✓ TextField ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                        // console.log(`✓ TextField ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
                     } else if (field instanceof PDFLib.PDFCheckBox) {
                         if (valueStr === '1' || valueStr === 'true' || valueStr === 'on' || valueStr === 'checked') {
                             field.check();
                             filledFields++;
-                            console.log(`✓ CheckBox ${targetFieldName} aktiviert (via ${dataKey})`);
+                            // console.log(`✓ CheckBox ${targetFieldName} aktiviert (via ${dataKey})`);
                         }
                     } else if (field instanceof PDFLib.PDFRadioGroup) {
                         const options = field.getOptions();
                         if (options.includes(valueStr)) {
                             field.select(valueStr);
                             filledFields++;
-                            console.log(`✓ RadioGroup ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                            // console.log(`✓ RadioGroup ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
                         }
                     } else if (field instanceof PDFLib.PDFDropdown) {
                         const options = field.getOptions();
                         if (options.includes(valueStr)) {
                             field.select(valueStr);
                             filledFields++;
-                            console.log(`✓ Dropdown ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
+                            // console.log(`✓ Dropdown ${targetFieldName} = "${valueStr}" (via ${dataKey})`);
                         }
                     }
                 } catch (fieldError) {
@@ -809,12 +809,12 @@ async function fillPDFForZip(pdf, data, flatten = true) {
         }
         
         // SCHRITT 1.5: DIREKTE FELDSUCHE (wie in normaler PDF-Generierung)
-        console.log('\n=== DIREKTE FELDSUCHE FÜR ZIP ===');
+        // console.log('\n=== DIREKTE FELDSUCHE FÜR ZIP ===');
         for (const field of allFields) {
             const fieldName = field.getName();
             if (formData[fieldName] && formData[fieldName].toString().trim() !== '') {
                 const value = formData[fieldName];
-                console.log(`\n--- ZIP DIREKTE FELDSUCHE: ${fieldName} ---`);
+                // console.log(`\n--- ZIP DIREKTE FELDSUCHE: ${fieldName} ---`);
                 
                 // Überspringe wenn bereits verarbeitet
                 if (!pdf.fields.includes(fieldName)) {
@@ -822,7 +822,7 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                         if (field instanceof PDFLib.PDFTextField) {
                             field.setText(value.toString());
                             filledFields++;
-                            console.log(`✓ ZIP Direkte TextField ${fieldName} = "${value}"`);
+                            // console.log(`✓ ZIP Direkte TextField ${fieldName} = "${value}"`);
                         } else if (field instanceof PDFLib.PDFCheckBox) {
                             const shouldCheck = value === '1' || value === 'true' || value === true || 
                                                value === 'on' || value === 'Ja' || value === 'ja' || 
@@ -830,21 +830,21 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                             if (shouldCheck) {
                                 field.check();
                                 filledFields++;
-                                console.log(`✓ ZIP Direkte CheckBox ${fieldName} aktiviert`);
+                                // console.log(`✓ ZIP Direkte CheckBox ${fieldName} aktiviert`);
                             }
                         } else if (field instanceof PDFLib.PDFRadioGroup) {
                             const options = field.getOptions();
                             if (options.includes(value.toString())) {
                                 field.select(value.toString());
                                 filledFields++;
-                                console.log(`✓ ZIP Direkte RadioGroup ${fieldName} = "${value}"`);
+                                // console.log(`✓ ZIP Direkte RadioGroup ${fieldName} = "${value}"`);
                             }
                         } else if (field instanceof PDFLib.PDFDropdown) {
                             const options = field.getOptions();
                             if (options.includes(value.toString())) {
                                 field.select(value.toString());
                                 filledFields++;
-                                console.log(`✓ ZIP Direkte Dropdown ${fieldName} = "${value}"`);
+                                // console.log(`✓ ZIP Direkte Dropdown ${fieldName} = "${value}"`);
                             }
                         }
                     } catch (directFieldError) {
@@ -855,10 +855,10 @@ async function fillPDFForZip(pdf, data, flatten = true) {
         }
         
         // SCHRITT 2: UNTERSCHRIFT-FELDER (Verarbeite PDF-Felder direkt für korrekte Mappings)
-        console.log('\n=== UNTERSCHRIFT-VERARBEITUNG FÜR ZIP ===');
-        console.log('🔍 Alle Formulardaten für ZIP:', Object.keys(formData));
-        console.log('🔍 Unterschrift-Felder in Formulardaten:', Object.keys(formData).filter(key => 
-            key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')));
+        // console.log('\n=== UNTERSCHRIFT-VERARBEITUNG FÜR ZIP ===');
+        // console.log('🔍 Alle Formulardaten für ZIP:', Object.keys(formData));
+        // console.log('🔍 Unterschrift-Felder in Formulardaten:', Object.keys(formData).filter(key => 
+        //     key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')));
         
         // Durchlaufe alle PDF-Felder die Unterschriften sind
         if (pdfConfig.fields) {
@@ -867,14 +867,14 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                      pdfFieldName.toLowerCase().includes('unterschrift')) &&
                     fieldConfig.type === 'signature') {
                     
-                    console.log(`\n--- Verarbeite PDF-Unterschrift-Feld: ${pdfFieldName} ---`);
+                    // console.log(`\n--- Verarbeite PDF-Unterschrift-Feld: ${pdfFieldName} ---`);
                     
                     // Bestimme welches Formularfeld verwendet werden soll
                     const formFieldName = fieldConfig.mapping || pdfFieldName;
                     const fieldValue = formData[formFieldName];
                     
-                    console.log(`  Mapping: ${pdfFieldName} → ${formFieldName}`);
-                    console.log(`  Wert vorhanden: ${!!fieldValue}`);
+                    // console.log(`  Mapping: ${pdfFieldName} → ${formFieldName}`);
+                    // console.log(`  Wert vorhanden: ${!!fieldValue}`);
                     
                     if (fieldValue && fieldValue.toString().trim() !== '') {
                         let alreadyProcessed = false;
@@ -886,10 +886,10 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                                 field.setText('[Unterschrift eingefügt]');
                                 filledFields++;
                                 alreadyProcessed = true;
-                                console.log(`✓ ZIP: Unterschrift-TextField ${pdfFieldName} gesetzt`);
+                                // console.log(`✓ ZIP: Unterschrift-TextField ${pdfFieldName} gesetzt`);
                             }
                         } catch (e) {
-                            console.log(`  ${pdfFieldName} ist kein PDF-Formularfeld`);
+                            // console.log(`  ${pdfFieldName} ist kein PDF-Formularfeld`);
                         }
                         
                         // Wenn nicht als Formularfeld verarbeitet, als Bild einbetten
@@ -898,38 +898,38 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                                 const success = await embedSignatureInPDF(pdfDoc, pdfFieldName, fieldValue, pdf.name);
                                 if (success) {
                                     filledFields++;
-                                    console.log(`✓ ZIP: Unterschrift ${pdfFieldName} als Bild eingefügt (von ${formFieldName})`);
+                                    // console.log(`✓ ZIP: Unterschrift ${pdfFieldName} als Bild eingefügt (von ${formFieldName})`);
                                 }
                             } catch (signatureError) {
                                 console.warn(`Fehler beim Einbetten der Unterschrift ${pdfFieldName}:`, signatureError);
                             }
                         }
                     } else {
-                        console.log(`  ⏭️ Keine Daten für ${formFieldName}`);
+                        // console.log(`  ⏭️ Keine Daten für ${formFieldName}`);
                     }
                 }
             }
         }
         
         // SCHRITT 2.5: ERWEITERTE UNTERSCHRIFT-BEHANDLUNG (wie in normaler PDF-Generierung)
-        console.log('\n=== ERWEITERTE UNTERSCHRIFT-BEHANDLUNG FÜR ZIP ===');
-        console.log('🔍 Suche nach Base64 Unterschriften...');
+        // console.log('\n=== ERWEITERTE UNTERSCHRIFT-BEHANDLUNG FÜR ZIP ===');
+        // console.log('🔍 Suche nach Base64 Unterschriften...');
         const base64Signatures = Object.entries(formData).filter(([key, value]) => 
             (key.toLowerCase().includes('unterschrift') || key.toLowerCase().includes('signature')) && 
             value && value.startsWith && value.startsWith('data:image/'));
-        console.log(`🔍 Gefundene Base64 Unterschriften (${base64Signatures.length}):`, base64Signatures.map(([key, value]) => 
-            `${key} (${value.substring(0, 50)}...)`));
+        // console.log(`🔍 Gefundene Base64 Unterschriften (${base64Signatures.length}):`, base64Signatures.map(([key, value]) => 
+        //     `${key} (${value.substring(0, 50)}...)`));
             
         for (const [fieldName, fieldValue] of Object.entries(formData)) {
             if ((fieldName.toLowerCase().includes('unterschrift') || fieldName.toLowerCase().includes('signature')) && 
                 fieldValue && fieldValue.startsWith('data:image/')) {
                 
-                console.log(`Verarbeite erweiterte Unterschrift-Feld: ${fieldName}`);
+                // console.log(`Verarbeite erweiterte Unterschrift-Feld: ${fieldName}`);
                 
                 // Prüfe ob diese Unterschrift für dieses PDF konfiguriert ist
                 const signatureConfig = getSignatureConfig(fieldName, pdf.name);
                 if (signatureConfig.x === undefined && signatureConfig.y === undefined) {
-                    console.log(`⏭️ ZIP: Unterschrift ${fieldName} ist nicht für ${pdf.name} konfiguriert - überspringe`);
+                    // console.log(`⏭️ ZIP: Unterschrift ${fieldName} ist nicht für ${pdf.name} konfiguriert - überspringe`);
                     continue;
                 }
                 
@@ -939,7 +939,7 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                     const field = form.getField(fieldName);
                     if (field) {
                         alreadyProcessed = true;
-                        console.log(`ZIP: Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
+                        // console.log(`ZIP: Unterschrift ${fieldName} bereits als Formularfeld verarbeitet`);
                     }
                 } catch (e) {
                     // Feld existiert nicht als Formularfeld - das ist ok
@@ -950,7 +950,7 @@ async function fillPDFForZip(pdf, data, flatten = true) {
                         const success = await embedSignatureInPDF(pdfDoc, fieldName, fieldValue, pdf.name);
                         if (success) {
                             filledFields++;
-                            console.log(`✓ ZIP: Erweiterte Unterschrift ${fieldName} als separates Bild eingefügt`);
+                            // console.log(`✓ ZIP: Erweiterte Unterschrift ${fieldName} als separates Bild eingefügt`);
                         }
                     } catch (signatureError) {
                         console.warn(`Fehler beim Einbetten der erweiterten Unterschrift ${fieldName} für ZIP:`, signatureError);
@@ -963,19 +963,19 @@ async function fillPDFForZip(pdf, data, flatten = true) {
         if (flatten) {
             try {
                 form.flatten();
-                console.log('✓ Formular geflacht für ZIP');
+                // console.log('✓ Formular geflacht für ZIP');
             } catch (flattenError) {
                 console.warn('⚠️ Warnung: Formular konnte nicht geflacht werden:', flattenError);
             }
         }
         
         // SCHRITT 4: PDF-BYTES GENERIEREN UND ALS BLOB ZURÜCKGEBEN
-        console.log('📦 Generiere PDF-Bytes für ZIP...');
+        // console.log('📦 Generiere PDF-Bytes für ZIP...');
         const filledPdfBytes = await pdfDoc.save();
         const blob = new Blob([filledPdfBytes], { type: 'application/pdf' });
         
         const modeText = flatten ? 'geflacht (nicht bearbeitbar)' : 'bearbeitbar';
-        console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} für ZIP (${modeText})`);
+        // console.log(`${filledFields} Felder erfolgreich ausgefüllt in ${pdf.name} für ZIP (${modeText})`);
         
         return blob;
         
@@ -992,7 +992,7 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
     const fieldToGroupMap = {};
     const fieldOrder = [];
     
-    console.log(`=== YAML-PARSING für ${pdfName} ===`);
+    // console.log(`=== YAML-PARSING für ${pdfName} ===`);
     
     // Erst alle Felder sammeln und deren Gruppen bestimmen
     for (let i = 0; i < lines.length; i++) {
@@ -1000,13 +1000,13 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
         
         if (line.trim() === 'fields:') {
             inFieldsSection = true;
-            console.log('Fields-Sektion gefunden');
+            // console.log('Fields-Sektion gefunden');
             continue;
         }
         
         if (inFieldsSection) {
             if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
-                console.log('Ende der Fields-Sektion erreicht');
+                // console.log('Ende der Fields-Sektion erreicht');
                 break;
             }
             
@@ -1015,9 +1015,8 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
             if (fieldMatch) {
                 const fieldName = fieldMatch[1].trim();
                 // Überspringe bekannte Metadaten-Schlüssel
-                if (!['group', 'type', 'description', 'options', 'mapping'].includes(fieldName)) {
+                if (!['group', 'type', 'description', 'options', 'mapping', 'hidden_for_pdfs', 'title', 'signature_width', 'signature_height', 'signature_x', 'signature_y', 'signature_page', 'berechnung'].includes(fieldName)) {
                     fieldOrder.push(fieldName);
-                    console.log(`Feld gefunden: ${fieldName} (Position ${fieldOrder.length})`);
                 
                     let fieldGroup = 'Sonstige';
                 
@@ -1032,7 +1031,7 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
                     const groupMatch = nextLine.match(/^\s+group:\s*(.+)$/);
                     if (groupMatch) {
                         fieldGroup = groupMatch[1].trim();
-                        console.log(`  → Gruppe: ${fieldGroup}`);
+                        // console.log(`  → Gruppe: ${fieldGroup}`);
                         break;
                     }
                 }
@@ -1073,7 +1072,7 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
                 const groupName = groupMatch[1].trim();
                 if (!groupOrder.includes(groupName)) {
                     groupOrder.push(groupName);
-                    console.log(`Gruppe gefunden: ${groupName} (Position ${groupOrder.length})`);
+                    // console.log(`Gruppe gefunden: ${groupName} (Position ${groupOrder.length})`);
                 }
             }
         }
@@ -1090,9 +1089,9 @@ function extractFieldOrderFromYaml(yamlText, pdfName) {
     window.yamlFieldOrders.set(pdfName, extractedOrder);
     window.yamlGroupOrders.set(pdfName, groupOrder);
     
-    console.log(`YAML-Feldreihenfolge für ${pdfName} extrahiert:`, extractedOrder);
-    console.log(`YAML-Gruppenreihenfolge für ${pdfName} extrahiert:`, groupOrder);
-    console.log(`=== ENDE YAML-PARSING ===\n`);
+    // console.log(`YAML-Feldreihenfolge für ${pdfName} extrahiert:`, extractedOrder);
+    // console.log(`YAML-Gruppenreihenfolge für ${pdfName} extrahiert:`, groupOrder);
+    // console.log(`=== ENDE YAML-PARSING ===\n`);
     
     return extractedOrder;
 }
@@ -1109,7 +1108,7 @@ async function loadPDFConfigForFile(pdfName) {
             // Extrahiere Feldreihenfolge aus YAML-Text
             extractFieldOrderFromYaml(yamlText, pdfName);
             
-            console.log(`Konfiguration für ${pdfName} geladen:`, config);
+            // console.log(`Konfiguration für ${pdfName} geladen:`, config);
             return true;
         }
     } catch (error) {
@@ -1121,12 +1120,12 @@ async function loadPDFConfigForFile(pdfName) {
 
 async function loadPDFsFromDirectory() {
     try {
-        console.log('🔍 Versuche config.yaml zu laden von:', '../config.yaml');
-        console.log('🌐 Aktuelle URL:', window.location.href);
+        // console.log('🔍 Versuche config.yaml zu laden von:', '../config.yaml');
+        // console.log('🌐 Aktuelle URL:', window.location.href);
         
         // Lade config.yaml für PDF-Liste
         const configResponse = await fetch('../config.yaml');
-        console.log('📄 Config response status:', configResponse.status);
+        // console.log('📄 Config response status:', configResponse.status);
         
         if (!configResponse.ok) {
             throw new Error(`config.yaml nicht gefunden (Status: ${configResponse.status}). URL: ${window.location.href}`);
@@ -1139,22 +1138,22 @@ async function loadPDFsFromDirectory() {
             throw new Error('Keine PDFs in config.yaml definiert');
         }
         
-        console.log(`Lade ${config.pdfs.length} PDFs aus config.yaml`);
+        // console.log(`Lade ${config.pdfs.length} PDFs aus config.yaml`);
         
         for (const pdfInfo of config.pdfs) {
             const pdfName = pdfInfo.name;
             
             try {
-                console.log(`🔄 Lade PDF: ${pdfName}`);
+                // console.log(`🔄 Lade PDF: ${pdfName}`);
                 const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
                 if (response.ok) {
-                    console.log(`📥 Response OK für ${pdfName}, Größe: ${response.headers.get('content-length')} bytes`);
+                    // console.log(`📥 Response OK für ${pdfName}, Größe: ${response.headers.get('content-length')} bytes`);
                     const arrayBuffer = await response.arrayBuffer();
-                    console.log(`📦 ArrayBuffer erhalten für ${pdfName}, Größe: ${arrayBuffer.byteLength} bytes`);
+                    // console.log(`📦 ArrayBuffer erhalten für ${pdfName}, Größe: ${arrayBuffer.byteLength} bytes`);
                     const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-                    console.log(`✅ PDF-Dokument geladen für ${pdfName}`);
+                    // console.log(`✅ PDF-Dokument geladen für ${pdfName}`);
                     const fields = await extractFieldsFromPDF(pdfDoc, pdfName);
-                    console.log(`📝 ${fields.length} Felder extrahiert für ${pdfName}`);
+                    // console.log(`📝 ${fields.length} Felder extrahiert für ${pdfName}`);
                     
                     // Lade individuelle Konfiguration für dieses PDF
                     const hasConfig = await loadPDFConfigForFile(pdfName);
@@ -1199,7 +1198,7 @@ async function extractFieldsFromPDF(pdfDoc, pdfName) {
     
     // Fallback-Modus wenn pdfDoc null ist (beschädigtes PDF)
     if (!pdfDoc) {
-        console.log(`Verwende Fallback-Felder für ${pdfName}`);
+        // console.log(`Verwende Fallback-Felder für ${pdfName}`);
         if (pdfName.includes('5120') || pdfName.includes('Arbeitgeber') || pdfName.includes('EV')) {
             extractedFields.push(
                 'Nachname', 'Vorname', 'DienstgradDerReserve', 'Personalnummer', 'Personenkennziffer',
@@ -1228,7 +1227,7 @@ async function extractFieldsFromPDF(pdfDoc, pdfName) {
             if (field.constructor.name === 'PDFRadioGroup') {
                 try {
                     const options = field.getOptions();
-                    console.log(`Radio Group ${fieldName} gefunden mit Optionen:`, options);
+                    // console.log(`Radio Group ${fieldName} gefunden mit Optionen:`, options);
                 } catch (error) {
                     console.warn(`Fehler beim Auslesen der Radio Group Optionen für ${fieldName}:`, error);
                 }

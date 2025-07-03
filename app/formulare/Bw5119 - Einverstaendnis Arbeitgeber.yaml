@@ -14,7 +14,10 @@ groups:
   Sonstige:
     title: 📋 Sonstige Felder
     description: Weitere Informationen
+
 fields:
+  NameDesUnternehmens:
+    group: Persönliche Daten
   Datum:
     group: Persönliche Daten
     type: date
@@ -55,6 +58,7 @@ fields:
     group: Persönliche Daten
     type: tel
     mapping: Telefon
+  
   fromDate1:
     group: Dienstleistung
     type: date
@@ -63,38 +67,39 @@ fields:
     group: Dienstleistung
     type: date
     mapping: bis
-  NameDesUnternehmens:
-    group: Arbeitgeber
   fromDate2:
-    group: Arbeitgeber
+    group: Dienstleistung
     type: date
   toDate2:
-    group: Arbeitgeber
+    group: Dienstleistung
     type: date
   fromDate3:
-    group: Arbeitgeber
+    group: Dienstleistung
     type: date
   toDate3:
-    group: Arbeitgeber
+    group: Dienstleistung
     type: date
-  Einverstanden:
-    group: Arbeitgeber
-    type: checkbox
-  NichtEinverstanden:
-    group: Arbeitgeber
-    type: checkbox
-  EinverstnadenImJahr:
-    group: Arbeitgeber
-  Ort:
-    group: Arbeitgeber
+  
   Group1:
     group: Arbeitgeber
+    title: Einverständniserklärung
+    type: group
+    options:
+      - Einverstanden
+      - NichtEinverstanden
+      - EinverstandenImJahr
   JahrEinverstanden:
     group: Arbeitgeber
     type: text
-  Signature2:
-    group: Unterschriften
+
+
+  Ort:
+    group: Arbeitgeber
     type: text
-    mapping: Unterschrift
-    hidden_for_pdfs:
-      - Bw5119 - Einverstaendnis Arbeitgeber.pdf
+
+  EinverstnadenImJahr:
+    type: hidden        
+  Einverstanden:
+    type: hidden    
+  NichtEinverstanden:
+    type: hidden    

@@ -3,11 +3,11 @@
 
 // Email-Client Navigation System
 function showView(viewName) {
-    console.log(`🔄 Switching to view: ${viewName}`);
+    // console.log(`🔄 Switching to view: ${viewName}`);
     
     // Handle live preview when leaving form-fields view
     if (viewName !== 'form-fields' && window.livePreview && window.livePreview.isActive) {
-        console.log('🔄 Disabling live preview when leaving form-fields view');
+    // console.log('🔄 Disabling live preview when leaving form-fields view');
         // Disable live preview to clean up layout classes
         if (typeof toggleLivePreview === 'function') {
             toggleLivePreview();
@@ -71,9 +71,9 @@ function switchTab(tabName) {
 
 // Go to form fields view (called from PDF selection)
 function goToFormFields() {
-    console.log('=== goToFormFields() aufgerufen ===');
-    console.log('Ausgewählte PDFs:', Array.from(window.selectedPDFs));
-    console.log('window.selectedPDFs.size:', window.selectedPDFs.size);
+    // console.log('=== goToFormFields() aufgerufen ===');
+    // console.log('Ausgewählte PDFs:', Array.from(window.selectedPDFs));
+    // console.log('window.selectedPDFs.size:', window.selectedPDFs.size);
     
     if (window.selectedPDFs.size === 0) {
         console.error('FEHLER: Keine PDFs ausgewählt beim Wechsel zu Formularfeldern');
@@ -87,11 +87,11 @@ function goToFormFields() {
         formFieldsMenuItem.classList.remove('disabled');
     }
     
-    console.log('Rufe generateFormForSelectedPDFs() auf...');
+    // console.log('Rufe generateFormForSelectedPDFs() auf...');
     generateFormForSelectedPDFs();
-    console.log('generateFormForSelectedPDFs() beendet');
+    // console.log('generateFormForSelectedPDFs() beendet');
     
-    console.log('Wechsle zu form-fields view...');
+    // console.log('Wechsle zu form-fields view...');
     showView('form-fields');
     
     // Automatically enable live preview and select first PDF
@@ -99,12 +99,12 @@ function goToFormFields() {
         enableLivePreviewAutomatically();
     }, 500);
     
-    console.log('View-Wechsel abgeschlossen');
+    // console.log('View-Wechsel abgeschlossen');
 }
 
 function generatePDFSelection() {
-    console.log('📋 generatePDFSelection() called');
-    console.log('📋 availablePDFs:', window.availablePDFs?.length || 'undefined');
+    // console.log('📋 generatePDFSelection() called');
+    // console.log('📋 availablePDFs:', window.availablePDFs?.length || 'undefined');
     
     const container = document.getElementById('pdfSelection');
     if (!container) {
@@ -119,7 +119,7 @@ function generatePDFSelection() {
         return;
     }
     
-    console.log(`📋 Generiere ${window.availablePDFs.length} PDF-Optionen`);
+    // console.log(`📋 Generiere ${window.availablePDFs.length} PDF-Optionen`);
     
     window.availablePDFs.forEach((pdf, index) => {
         const fieldsPreview = generateFieldsPreview(pdf.fields);
@@ -187,8 +187,8 @@ function toggleFields(element) {
 }
 
 function onPDFSelectionChange() {
-    console.log('=== onPDFSelectionChange() aufgerufen ===');
-    console.log('window.selectedPDFs before clear:', window.selectedPDFs);
+    // console.log('=== onPDFSelectionChange() aufgerufen ===');
+    // console.log('window.selectedPDFs before clear:', window.selectedPDFs);
     
     if (!window.selectedPDFs) {
         console.error('❌ window.selectedPDFs ist nicht initialisiert!');
@@ -197,17 +197,17 @@ function onPDFSelectionChange() {
     
     // Debug: Check DOM structure
     const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-    console.log('🔍 Alle Checkboxen gefunden:', allCheckboxes.length);
+    // console.log('🔍 Alle Checkboxen gefunden:', allCheckboxes.length);
     allCheckboxes.forEach((cb, index) => {
-        console.log(`  Checkbox ${index}:`, cb.id, cb.value, 'closest(.pdf-checkbox):', !!cb.closest('.pdf-checkbox'));
+    // console.log(`  Checkbox ${index}:`, cb.id, cb.value, 'closest(.pdf-checkbox):', !!cb.closest('.pdf-checkbox'));
     });
     
     window.selectedPDFs.clear();
     const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
-    console.log('Gefundene aktivierte Checkboxen:', checkedBoxes.length);
+    // console.log('Gefundene aktivierte Checkboxen:', checkedBoxes.length);
     
     checkedBoxes.forEach(checkbox => {
-        console.log('Aktivierte Checkbox:', checkbox.value);
+    // console.log('Aktivierte Checkbox:', checkbox.value);
         window.selectedPDFs.add(checkbox.value);
         
         const pdfCheckboxElement = checkbox.closest('.pdf-checkbox');
@@ -227,13 +227,13 @@ function onPDFSelectionChange() {
         }
     });
     
-    console.log('Neue Auswahl - selectedPDFs:', Array.from(window.selectedPDFs));
-    console.log('selectedPDFs.size:', window.selectedPDFs.size);
+    // console.log('Neue Auswahl - selectedPDFs:', Array.from(window.selectedPDFs));
+    // console.log('selectedPDFs.size:', window.selectedPDFs.size);
     
     updateSelectionSummary();
     updateNextButton();
     
-    console.log('onPDFSelectionChange() beendet');
+    // console.log('onPDFSelectionChange() beendet');
     
     // Keep the last selected PDF visible in preview
     updatePDFPreviewForSelection();
@@ -269,27 +269,27 @@ function updateNextButton() {
     const nextButton = document.getElementById('nextButton');
     const formFieldsMenuItem = document.getElementById('formFieldsMenuItem');
     
-    console.log('🔄 updateNextButton() - selectedPDFs.size:', window.selectedPDFs?.size || 'undefined');
-    console.log('🔄 nextButton found:', !!nextButton);
-    console.log('🔄 formFieldsMenuItem found:', !!formFieldsMenuItem);
+    // console.log('🔄 updateNextButton() - selectedPDFs.size:', window.selectedPDFs?.size || 'undefined');
+    // console.log('🔄 nextButton found:', !!nextButton);
+    // console.log('🔄 formFieldsMenuItem found:', !!formFieldsMenuItem);
     
     if (window.selectedPDFs && window.selectedPDFs.size > 0) {
         if (nextButton) {
             nextButton.disabled = false;
-            console.log('✅ Next button enabled');
+    // console.log('✅ Next button enabled');
         }
         if (formFieldsMenuItem) {
             formFieldsMenuItem.classList.remove('disabled');
-            console.log('✅ Form fields menu item enabled');
+    // console.log('✅ Form fields menu item enabled');
         }
     } else {
         if (nextButton) {
             nextButton.disabled = true;
-            console.log('❌ Next button disabled');
+    // console.log('❌ Next button disabled');
         }
         if (formFieldsMenuItem) {
             formFieldsMenuItem.classList.add('disabled');
-            console.log('❌ Form fields menu item disabled');
+    // console.log('❌ Form fields menu item disabled');
         }
     }
 }
@@ -495,26 +495,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Automatically enable live preview and select first PDF
 function enableLivePreviewAutomatically() {
-    console.log('🔄 Live-Vorschau wird aktiviert');
+    // console.log('🔄 Live-Vorschau wird aktiviert');
     
     // Enable live preview if not already active
     if (!window.livePreview || !window.livePreview.isActive) {
         if (typeof toggleLivePreview === 'function') {
             toggleLivePreview();
-            console.log('✅ Live-Vorschau aktiviert');
+    // console.log('✅ Live-Vorschau aktiviert');
             
             // The toggleLivePreview function will call initializeLivePreview()
             // which already handles auto-selection of the first PDF, so we don't need to do it here
         }
     } else {
-        console.log('Live-Vorschau bereits aktiv');
+    // console.log('Live-Vorschau bereits aktiv');
         
         // If already active, just make sure the dropdown is populated
         const pdfSelector = document.getElementById('livePreviewPDFSelector');
         if (pdfSelector && window.selectedPDFs && window.selectedPDFs.size > 0) {
             // Check if dropdown is empty and repopulate if needed
             if (pdfSelector.children.length <= 1) {
-                console.log('🔄 Dropdown ist leer, fülle es neu...');
+    // console.log('🔄 Dropdown ist leer, fülle es neu...');
                 
                 pdfSelector.innerHTML = '<option value="">PDF auswählen...</option>';
                 window.selectedPDFs.forEach(pdfName => {
@@ -532,7 +532,7 @@ function enableLivePreviewAutomatically() {
                     switchLivePreviewPDF();
                 }
                 
-                console.log(`✅ Dropdown neu gefüllt und erstes PDF ausgewählt: ${firstPDF}`);
+    // console.log(`✅ Dropdown neu gefüllt und erstes PDF ausgewählt: ${firstPDF}`);
             }
         }
     }
@@ -542,7 +542,7 @@ function enableLivePreviewAutomatically() {
 let currentlySelectedPDF = null; // Track last selected PDF
 
 function showPDFPreview(pdf) {
-    console.log('📄 Showing PDF preview for:', pdf.name);
+    // console.log('📄 Showing PDF preview for:', pdf.name);
     
     const previewContent = document.getElementById('pdfPreviewContent');
     if (!previewContent) {
@@ -573,7 +573,7 @@ async function loadActualPDFPreview(pdf) {
     }
     
     try {
-        console.log('🔄 Loading PDF preview for:', pdf.name);
+    // console.log('🔄 Loading PDF preview for:', pdf.name);
         
         // Load the PDF file - correct path relative to main app
         const pdfPath = `../formulare/${pdf.name}`;
@@ -610,7 +610,7 @@ async function loadActualPDFPreview(pdf) {
             <embed src="${url}" type="application/pdf" width="100%" height="100%" style="border: none; border-radius: 4px;">
         `;
         
-        console.log('✅ PDF preview loaded successfully for:', pdf.name);
+    // console.log('✅ PDF preview loaded successfully for:', pdf.name);
         
     } catch (error) {
         console.warn('❌ Error loading PDF preview:', error);
@@ -637,12 +637,12 @@ function updatePDFPreviewForSelection() {
         if (pdf) {
             currentlySelectedPDF = pdf;
             showPDFPreview(pdf);
-            console.log('📄 Updated preview for selected PDF:', lastSelectedPDFName);
+    // console.log('📄 Updated preview for selected PDF:', lastSelectedPDFName);
         }
     } else if (currentlySelectedPDF) {
         // If no PDFs are selected but we had one before, keep showing it
         showPDFPreview(currentlySelectedPDF);
-        console.log('📄 Keeping previous PDF in preview');
+    // console.log('📄 Keeping previous PDF in preview');
     } else {
         // Show placeholder
         showPDFPreviewPlaceholder();
@@ -661,4 +661,4 @@ function showPDFPreviewPlaceholder() {
     }
 }
 
-console.log('✅ UI Manager (Email-Client Style) loaded');
+    // console.log('✅ UI Manager (Email-Client Style) loaded');

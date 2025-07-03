@@ -32,7 +32,7 @@ function getAllFormData() {
             const fieldName = signatureInput.name || signatureInput.id;
             if (fieldName && signatureInput.value) {
                 formData[fieldName] = signatureInput.value;
-                console.log(`Unterschrift-Feld ${fieldName} erfasst: ${signatureInput.value.substring(0, 50)}...`);
+    // console.log(`Unterschrift-Feld ${fieldName} erfasst: ${signatureInput.value.substring(0, 50)}...`);
             }
         });
         
@@ -66,7 +66,7 @@ function getAllFormData() {
         }
     });
     
-    console.log('Gesammelte Formulardaten:', formData);
+    // console.log('Gesammelte Formulardaten:', formData);
     return formData;
 }
 
@@ -107,7 +107,7 @@ function restoreSignatureDisplay(fieldId, base64Data) {
         return;
     }
     
-    console.log(`Stelle Unterschrift für Feld ${fieldId} wieder her`);
+    // console.log(`Stelle Unterschrift für Feld ${fieldId} wieder her`);
     
     // Canvas wiederherstellen (falls im Zeichnen-Modus)
     if (window.signatures && window.signatures.has(fieldId)) {
@@ -121,7 +121,7 @@ function restoreSignatureDisplay(fieldId, base64Data) {
         preview.classList.add('has-signature');
     }
     
-    console.log(`✓ Unterschrift für ${fieldId} wiederhergestellt`);
+    // console.log(`✓ Unterschrift für ${fieldId} wiederhergestellt`);
 }
 
 
@@ -195,15 +195,15 @@ function loadData(event) {
                 }
             });
             
-            console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
+    // console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
             
             // Nur Daten in hiddenData speichern, die NICHT in sichtbaren Feldern vorkommen
             Object.keys(formData).forEach(key => {
                 if (!visibleFieldNames.has(key)) {
                     window.hiddenData[key] = formData[key];
-                    console.log(`Feld ${key} als versteckt markiert`);
+    // console.log(`Feld ${key} als versteckt markiert`);
                 } else {
-                    console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
+    // console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
                 }
             });
             
@@ -211,7 +211,7 @@ function loadData(event) {
             for (const [key, value] of Object.entries(formData)) {
                 // URL-Parameter haben Vorrang - überspringen wenn URL-Parameter vorhanden
                 if (window.urlParamData && window.urlParamData.hasOwnProperty(key)) {
-                    console.log(`Feld ${key} wird durch URL-Parameter geschützt`);
+    // console.log(`Feld ${key} wird durch URL-Parameter geschützt`);
                     continue;
                 }
                 
@@ -229,7 +229,7 @@ function loadData(event) {
                     } else {
                         element.value = value;
                     }
-                    console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
+    // console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
                 } else {
                     // Radio Button Gruppen
                     const radioButtons = document.querySelectorAll(`input[type="radio"][name="${key}"]`);
@@ -237,7 +237,7 @@ function loadData(event) {
                         radioButtons.forEach(radio => {
                             radio.checked = radio.value === value;
                         });
-                        console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
+    // console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
                     }
                 }
             }
@@ -256,7 +256,7 @@ function loadData(event) {
                     
                     // Falls nicht gefunden, versuche fuzzy matching (für umbenannte PDFs)
                     if (!checkbox) {
-                        console.log(`⚠️ PDF ${pdfName} nicht gefunden, versuche fuzzy matching...`);
+    // console.log(`⚠️ PDF ${pdfName} nicht gefunden, versuche fuzzy matching...`);
                         
                         // Versuche ähnliche Namen zu finden
                         const allCheckboxes = document.querySelectorAll('.pdf-checkbox input[type="checkbox"]');
@@ -273,7 +273,7 @@ function loadData(event) {
                             if (normalizedStored === normalizedAvailable) {
                                 checkbox = cb;
                                 actualPdfName = cb.value;
-                                console.log(`✅ Fuzzy match gefunden: ${pdfName} -> ${actualPdfName}`);
+    // console.log(`✅ Fuzzy match gefunden: ${pdfName} -> ${actualPdfName}`);
                                 break;
                             }
                         }
@@ -283,7 +283,7 @@ function loadData(event) {
                         window.selectedPDFs.add(actualPdfName);
                         checkbox.checked = true;
                         checkbox.closest('.pdf-checkbox').classList.add('selected');
-                        console.log(`✅ PDF ausgewählt: ${actualPdfName}`);
+    // console.log(`✅ PDF ausgewählt: ${actualPdfName}`);
                     } else {
                         console.warn(`❌ PDF nicht gefunden: ${pdfName}`);
                     }
@@ -337,24 +337,24 @@ async function loadExampleData() {
             }
         });
         
-        console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
+    // console.log('Sichtbare Felder:', Array.from(visibleFieldNames));
         
         // Nur Daten in hiddenData speichern, die NICHT in sichtbaren Feldern vorkommen
         Object.keys(formData).forEach(key => {
             if (!visibleFieldNames.has(key)) {
                 window.hiddenData[key] = formData[key];
-                console.log(`Feld ${key} als versteckt markiert`);
+    // console.log(`Feld ${key} als versteckt markiert`);
             } else {
-                console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
+    // console.log(`Feld ${key} ist sichtbar - nicht in hiddenData`);
             }
         });
         
         // Formularfelder setzen (nur sichtbare Felder)
-        console.log('🔒 URL-Parameter Schutz aktiv für Felder:', Object.keys(window.urlParamData || {}));
+    // console.log('🔒 URL-Parameter Schutz aktiv für Felder:', Object.keys(window.urlParamData || {}));
         for (const [key, value] of Object.entries(formData)) {
             // URL-Parameter haben Vorrang - überspringen wenn URL-Parameter vorhanden
             if (window.urlParamData && window.urlParamData.hasOwnProperty(key)) {
-                console.log(`🔒 Feld ${key} wird durch URL-Parameter geschützt (Beispieldaten) - URL-Wert: ${window.urlParamData[key]}, Beispiel-Wert: ${value}`);
+    // console.log(`🔒 Feld ${key} wird durch URL-Parameter geschützt (Beispieldaten) - URL-Wert: ${window.urlParamData[key]}, Beispiel-Wert: ${value}`);
                 continue;
             }
             
@@ -372,7 +372,7 @@ async function loadExampleData() {
                 } else {
                     element.value = value;
                 }
-                console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
+    // console.log(`Feld ${key} gesetzt mit Wert: ${value}`);
             } else {
                 // Radio Button Gruppen
                 const radioButtons = document.querySelectorAll(`input[type="radio"][name="${key}"]`);
@@ -380,7 +380,7 @@ async function loadExampleData() {
                     radioButtons.forEach(radio => {
                         radio.checked = radio.value === value;
                     });
-                    console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
+    // console.log(`Radio-Gruppe ${key} gesetzt mit Wert: ${value}`);
                 }
             }
         }
@@ -391,7 +391,7 @@ async function loadExampleData() {
         }
         
         // Sofort Berechnungen ausführen nach dem Setzen der Daten
-        console.log('🧮 Führe Berechnungen direkt nach Beispieldaten-Laden aus...');
+    // console.log('🧮 Führe Berechnungen direkt nach Beispieldaten-Laden aus...');
         if (typeof calculateAllFields === 'function') {
             calculateAllFields();
         }
@@ -399,12 +399,12 @@ async function loadExampleData() {
         // Live-Vorschau sofort nach dem Setzen der Formulardaten aktualisieren
         if (window.livePreview && window.livePreview.isActive && typeof updateLivePreview === 'function') {
             updateLivePreview();
-            console.log('✅ Live-Vorschau nach Beispieldaten-Laden aktualisiert');
+    // console.log('✅ Live-Vorschau nach Beispieldaten-Laden aktualisiert');
         }
         
         // Versteckte Daten anzeigen und Berechnungen nach dem Laden ausführen
         setTimeout(() => {
-            console.log('🧮 Starte zusätzliche Berechnungen nach Beispieldaten-Laden...');
+    // console.log('🧮 Starte zusätzliche Berechnungen nach Beispieldaten-Laden...');
             updateHiddenDataSection();
             addCalculationEventListeners();
             calculateAllFields();
@@ -416,7 +416,7 @@ async function loadExampleData() {
             if (window.livePreview && window.livePreview.isActive && typeof updateLivePreview === 'function') {
                 setTimeout(() => {
                     updateLivePreview();
-                    console.log('✅ Live-Vorschau nach Berechnungen nochmals aktualisiert');
+    // console.log('✅ Live-Vorschau nach Berechnungen nochmals aktualisiert');
                 }, 50);
             }
         }, 100);
@@ -441,9 +441,9 @@ function parseUrlParams() {
     let hasParams = false;
     let content = '<ul>';
     
-    console.log('🔗 Parsing URL parameters...');
+    // console.log('🔗 Parsing URL parameters...');
     for (const [key, value] of urlParams) {
-        console.log(`📋 URL-Parameter gefunden: ${key} = ${value}`);
+    // console.log(`📋 URL-Parameter gefunden: ${key} = ${value}`);
         // In urlParamData speichern für Vorrang bei loadData
         window.urlParamData[key] = value;
         
@@ -710,7 +710,7 @@ function showUrlParameterDialog(activeValues) {
 // Load settings data into form fields (called when loading saved data)
 function loadSettingsToForm() {
     try {
-        console.log('🔄 Lade Einstellungen in Formularfelder...');
+    // console.log('🔄 Lade Einstellungen in Formularfelder...');
         
         if (window.appSettings) {
             // Update settings form fields if they exist
@@ -734,7 +734,7 @@ function loadSettingsToForm() {
                 emailBody.value = window.appSettings.emailBody;
             }
             
-            console.log('✅ Einstellungen in Formular geladen');
+    // console.log('✅ Einstellungen in Formular geladen');
         }
     } catch (error) {
         console.error('Fehler beim Laden der Einstellungen in Formular:', error);
@@ -745,5 +745,5 @@ function loadSettingsToForm() {
 function updateHiddenDataSection() {
     // Placeholder Funktion - kann in Zukunft implementiert werden
     // für die Anzeige versteckter Felder oder Debugging-Informationen
-    console.log('updateHiddenDataSection() aufgerufen');
+    // console.log('updateHiddenDataSection() aufgerufen');
 }

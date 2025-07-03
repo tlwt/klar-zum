@@ -376,7 +376,7 @@ async function saveConfigDirect() {
         }
         
         if (response.ok) {
-            showConfigStatus(`✅ Konfiguration ${configName} erfolgreich gespeichert!`, 'success');
+            showNotification(`Konfiguration ${configName} erfolgreich gespeichert!`, 'success');
         } else {
             // Fallback: Download anbieten
             throw new Error(`Server-Antwort: ${response.status} ${response.statusText}`);

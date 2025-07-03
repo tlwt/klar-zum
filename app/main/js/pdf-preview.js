@@ -76,7 +76,7 @@ function toggleLivePreview() {
 }
 
 async function initializeLivePreview() {
-    console.log('🎬 initializeLivePreview() gestartet');
+    // console.log('🎬 initializeLivePreview() gestartet');
     const selector = document.getElementById('livePreviewPDFSelector');
     
     if (!selector) {
@@ -84,7 +84,7 @@ async function initializeLivePreview() {
         return;
     }
     
-    console.log('📋 window.selectedPDFs:', Array.from(window.selectedPDFs || []));
+    // console.log('📋 window.selectedPDFs:', Array.from(window.selectedPDFs || []));
     
     // PDF-Auswahl aktualisieren
     selector.innerHTML = '<option value="">PDF auswählen...</option>';
@@ -95,10 +95,10 @@ async function initializeLivePreview() {
             option.value = pdfName;
             option.textContent = pdfName;
             selector.appendChild(option);
-            console.log(`➕ Option hinzugefügt: ${pdfName}`);
+    // console.log(`➕ Option hinzugefügt: ${pdfName}`);
         });
         
-        console.log(`✅ ${selector.children.length - 1} PDF-Optionen hinzugefügt`);
+    // console.log(`✅ ${selector.children.length - 1} PDF-Optionen hinzugefügt`);
     } else {
         console.warn('⚠️ Keine selectedPDFs gefunden!');
     }
@@ -120,7 +120,7 @@ async function initializeLivePreview() {
 }
 
 async function switchLivePreviewPDF() {
-    console.log('🔄 switchLivePreviewPDF() aufgerufen');
+    // console.log('🔄 switchLivePreviewPDF() aufgerufen');
     
     const selector = document.getElementById('livePreviewPDFSelector');
     if (!selector) {
@@ -129,10 +129,10 @@ async function switchLivePreviewPDF() {
     }
     
     const selectedPDF = selector.value;
-    console.log('📄 Ausgewähltes PDF:', selectedPDF);
+    // console.log('📄 Ausgewähltes PDF:', selectedPDF);
     
     if (!selectedPDF) {
-        console.log('⚠️ Kein PDF ausgewählt, beende Funktion');
+    // console.log('⚠️ Kein PDF ausgewählt, beende Funktion');
         return;
     }
 
@@ -140,20 +140,20 @@ async function switchLivePreviewPDF() {
     
     try {
         // PDF-Objekt finden
-        console.log('🔍 Suche PDF-Info für:', selectedPDF);
+    // console.log('🔍 Suche PDF-Info für:', selectedPDF);
         const pdfInfo = window.availablePDFs.find(pdf => pdf.name === selectedPDF);
         if (!pdfInfo) {
             console.error('❌ PDF nicht in availablePDFs gefunden:', selectedPDF);
-            console.log('Available PDFs:', window.availablePDFs.map(p => p.name));
+    // console.log('Available PDFs:', window.availablePDFs.map(p => p.name));
             throw new Error('PDF nicht gefunden');
         }
         
-        console.log('✅ PDF-Info gefunden:', pdfInfo.name);
+    // console.log('✅ PDF-Info gefunden:', pdfInfo.name);
 
         window.livePreview.currentPDF = selectedPDF;
         window.livePreview.currentPage = 1;
         
-        console.log('🔄 Erzwinge PDF-Wechsel...');
+    // console.log('🔄 Erzwinge PDF-Wechsel...');
         // Force update by resetting last form data and calling update
         window.livePreview.lastFormData = null; // Reset to force update
         await updateLivePreview();
@@ -176,12 +176,12 @@ async function switchLivePreviewPDF() {
 
 // Live-Update-Funktion die bei Formular-Änderungen aufgerufen wird
 async function updateLivePreview() {
-    console.log('📄 updateLivePreview() gestartet');
-    console.log('  isActive:', window.livePreview.isActive);
-    console.log('  currentPDF:', window.livePreview.currentPDF);
+    // console.log('📄 updateLivePreview() gestartet');
+    // console.log('  isActive:', window.livePreview.isActive);
+    // console.log('  currentPDF:', window.livePreview.currentPDF);
     
     if (!window.livePreview.isActive || !window.livePreview.currentPDF) {
-        console.log('❌ Abbruch: Live-Vorschau inaktiv oder kein PDF ausgewählt');
+    // console.log('❌ Abbruch: Live-Vorschau inaktiv oder kein PDF ausgewählt');
         return;
     }
 
@@ -191,15 +191,15 @@ async function updateLivePreview() {
         
         // Prüfe ob sich die Daten geändert haben
         const formDataString = JSON.stringify(formData);
-        console.log('🔍 Formdata-Check:', formDataString === window.livePreview.lastFormData ? 'GLEICH' : 'UNTERSCHIEDLICH');
+    // console.log('🔍 Formdata-Check:', formDataString === window.livePreview.lastFormData ? 'GLEICH' : 'UNTERSCHIEDLICH');
         
         if (formDataString === window.livePreview.lastFormData) {
-            console.log('⏭️ Keine Änderung der Formulardaten, überspringe Update');
+    // console.log('⏭️ Keine Änderung der Formulardaten, überspringe Update');
             return; // Keine Änderung
         }
         window.livePreview.lastFormData = formDataString;
 
-        console.log('🔄 Live-Vorschau aktualisieren...');
+    // console.log('🔄 Live-Vorschau aktualisieren...');
         
         // PDF-Objekt finden
         const pdfInfo = window.availablePDFs.find(pdf => pdf.name === window.livePreview.currentPDF);
@@ -314,7 +314,7 @@ async function createFilledPDFForLivePreview(pdfInfo, formData) {
                 // Prüfe ob diese Unterschrift für dieses PDF konfiguriert ist
                 const signatureConfig = getSignatureConfig(fieldName, pdfInfo.name);
                 if (signatureConfig.x === undefined && signatureConfig.y === undefined) {
-                    console.log(`⏭️ Live-Vorschau: Unterschrift ${fieldName} ist nicht für ${pdfInfo.name} konfiguriert - überspringe`);
+    // console.log(`⏭️ Live-Vorschau: Unterschrift ${fieldName} ist nicht für ${pdfInfo.name} konfiguriert - überspringe`);
                     continue;
                 }
                 
@@ -486,7 +486,7 @@ function calculateOptimalScale() {
         const containerWidth = previewContent.clientWidth * 0.95; // 95% of container width
         const containerHeight = previewContent.clientHeight * 0.95; // 95% of container height
         
-        console.log(`📐 Container size: ${containerWidth}x${containerHeight}`);
+    // console.log(`📐 Container size: ${containerWidth}x${containerHeight}`);
         
         return { containerWidth, containerHeight };
     } catch (error) {
@@ -502,7 +502,7 @@ async function renderLivePreviewPage() {
     }
 
     try {
-        console.log(`Rendering Live-Vorschau Seite ${window.livePreview.currentPage} von ${window.livePreview.totalPages}`);
+    // console.log(`Rendering Live-Vorschau Seite ${window.livePreview.currentPage} von ${window.livePreview.totalPages}`);
         
         const page = await window.livePreview.pdfDocument.getPage(window.livePreview.currentPage);
         
@@ -514,7 +514,7 @@ async function renderLivePreviewPage() {
             const scaleY = containerInfo.containerHeight / originalViewport.height;
             const optimalScale = Math.min(scaleX, scaleY, 3.0); // Max scale of 3.0 to prevent too large images
             
-            console.log(`📐 Calculated scale: ${optimalScale.toFixed(2)} (PDF: ${originalViewport.width}x${originalViewport.height})`);
+    // console.log(`📐 Calculated scale: ${optimalScale.toFixed(2)} (PDF: ${originalViewport.width}x${originalViewport.height})`);
             window.livePreview.scale = optimalScale;
         }
         
@@ -534,7 +534,7 @@ async function renderLivePreviewPage() {
         };
         
         await page.render(renderContext).promise;
-        console.log(`✓ Live-Vorschau Seite ${window.livePreview.currentPage} erfolgreich gerendert`);
+    // console.log(`✓ Live-Vorschau Seite ${window.livePreview.currentPage} erfolgreich gerendert`);
         
         // Canvas sichtbar machen
         showLivePreviewLoading(false);

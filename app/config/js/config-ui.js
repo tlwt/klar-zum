@@ -364,6 +364,44 @@ function closeMoveFieldDialog() {
     }
 }
 
+// Modern Notification System
+function showNotification(message, type = 'success', duration = 4000) {
+    const container = document.getElementById('notificationContainer');
+    if (!container) return;
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    notification.innerHTML = `
+        <div class="notification-icon">${icons[type] || icons.success}</div>
+        <div class="notification-message">${message}</div>
+        <button class="notification-close" onclick="closeNotification(this)">×</button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Auto remove
+    setTimeout(() => closeNotification(notification.querySelector('.notification-close')), duration);
+}
+
+function closeNotification(closeBtn) {
+    const notification = closeBtn.closest('.notification');
+    if (notification) {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }
+}
+
 function addVirtualField(groupName) {
     const fieldName = prompt('Name des virtuellen Feldes:');
     if (!fieldName || fieldName.trim() === '') return;

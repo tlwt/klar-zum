@@ -6,13 +6,13 @@ function generateFormForSelectedPDFs() {
     container.innerHTML = '';
     window.calculatedFields.clear();
     
-    console.log('=== DEBUGGING: generateFormForSelectedPDFs ===');
-    console.log('Ausgewählte PDFs:', Array.from(window.selectedPDFs));
-    console.log('Verfügbare PDF-Felder:', window.pdfFields);
-    console.log('PDF-Konfigurationen:', window.pdfConfigs);
+    // console.log('=== DEBUGGING: generateFormForSelectedPDFs ===');
+    // console.log('Ausgewählte PDFs:', Array.from(window.selectedPDFs));
+    // console.log('Verfügbare PDF-Felder:', window.pdfFields);
+    // console.log('PDF-Konfigurationen:', window.pdfConfigs);
     
     if (window.selectedPDFs.size === 0) {
-        console.log('FEHLER: Keine PDFs ausgewählt');
+        // console.log('FEHLER: Keine PDFs ausgewählt');
         container.innerHTML = '<div class="form-section"><h3>ℹ️ Keine PDFs ausgewählt</h3><p class="description">Bitte gehen Sie zurück und wählen Sie mindestens ein PDF aus.</p></div>';
         return;
     }
@@ -21,7 +21,7 @@ function generateFormForSelectedPDFs() {
     const fieldMappings = new Map();
     const fieldCalculations = new Map();
     
-    console.log('=== DEBUG: Feldanalyse ===');
+    // console.log('=== DEBUG: Feldanalyse ===');
     
     // Schritt 1: Sammle alle Felder und Konfigurationen pro PDF
     const pdfFieldsInfo = new Map();
@@ -30,11 +30,11 @@ function generateFormForSelectedPDFs() {
         const pdfConfig = window.pdfConfigs.get(pdfName) || {};
         pdfFieldsInfo.set(pdfName, { fields, config: pdfConfig });
         
-        console.log(`\n--- PDF: ${pdfName} ---`);
-        console.log(`Gefundene Felder (${fields.length}):`, fields);
-        console.log(`Konfiguration:`, pdfConfig);
-        console.log(`Hat Konfiguration:`, Object.keys(pdfConfig).length > 0);
-        console.log(`Hat Feld-Konfiguration:`, !!(pdfConfig.fields && Object.keys(pdfConfig.fields).length > 0));
+        // console.log(`\n--- PDF: ${pdfName} ---`);
+        // console.log(`Gefundene Felder (${fields.length}):`, fields);
+        // console.log(`Konfiguration:`, pdfConfig);
+        // console.log(`Hat Konfiguration:`, Object.keys(pdfConfig).length > 0);
+        // console.log(`Hat Feld-Konfiguration:`, !!(pdfConfig.fields && Object.keys(pdfConfig.fields).length > 0));
     });
     
     // Schritt 2: Sammle alle unique Felder
@@ -43,12 +43,11 @@ function generateFormForSelectedPDFs() {
         fields.forEach(field => allUniqueFields.add(field));
     });
     
-    console.log(`\n=== ALLE UNIQUE FELDER (${allUniqueFields.size}) ===`);
-    console.log(Array.from(allUniqueFields));
+    // console.log(`\n=== ALLE UNIQUE FELDER (${allUniqueFields.size}) ===`);
+    // console.log(Array.from(allUniqueFields));
     
     // Schritt 3: Prüfe jedes Feld - nur anzeigen wenn es in ALLEN PDFs erlaubt ist
     allUniqueFields.forEach(field => {
-        console.log(`\n--- PRÜFE FELD: ${field} ---`);
         
         let shouldShowFieldGlobally = true;
         let globalMapping = field;
@@ -61,15 +60,15 @@ function generateFormForSelectedPDFs() {
             const hasFieldInPdf = fields.includes(field);
             
             if (!hasFieldInPdf) {
-                console.log(`  ${pdfName}: Feld nicht vorhanden`);
+                // console.log(`  ${pdfName}: Feld nicht vorhanden`);
                 continue; // Feld existiert in diesem PDF nicht
             }
             
             const fieldConf = pdfConfig.fields?.[field] || {};
             const hiddenForPDFs = fieldConf.hidden_for_pdfs || [];
             
-            console.log(`  ${pdfName}: Prüfe Sichtbarkeit`);
-            console.log(`    Konfiguration:`, fieldConf);
+            // console.log(`  ${pdfName}: Prüfe Sichtbarkeit`);
+            // console.log(`    Konfiguration:`, fieldConf);
             
             let shouldShowFieldInThisPdf;
             
@@ -80,23 +79,27 @@ function generateFormForSelectedPDFs() {
                 // Konfiguration vorhanden
                 const isSignatureField = field.toLowerCase().includes('signature') || field.toLowerCase().includes('unterschrift');
                 const isFieldInConfig = fieldConf && Object.keys(fieldConf).length > 0;
-                const isHiddenForThisPdf = hiddenForPDFs.some(hiddenPdf => pdfName.includes(hiddenPdf));
+                const isHiddenForThisPdf = hiddenForPDFs.some(hiddenPdf => {
+                    const match1 = hiddenPdf.includes(pdfName.replace('.pdf', ''));
+                    const match2 = pdfName.includes(hiddenPdf);
+                    return match1 || match2;
+                });
                 
                 if (isSignatureField) {
                     // Unterschrift-Felder: Nur anzeigen wenn explizit in der Konfiguration definiert
                     shouldShowFieldInThisPdf = isFieldInConfig && !isHiddenForThisPdf;
-                    console.log(`    Unterschrift-Feld: inConfig=${isFieldInConfig}, notHidden=${!isHiddenForThisPdf}`);
+                    // console.log(`    Unterschrift-Feld: inConfig=${isFieldInConfig}, notHidden=${!isHiddenForThisPdf}`);
                 } else {
                     // Normale Felder: Anzeigen außer wenn explizit versteckt
                     shouldShowFieldInThisPdf = !isHiddenForThisPdf;
                 }
             }
             
-            console.log(`    Sichtbar in ${pdfName}: ${shouldShowFieldInThisPdf}`);
+            // console.log(`    Sichtbar in ${pdfName}: ${shouldShowFieldInThisPdf}`);
             
             if (shouldShowFieldInThisPdf) {
                 fieldFoundInAnyPdf = true;
-                console.log(`    → Feld ist in ${pdfName} erlaubt`);
+                // console.log(`    → Feld ist in ${pdfName} erlaubt`);
                 
                 // Sammle Mapping und Berechnung
                 if (fieldConf.mapping) {
@@ -104,19 +107,19 @@ function generateFormForSelectedPDFs() {
                 }
                 if (fieldConf.berechnung) {
                     globalCalculation = fieldConf.berechnung;
-                    console.log(`🧮 Found calculation for ${field}:`, globalCalculation);
+                    // console.log(`🧮 Found calculation for ${field}:`, globalCalculation);
                 }
             }
         }
         
         shouldShowFieldGlobally = fieldFoundInAnyPdf;
         
-        console.log(`  GLOBAL SICHTBAR: ${shouldShowFieldGlobally}`);
+        // console.log(`  GLOBAL SICHTBAR: ${shouldShowFieldGlobally}`);
         
         if (shouldShowFieldGlobally || globalCalculation) {
             // Zeige Feld wenn es entweder in PDF existiert ODER eine Berechnung hat
             const displayName = globalMapping || field;
-            console.log(`  → Wird angezeigt als: ${displayName}`);
+            // console.log(`  → Wird angezeigt als: ${displayName}`);
             
             activeFields.add(displayName);
             
@@ -133,21 +136,21 @@ function generateFormForSelectedPDFs() {
             if (globalCalculation) {
                 fieldCalculations.set(displayName, globalCalculation);
                 window.calculatedFields.add(displayName);
-                console.log(`  → Berechnung gespeichert für ${displayName}: ${globalCalculation}`);
+                // console.log(`  → Berechnung gespeichert für ${displayName}: ${globalCalculation}`);
             }
         }
     });
     
-    console.log('\n=== ERGEBNIS ===');
-    console.log('Aktive Felder:', Array.from(activeFields));
-    console.log('Anzahl aktive Felder:', activeFields.size);
-    console.log('Berechnete Felder:', Array.from(window.calculatedFields));
+    // console.log('\n=== ERGEBNIS ===');
+    // console.log('Aktive Felder:', Array.from(activeFields));
+    // console.log('Anzahl aktive Felder:', activeFields.size);
+    // console.log('Berechnete Felder:', Array.from(window.calculatedFields));
     
     window.currentFieldMappings = fieldMappings;
     window.currentFieldCalculations = fieldCalculations;
     
-    console.log('📊 Field Mappings:', fieldMappings);
-    console.log('🧮 Field Calculations:', fieldCalculations);
+    // console.log('📊 Field Mappings:', fieldMappings);
+    // console.log('🧮 Field Calculations:', fieldCalculations);
     
     if (activeFields.size === 0) {
         console.error('FEHLER: Keine aktiven Felder gefunden!');
@@ -156,13 +159,13 @@ function generateFormForSelectedPDFs() {
     }
     
     const groupedFields = organizeFieldsByGroups(activeFields);
-    console.log('Gruppierte Felder:', groupedFields);
+    // console.log('Gruppierte Felder:', groupedFields);
     
     let sectionsCreated = 0;
     for (const [groupName, fields] of Object.entries(groupedFields)) {
         if (fields.length === 0) continue;
         
-        console.log(`Erstelle Sektion für Gruppe: ${groupName} mit ${fields.length} Feldern`);
+        // console.log(`Erstelle Sektion für Gruppe: ${groupName} mit ${fields.length} Feldern`);
         
         const section = document.createElement('div');
         section.className = 'form-section';
@@ -178,7 +181,7 @@ function generateFormForSelectedPDFs() {
         `;
         
         fields.forEach(fieldName => {
-            console.log(`  → Generiere Feld: ${fieldName}`);
+            // console.log(`  → Generiere Feld: ${fieldName}`);
             sectionHTML += generateFormField(fieldName);
         });
         
@@ -188,7 +191,7 @@ function generateFormForSelectedPDFs() {
         sectionsCreated++;
     }
     
-    console.log(`Insgesamt ${sectionsCreated} Sektionen erstellt`);
+    // console.log(`Insgesamt ${sectionsCreated} Sektionen erstellt`);
     
     
     // Event-Listener für Berechnungen hinzufügen
@@ -203,7 +206,7 @@ function generateFormForSelectedPDFs() {
         handleUrlParams();
     }, 100);
     
-    console.log('=== DEBUGGING ENDE ===\n');
+    // console.log('=== DEBUGGING ENDE ===\n');
 }
 
 function getGroupConfig(groupName) {
@@ -266,7 +269,7 @@ function organizeFieldsByGroups(activeFields) {
         }
     });
     
-    console.log('Finale Gruppen-Reihenfolge:', finalGroupOrder);
+    // console.log('Finale Gruppen-Reihenfolge:', finalGroupOrder);
     
     // Felder den Gruppen zuordnen mit Berücksichtigung der Feld-Reihenfolge
     fieldsArray.forEach(fieldName => {
@@ -279,14 +282,14 @@ function organizeFieldsByGroups(activeFields) {
                 const directFieldConf = config.fields?.[fieldName];
                 if (directFieldConf && directFieldConf.group) {
                     group = directFieldConf.group;
-                    console.log(`Feld ${fieldName} → Gruppe: ${group} (direkt aus ${pdfName})`);
+                    // console.log(`Feld ${fieldName} → Gruppe: ${group} (direkt aus ${pdfName})`);
                     break;
                 } else {
                     // Suche nach Original-Feld, das auf diesen Namen mappt
                     for (const [originalField, fieldConfig] of Object.entries(config.fields || {})) {
                         if (fieldConfig.mapping === fieldName && fieldConfig.group) {
                             group = fieldConfig.group;
-                            console.log(`Feld ${fieldName} → Gruppe: ${group} (via mapping von ${originalField} aus ${pdfName})`);
+                            // console.log(`Feld ${fieldName} → Gruppe: ${group} (via mapping von ${originalField} aus ${pdfName})`);
                             break;
                         }
                     }
@@ -325,7 +328,7 @@ function organizeFieldsByGroups(activeFields) {
 }
 
 function sortFieldsInGroup(fields, groupName) {
-    console.log(`Sortiere Felder für Gruppe: ${groupName}, Felder:`, fields);
+    // console.log(`Sortiere Felder für Gruppe: ${groupName}, Felder:`, fields);
     
     // Sammle alle Feld-Reihenfolgen aus den YAML-extrahierten Ordnungen
     const fieldOrders = new Map();
@@ -336,7 +339,7 @@ function sortFieldsInGroup(fields, groupName) {
             const yamlOrder = window.yamlFieldOrders.get(pdfName);
             if (yamlOrder[groupName]) {
                 fieldOrders.set(pdfName, yamlOrder[groupName]);
-                console.log(`YAML-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, yamlOrder[groupName]);
+                // console.log(`YAML-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, yamlOrder[groupName]);
             }
         } else {
             // Fallback: Verwende die Reihenfolge aus der Konfiguration (unzuverlässig)
@@ -359,13 +362,13 @@ function sortFieldsInGroup(fields, groupName) {
                 
                 if (groupFields.length > 0) {
                     fieldOrders.set(pdfName + '_fallback', groupFields);
-                    console.log(`Fallback-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, groupFields);
+                    // console.log(`Fallback-Reihenfolge für ${pdfName}, Gruppe ${groupName}:`, groupFields);
                 }
             }
         }
     });
     
-    console.log(`Feld-Reihenfolgen für Gruppe ${groupName}:`, Array.from(fieldOrders.entries()));
+    // console.log(`Feld-Reihenfolgen für Gruppe ${groupName}:`, Array.from(fieldOrders.entries()));
     
     // Bestimme die finale Feld-Reihenfolge
     let finalFieldOrder = [];
@@ -377,10 +380,10 @@ function sortFieldsInGroup(fields, groupName) {
         const yamlOrders = Array.from(fieldOrders.entries()).filter(([key, _]) => !key.includes('_fallback'));
         if (yamlOrders.length > 0) {
             finalFieldOrder = [...yamlOrders[0][1]];
-            console.log(`Verwende YAML-basierte Reihenfolge von ${yamlOrders[0][0]}`);
+            // console.log(`Verwende YAML-basierte Reihenfolge von ${yamlOrders[0][0]}`);
         } else {
             finalFieldOrder = [...allFieldOrders[0]];
-            console.log(`Verwende Fallback-Reihenfolge`);
+            // console.log(`Verwende Fallback-Reihenfolge`);
         }
         
         // Ergänze um Felder aus anderen Konfigurationen
@@ -403,7 +406,7 @@ function sortFieldsInGroup(fields, groupName) {
     // Entferne Felder, die nicht in der aktuellen Feldliste stehen
     finalFieldOrder = finalFieldOrder.filter(fieldName => fields.includes(fieldName));
     
-    console.log(`Finale Feld-Reihenfolge für Gruppe ${groupName}:`, finalFieldOrder);
+    // console.log(`Finale Feld-Reihenfolge für Gruppe ${groupName}:`, finalFieldOrder);
     
     return finalFieldOrder;
 }
@@ -539,7 +542,7 @@ function generateFormField(fieldName) {
         `;
     }
     
-    // Spezielle Behandlung für Radio Buttons
+    // Spezielle Behandlung für Radio Buttons (einzelne Radio Buttons)
     if (type === 'radio' && options.length > 0) {
         let radioHTML = `
             <div class="form-group">
@@ -550,10 +553,12 @@ function generateFormField(fieldName) {
         
         options.forEach((option, index) => {
             const isFirst = index === 0;
+            const optionValue = typeof option === 'object' ? option.value : option;
+            const optionLabel = typeof option === 'object' ? option.label : option;
             radioHTML += `
                 <div class="radio-container">
-                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${option}">
-                    <label for="${fieldName}_${index}" class="radio-label">${option}</label>
+                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${optionValue}">
+                    <label for="${fieldName}_${index}" class="radio-label">${optionLabel}</label>
                 </div>
             `;
         });
@@ -563,6 +568,33 @@ function generateFormField(fieldName) {
             </div>
         `;
         return radioHTML;
+    }
+    
+    // Spezielle Behandlung für Radio Button Groups (mutual exclusive group)
+    if (type === 'group' && options.length > 0) {
+        let groupHTML = `
+            <div class="form-group">
+                <label class="form-label">${title}${calculatedBadge}${pdfInfoBadge}</label>
+                ${description ? `<div class="field-description">${description}</div>` : ''}
+                <div class="radio-group">
+        `;
+        
+        options.forEach((option, index) => {
+            const optionValue = typeof option === 'object' ? option.value : option;
+            const optionLabel = typeof option === 'object' ? option.label : option;
+            groupHTML += `
+                <div class="radio-container">
+                    <input type="radio" id="${fieldName}_${index}" name="${fieldName}" value="${optionValue}">
+                    <label for="${fieldName}_${index}" class="radio-label">${optionLabel}</label>
+                </div>
+            `;
+        });
+        
+        groupHTML += `
+                </div>
+            </div>
+        `;
+        return groupHTML;
     }
     
     // Spezielle Behandlung für Dropdown/Select

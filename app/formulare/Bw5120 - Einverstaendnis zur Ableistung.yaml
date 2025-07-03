@@ -5,15 +5,31 @@ groups:
   Dienstleistung:
     title: 🎖️ Dienstleistungsangaben
     description: Informationen zur Dienstleistung
-  Unterschriften:
-    title: ✍️ Unterschriften
-    description: Erforderliche Unterschriften
+  Beschäftigungsverhältnis:
+    title: Beschäftigungsverhältnis
+    description: ''
+  Interessenskonflikt:
+    title: Interessenskonflikt
+    description: ''
+  Mandatsträger:
+    title: Mandatsträger
+    description: Infos zum Mandat
   Einverständnis:
     title: ✅ Einverständniserklärungen
     description: Erforderliche Zustimmungen
+  Dienstverhältnis:
+    title:  Dienstverhältnis
+    description: Übernahme in Dienstverhältnis
+  Anreise:
+    title:  Anreise
+    description: Anreiseinfo
+  Unterschriften:
+    title: ✍️ Unterschriften
+    description: Erforderliche Unterschriften
   Sonstige:
     title: 📋 Sonstige Felder
     description: Weitere Informationen
+
 fields:
   Nachname:
     group: Persönliche Daten
@@ -46,6 +62,7 @@ fields:
   EMail:
     group: Persönliche Daten
     type: email
+
   Bitte wählen:
     group: Dienstleistung
     title: Einverständnis zur Ableistung
@@ -54,8 +71,6 @@ fields:
       - null
       - einer Übung § 61 SG
       - eines Wehrdienstes zur temporären Verbesserung der personellen Einsatzbereitschaft (§ 63b SG)
-  Anschrift Dienstleistungstruppenanteil:
-    group: Dienstleistung
   vom Beginn der Dienstleitung:
     group: Dienstleistung
     type: date
@@ -76,44 +91,89 @@ fields:
   in Ort Standort der Dienstleistungsstelle:
     group: Dienstleistung
     type: text
-  Anreise:
+
+  Strafverfahren:
     group: Dienstleistung
     type: radio
     options:
       - Ja
       - Nein
-  Beschaeftigung_Beamter:
-    group: Dienstleistung
-    type: checkbox
-    title: Beamter
-    description: Ich bin Beamter
-  Beschaeftigung_Arbeitsverhaeltnis:
-    group: Dienstleistung
-    type: checkbox
-    description: Ich habe keine Arbeit
-    title: Arbeitslos
-  Beschaeftigung_Selbstaendig:
-    group: Dienstleistung
-    type: checkbox
-    title: Sebstständig
-    description: Ich bin selbstständig
-  Beschaeftigung_Pensionaer:
-    group: Dienstleistung
-    type: checkbox
-    title: Pensionär, Schüler o.ä.
-    description: Ich bin Pensionär, Schüler o.ä.
-  Beschaeftigung_KeinArbeitsverhaeltnis:
-    group: Dienstleistung
-    type: checkbox
-  Selbststaendig:
-    group: Dienstleistung
-    type: text
-  Pensionaer:
-    group: Dienstleistung
-  Pensionär:
-    group: Dienstleistung
+
   Arbeitsverhältnis:
-    group: Dienstleistung
+    group: Beschäftigungsverhältnis
+    type: radio
+    options:
+      - Ich bin Beamter beziehungsweise Beamtin bei der Bundeswehr
+      - Ich stehe zurzeit in einem Arbeitsverhältnis
+      - Ich bin selbstständig als (Tätigkeit)
+      - Ich stehe zurzeit in keinem Arbeitsverhältnis
+      - Ich bin Pensionär, Schüler oder ähnliches (Tätigkeit)
+    title: Ich stehe in einem Arbeitsverhältnis
+  Selbstständig:
+    group: Beschäftigungsverhältnis
+    type: text
+    title: Selbstständige Tätigkeit
+  Pensionär:
+    group: Beschäftigungsverhältnis
+    type: text
+    title: Student/Pensionär sonstiges
+  Beschaeftigung:
+    group: Beschäftigungsverhältnis
+    title: Beschäftigungsverhältnis
+    type: checkbox
+
+  Mandatstraeger:
+    group: Mandatsträger
+    type: radio
+    options:
+      - Ja
+      - Nein
+    title: Ich bin Mandatsträger
+  Mandat:
+    group: Mandatsträger
+    type: text
+    title: Ich bekleide folgendes Mandat
+    
+  Selbststaendig:
+    group: Beschäftigungsverhältnis
+    type: text
+    title: Selbstständige Tätigkeit (Details)
+  Pensionaer:
+    group: Beschäftigungsverhältnis
+    type: checkbox
+    title: Student/Pensionär (Details)
+  Diszi:
+    group: Interessenskonflikt
+    title: Ich bin beschäftigt bei sonstigen Organisationen als Interessenvertreter, die auf Angelegenheiten der Bundeswehr Einfluss nehmen wollen.
+    type: checkbox
+  Punkt_3:
+    group: Einverständnis
+    title: Die Übung steht in einem Zusammenhang mit einem Bundeswehrauftrag.
+    type: checkbox
+
+
+  Verpflichtungszeit:
+    group: Einverständnis
+    title: Das Unternehmen steht in Geschäftsverbindungen zur Bundeswehr.
+    type: checkbox
+
+
+  Anreise:
+    group: Anreise
+    type: radio
+    options:
+      - Ja
+      - Nein
+    title: Benötige Gutschein für Anreise
+
+  Interesse:
+    group: Dienstverhältnis
+    title: Übernahme in ein aktives Dienstverhältnis?
+    type: radio
+    options:
+      - Ja
+      - Nein
+
   Signature1:
     group: Unterschriften
     type: signature
@@ -134,33 +194,18 @@ fields:
     signature_page: 2
     description: Unterschrift 2
     mapping: Unterschrift
-  Strafverfahren:
-    group: Einverständnis
-    type: radio
-    options:
-      - Ja
-      - Nein
-  Mandatstraeger:
-    group: Einverständnis
-  Interesse:
-    group: Sonstige
-  Verpflichtungszeit:
-    group: Sonstige
-  Diszi:
-    group: Sonstige
-  Punkt_3:
-    group: Sonstige
   Schutzbereich 3:
     group: Sonstige
     type: text
     hidden_for_pdfs:
-      - Bw5120 - Einverständnis zur Ableistung.pdf
+      - Bw5120 - Einverstaendnis zur Ableistung.pdf
   Schutzbereich 2:
     group: Sonstige
     type: text
     hidden_for_pdfs:
-      - Bw5120 - Einverständnis zur Ableistung.pdf
-  Mandat:
+      - Bw5120 - Einverstaendnis zur Ableistung.pdf
+  Anschrift Dienstleistungstruppenanteil:
     group: Sonstige
-  Selbstständig:
-    group: Sonstige
+    type: text
+    hidden_for_pdfs:
+      - Bw5120 - Einverstaendnis zur Ableistung.pdf

@@ -7,13 +7,13 @@ window.addEventListener('load', async function() {
 
 async function initializeApp() {
     try {
-        console.log('🚀 App-Initialisierung gestartet...');
+    // console.log('🚀 App-Initialisierung gestartet...');
         
         await loadPDFsFromDirectory();
         generatePDFSelection();
         parseUrlParams(); // URL-Parameter früh parsen und anzeigen
         
-        console.log('✅ App erfolgreich initialisiert');
+    // console.log('✅ App erfolgreich initialisiert');
         showMainApp();
     } catch (error) {
         console.error('❌ Fehler beim Initialisieren:', error);
@@ -22,27 +22,27 @@ async function initializeApp() {
 }
 
 async function generatePDFs(flatten = true) {
-    console.log('\n🎯 === GENERATE PDFs GESTARTET ===');
-    console.log('🔧 Flatten Mode:', flatten);
-    console.log('📊 selectedPDFs size:', window.selectedPDFs?.size || 0);
-    console.log('📊 availablePDFs length:', window.availablePDFs?.length || 0);
+    // console.log('\n🎯 === GENERATE PDFs GESTARTET ===');
+    // console.log('🔧 Flatten Mode:', flatten);
+    // console.log('📊 selectedPDFs size:', window.selectedPDFs?.size || 0);
+    // console.log('📊 availablePDFs length:', window.availablePDFs?.length || 0);
     
     const data = getAllFormData();
     const selectedPDFList = [];
     
-    console.log('📋 window.selectedPDFs:', Array.from(window.selectedPDFs || []));
-    console.log('📚 window.availablePDFs:', window.availablePDFs?.map(p => p.name) || []);
+    // console.log('📋 window.selectedPDFs:', Array.from(window.selectedPDFs || []));
+    // console.log('📚 window.availablePDFs:', window.availablePDFs?.map(p => p.name) || []);
     
     for (const pdfName of window.selectedPDFs) {
-        console.log(`🔍 Suche PDF: ${pdfName}`);
+    // console.log(`🔍 Suche PDF: ${pdfName}`);
         let pdf = window.availablePDFs.find(p => p.name === pdfName);
         
         if (pdf) {
             selectedPDFList.push(pdf);
-            console.log(`✅ PDF gefunden und hinzugefügt: ${pdfName}`);
+    // console.log(`✅ PDF gefunden und hinzugefügt: ${pdfName}`);
         } else {
             console.warn(`⚠️ PDF nicht in availablePDFs gefunden: ${pdfName}`);
-            console.log(`🔄 Versuche PDF dynamisch zu laden...`);
+    // console.log(`🔄 Versuche PDF dynamisch zu laden...`);
             
             // Versuche das PDF dynamisch zu laden
             try {
@@ -68,7 +68,7 @@ async function generatePDFs(flatten = true) {
                     // Füge zu availablePDFs hinzu für zukünftige Verwendung
                     window.availablePDFs.push(pdf);
                     selectedPDFList.push(pdf);
-                    console.log(`✅ PDF dynamisch geladen und hinzugefügt: ${pdfName}`);
+    // console.log(`✅ PDF dynamisch geladen und hinzugefügt: ${pdfName}`);
                 } else {
                     console.error(`❌ PDF konnte nicht geladen werden: ${pdfName} (Status: ${response.status})`);
                 }
@@ -78,7 +78,7 @@ async function generatePDFs(flatten = true) {
         }
     }
     
-    console.log(`📊 Finale selectedPDFList (${selectedPDFList.length}):`, selectedPDFList.map(p => p.name));
+    // console.log(`📊 Finale selectedPDFList (${selectedPDFList.length}):`, selectedPDFList.map(p => p.name));
     
     if (selectedPDFList.length === 0) {
         console.error('❌ Keine PDFs in selectedPDFList!');
@@ -97,11 +97,11 @@ async function generatePDFs(flatten = true) {
         // Generiere alle PDFs parallel und sammle Download-Promises
         for (const pdf of selectedPDFList) {
             try {
-                console.log(`🔄 Starte Generierung für: ${pdf.name}`);
+    // console.log(`🔄 Starte Generierung für: ${pdf.name}`);
                 const downloadPromise = fillAndDownloadPDF(pdf, data, flatten);
                 downloadPromises.push(downloadPromise.then(() => {
                     successCount++;
-                    console.log(`✅ PDF erfolgreich generiert: ${pdf.name}`);
+    // console.log(`✅ PDF erfolgreich generiert: ${pdf.name}`);
                     return pdf.name;
                 }).catch(pdfError => {
                     console.error(`❌ Fehler bei PDF ${pdf.name}:`, pdfError);
@@ -115,7 +115,7 @@ async function generatePDFs(flatten = true) {
         }
         
         // Warte auf alle PDF-Generierungen
-        console.log(`🚀 Starte ${downloadPromises.length} PDF-Downloads parallel...`);
+    // console.log(`🚀 Starte ${downloadPromises.length} PDF-Downloads parallel...`);
         await Promise.allSettled(downloadPromises);
         
         saveData();
@@ -134,24 +134,24 @@ async function generatePDFs(flatten = true) {
 }
 
 async function generatePDFsAsZip(flatten = true) {
-    console.log('\n📦 === GENERATE PDFs AS ZIP GESTARTET ===');
-    console.log('🔧 Flatten Mode:', flatten);
-    console.log('📊 selectedPDFs size:', window.selectedPDFs?.size || 0);
+    // console.log('\n📦 === GENERATE PDFs AS ZIP GESTARTET ===');
+    // console.log('🔧 Flatten Mode:', flatten);
+    // console.log('📊 selectedPDFs size:', window.selectedPDFs?.size || 0);
     
     const data = getAllFormData();
     const selectedPDFList = [];
     
     // Sammle PDFs (gleiche Logik wie generatePDFs)
     for (const pdfName of window.selectedPDFs) {
-        console.log(`🔍 Suche PDF: ${pdfName}`);
+    // console.log(`🔍 Suche PDF: ${pdfName}`);
         let pdf = window.availablePDFs.find(p => p.name === pdfName);
         
         if (pdf) {
             selectedPDFList.push(pdf);
-            console.log(`✅ PDF gefunden und hinzugefügt: ${pdfName}`);
+    // console.log(`✅ PDF gefunden und hinzugefügt: ${pdfName}`);
         } else {
             console.warn(`⚠️ PDF nicht in availablePDFs gefunden: ${pdfName}`);
-            console.log(`🔄 Versuche PDF dynamisch zu laden...`);
+    // console.log(`🔄 Versuche PDF dynamisch zu laden...`);
             
             try {
                 const response = await fetch(`../formulare/${encodeURIComponent(pdfName)}`);
@@ -171,7 +171,7 @@ async function generatePDFsAsZip(flatten = true) {
                     };
                     
                     selectedPDFList.push(pdf);
-                    console.log(`✅ PDF dynamisch geladen und hinzugefügt: ${pdfName}`);
+    // console.log(`✅ PDF dynamisch geladen und hinzugefügt: ${pdfName}`);
                 } else {
                     console.error(`❌ PDF konnte nicht geladen werden: ${pdfName} (Status: ${response.status})`);
                 }
@@ -198,7 +198,7 @@ async function generatePDFsAsZip(flatten = true) {
         // Generiere alle PDFs und füge sie zur ZIP hinzu (strukturiert in 3 Ordnern)
         for (const pdf of selectedPDFList) {
             try {
-                console.log(`🔄 Starte Generierung für ZIP: ${pdf.name}`);
+    // console.log(`🔄 Starte Generierung für ZIP: ${pdf.name}`);
                 
                 // Generiere konfigurierten Dateinamen (ohne Modus-Suffix)
                 let configuredFileName = generateFileName(pdf.name, data, false); // Basis-Name
@@ -208,12 +208,12 @@ async function generatePDFsAsZip(flatten = true) {
                 // 1. Bearbeitbares PDF-Formular
                 const editablePdfBlob = await fillPDFForZip(pdf, data, false);
                 zip.file(`PDF-Formulare/${configuredFileName}`, editablePdfBlob);
-                console.log(`✅ Bearbeitbares PDF zu ZIP hinzugefügt: PDF-Formulare/${configuredFileName}`);
+    // console.log(`✅ Bearbeitbares PDF zu ZIP hinzugefügt: PDF-Formulare/${configuredFileName}`);
                 
                 // 2. Finalisiertes PDF (geflacht)
                 const finalPdfBlob = await fillPDFForZip(pdf, data, true);
                 zip.file(`PDFs/${configuredFileName}`, finalPdfBlob);
-                console.log(`✅ Finalisiertes PDF zu ZIP hinzugefügt: PDFs/${configuredFileName}`);
+    // console.log(`✅ Finalisiertes PDF zu ZIP hinzugefügt: PDFs/${configuredFileName}`);
                 
                 successCount++;
                 
@@ -224,7 +224,7 @@ async function generatePDFsAsZip(flatten = true) {
         }
         
         // Füge JSON-Daten hinzu (mit konfiguriertem Namen)
-        console.log('📋 Füge JSON-Daten zur ZIP hinzu...');
+    // console.log('📋 Füge JSON-Daten zur ZIP hinzu...');
         try {
             const jsonData = {
                 formData: data,
@@ -256,7 +256,7 @@ async function generatePDFsAsZip(flatten = true) {
             }
                 
             zip.file(`Formulardaten/${jsonFileName}`, jsonBlob);
-            console.log(`✅ JSON-Daten zu ZIP hinzugefügt: Formulardaten/${jsonFileName}`);
+    // console.log(`✅ JSON-Daten zu ZIP hinzugefügt: Formulardaten/${jsonFileName}`);
         } catch (jsonError) {
             console.warn('⚠️ Fehler beim Hinzufügen der JSON-Daten:', jsonError);
         }
@@ -267,7 +267,7 @@ async function generatePDFsAsZip(flatten = true) {
         }
         
         // ZIP generieren und downloaden
-        console.log('📦 Generiere ZIP-Datei...');
+    // console.log('📦 Generiere ZIP-Datei...');
         const zipBlob = await zip.generateAsync({type: 'blob'});
         
         // ZIP-Dateiname erstellen: [Nachname], [Vorname] - [Datum].zip
@@ -302,5 +302,5 @@ async function generatePDFsAsZip(flatten = true) {
         showStatus('Fehler beim Generieren der ZIP: ' + error.message, 'error');
     }
     
-    console.log('📦 === GENERATE PDFs AS ZIP BEENDET ===\n');
+    // console.log('📦 === GENERATE PDFs AS ZIP BEENDET ===\n');
 }
